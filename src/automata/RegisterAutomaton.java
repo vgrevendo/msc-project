@@ -6,6 +6,7 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Scanner;
 
 /**
@@ -48,7 +49,7 @@ public class RegisterAutomaton extends Automaton {
 		int lineNumber = 0;
 		lineNumber = loadStates(sc);
 		lineNumber = loadRegisters(sc, lineNumber);
-		
+		loadTransitions(sc, lineNumber);
 	}
 	
 	private int loadStates(Scanner sc) throws ParseException {
@@ -104,7 +105,10 @@ public class RegisterAutomaton extends Automaton {
 			registers = new int[tokens.length];
 			
 			for(int i = 0; i < tokens.length; i++) {
-				registers[i] = Integer.parseInt(tokens[i]);
+				if(tokens[i].equals("#"))
+					registers[i] = -1;
+				else				
+					registers[i] = Integer.parseInt(tokens[i]);
 			}
 			
 			sc.nextLine();
@@ -145,9 +149,23 @@ public class RegisterAutomaton extends Automaton {
 				throw new ParseException("Could not resolve reference to states " + tokens[0] + ", " + tokens[2], lineNumber);
 			}
 			
-			mu.get(state1).put(Integer.parseInt(tokens[0]), state2);
+			mu.get(state1).put(Integer.parseInt(tokens[1]), state2);
 		}
 		
 		return lineNumber;
+	}
+
+	public void displayInfo() {
+		System.out.println("-- Automaton information --");
+		System.out.println("Number of states: " + states.length);
+		
+		int transitions = 0;
+		for(Entry<State, Map<Integer, State>> e: mu.entrySet()) {
+			transitions += e.getValue().entrySet().size();
+		}
+		
+		System.out.println("Number of transitions: " + transitions);
+		System.out.println("Number of values defined for rho: " + rho.entrySet().size());
+		System.out.println("---------------------------");
 	}
 }
