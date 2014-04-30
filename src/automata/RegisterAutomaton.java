@@ -5,18 +5,22 @@ import java.io.FileNotFoundException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Scanner;
 
+import algorithms.Tools;
+
 /**
- * A register automaton as defined in "Finite-memory Automata", Kaminski, Francez
+ * A register automaton as defined in "Finite-Memory Automata", Kaminski, Francez
  * @author vincent
  *
  */
 public class RegisterAutomaton extends Automaton {
 	
 	private State[] states;
+
 	private State initialState;
 	private int[] registers;
 	/**
@@ -28,7 +32,7 @@ public class RegisterAutomaton extends Automaton {
 	 * Mu is the relation as defined in the paper.
 	 * Nullpointers will have to be handled intelligently here.
 	 */
-	private Map<State, Map<Integer, State>> mu;
+	private Map<State, Map<Integer, List<State>>> mu;
 	
 	public RegisterAutomaton(String loadPath) throws FileNotFoundException, ParseException {
 		loadFromFile(loadPath);
@@ -73,13 +77,15 @@ public class RegisterAutomaton extends Automaton {
 					
 					//Init mu array
 					for(State state : states) {
-						mu.put(state, new HashMap<Integer, State>());
+						mu.put(state, new HashMap<Integer, List<State>>());
 					}
 					
 					return lineNumber;
 				} else {
-					throw new ParseException("Unrecognised single token", lineNumber);
+					State state = new State(tokens[0]);
+					stateSet.add(state);
 				}
+				break;
 			case 2:
 				State state = new State(tokens[0]);
 				stateSet.add(state);
@@ -88,7 +94,8 @@ public class RegisterAutomaton extends Automaton {
 			case 3:
 				State finalState = new State(tokens[0], tokens[2].equals("F"));
 				stateSet.add(finalState);
-				rho.put(finalState, Integer.parseInt(tokens[1]));
+				if(!tokens[1].equals("_"))
+					rho.put(finalState, Integer.parseInt(tokens[1]));
 				break;
 			default:
 				throw new ParseException("Unrecognised line", lineNumber);
@@ -99,7 +106,27 @@ public class RegisterAutomaton extends Automaton {
 		
 	}
 
+	/**
+	 * Load initial state and registers
+	 * @param sc
+	 * @param lineNumber
+	 * @return
+	 * @throws ParseException
+	 */
 	private int loadRegisters(Scanner sc, int lineNumber) throws ParseException {
+		if(sc.hasNext()) {
+			String token = sc.nextLine();
+			
+			for(State state : states) {
+				if(state.name.equals(token)) {
+					initialState = state;
+					break;
+				}
+			}
+		} else {
+			throw new ParseException("Expected declaration of initial state", lineNumber);
+		}
+		
 		if(sc.hasNext()) {
 			String[] tokens = sc.nextLine().split(" ");
 			registers = new int[tokens.length];
@@ -149,7 +176,10 @@ public class RegisterAutomaton extends Automaton {
 				throw new ParseException("Could not resolve reference to states " + tokens[0] + ", " + tokens[2], lineNumber);
 			}
 			
-			mu.get(state1).put(Integer.parseInt(tokens[1]), state2);
+			int label = Integer.parseInt(tokens[1]);
+			if(!mu.get(state1).containsKey(label))
+				mu.get(state1).put(label, new ArrayList<State>());
+			mu.get(state1).get(label).add(state2);
 		}
 		
 		return lineNumber;
@@ -160,12 +190,39 @@ public class RegisterAutomaton extends Automaton {
 		System.out.println("Number of states: " + states.length);
 		
 		int transitions = 0;
-		for(Entry<State, Map<Integer, State>> e: mu.entrySet()) {
-			transitions += e.getValue().entrySet().size();
+		for(Entry<State, Map<Integer, List<State>>> e: mu.entrySet()) {
+			for(Entry<Integer, List<State>> e2: e.getValue().entrySet()) {
+				transitions += e2.getValue().size();
+			}
 		}
 		
 		System.out.println("Number of transitions: " + transitions);
 		System.out.println("Number of values defined for rho: " + rho.entrySet().size());
+		
+		int fStates = 0;
+		for(State s : states) {
+			if(s.isFinal)
+				fStates ++;
+		}
+		
+		System.out.println("Number of final states: " + fStates);
+		
+		if(Tools.isDeterministic(this))
+			System.out.println("This automaton is deterministic");
+		else
+			System.out.println("This automaton is nondeterministic");
+		
 		System.out.println("---------------------------");
+	}
+
+	//Access methods
+	public State getInitialState() {
+		return initialState;
+	}
+	public State[] getStates() {
+		return states;
+	}
+	public Map<Integer, List<State>> getTransitions(State s) {
+		return mu.get(s);
 	}
 }
