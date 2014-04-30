@@ -89,13 +89,13 @@ public class RegisterAutomaton extends Automaton {
 			case 2:
 				State state = new State(tokens[0]);
 				stateSet.add(state);
-				rho.put(state, Integer.parseInt(tokens[1]));
+				rho.put(state, Integer.parseInt(tokens[1])-1);
 				break;
 			case 3:
 				State finalState = new State(tokens[0], tokens[2].equals("F"));
 				stateSet.add(finalState);
 				if(!tokens[1].equals("_"))
-					rho.put(finalState, Integer.parseInt(tokens[1]));
+					rho.put(finalState, Integer.parseInt(tokens[1])-1);
 				break;
 			default:
 				throw new ParseException("Unrecognised line", lineNumber);
@@ -176,7 +176,7 @@ public class RegisterAutomaton extends Automaton {
 				throw new ParseException("Could not resolve reference to states " + tokens[0] + ", " + tokens[2], lineNumber);
 			}
 			
-			int label = Integer.parseInt(tokens[1]);
+			int label = Integer.parseInt(tokens[1])-1;
 			if(!mu.get(state1).containsKey(label))
 				mu.get(state1).put(label, new ArrayList<State>());
 			mu.get(state1).get(label).add(state2);
@@ -224,5 +224,23 @@ public class RegisterAutomaton extends Automaton {
 	}
 	public Map<Integer, List<State>> getTransitions(State s) {
 		return mu.get(s);
+	}
+
+
+	
+	/**
+	 * Registers of an automaton model are immutable!
+	 * @return
+	 */
+	public int[] getInitialRegisters() {
+		return registers.clone();
+	}
+	
+	public Integer getAssignmentRegister(State s) {
+		return rho.get(s);
+	}
+	
+	public List<State> getNextStates(State currentState, int label) {
+		return mu.get(currentState).get(label);
 	}
 }
