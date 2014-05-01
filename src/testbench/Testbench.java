@@ -14,7 +14,7 @@ public class Testbench {
 			RegisterAutomaton ra = new RegisterAutomaton("res/example2.fma");
 			ra.displayInfo();
 			
-			if(Membership.isMember(ra, new int[] {1,2,1,3,2,3})) {
+			if(Membership.isMember(ra, new int[] {1,2,1,1,2,1})) {
 				System.out.println("Membership test is success");
 			} else
 				System.out.println("Membership test failed");

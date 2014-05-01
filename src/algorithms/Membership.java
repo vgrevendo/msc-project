@@ -1,6 +1,5 @@
 package algorithms;
 
-import java.util.Arrays;
 import java.util.List;
 
 import automata.RegisterAutomaton;
@@ -58,5 +57,9 @@ public class Membership {
 				return i;
 		}
 		return -1;
+	}
+	
+	private static boolean nondeterministicMemberCheck(RegisterAutomaton a, int[] w) {
+		return false;
 	}
 }
