@@ -59,9 +59,10 @@ public class SearchState {
 			List<State> adjacentStates = a.getNextStates(state, containingRegister);
 			
 			//Infer search states
-			for(State s: adjacentStates) {
-				adjacentSearchStates.add(new SearchState(s, registers.clone(), w.subList(1, w.size()), a));
-			}
+			if(adjacentStates != null)
+				for(State s: adjacentStates) {
+					adjacentSearchStates.add(new SearchState(s, registers.clone(), w.subList(1, w.size()), a));
+				}
 		}
 		
 		return adjacentSearchStates;
