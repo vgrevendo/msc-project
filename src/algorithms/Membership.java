@@ -1,16 +1,20 @@
 package algorithms;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Stack;
 
 import automata.RegisterAutomaton;
 import automata.State;
+import automata.ldfts.SearchNode;
+import automata.ldfts.SearchState;
 
 public class Membership {
 	public static boolean isMember(RegisterAutomaton a, int[] w) {
 		if(Tools.isDeterministic(a))
 			return deterministicMemberCheck(a, w);
 		
-		return false;
+		return nondeterministicMemberCheck(a, w);
 	}
 	
 	/**
@@ -51,7 +55,7 @@ public class Membership {
 		return currentState.isFinal;
 	}
 	
-	private static int registersContain(int[] registers, int symbol) {
+	public static int registersContain(int[] registers, int symbol) {
 		for(int i = 0; i < registers.length; i++) {
 			if(registers[i] == symbol)
 				return i;
@@ -59,7 +63,40 @@ public class Membership {
 		return -1;
 	}
 	
+	/**
+	 * A first naïve version of nondeterministic membership checking, by performing a
+	 * Limited Depth-First Tree Search into the automaton graph; see the ldfts package
+	 * for components. DFTS implies a stack as a frontier. 
+	 * @param a
+	 * @param w
+	 * @return
+	 */
 	private static boolean nondeterministicMemberCheck(RegisterAutomaton a, int[] w) {
+		ArrayList<Integer> wl = new ArrayList<>();
+		for(int i : w) {
+			wl.add(i);
+		}
+		
+		Stack<SearchNode> frontier = new Stack<>();
+		SearchState initialSearchState = new SearchState(a.getInitialState(), 
+														 a.getInitialRegisters(), 
+														 wl, a);
+		frontier.add(new SearchNode(initialSearchState, null, -1));
+		
+		//Main search loop
+		while(!frontier.isEmpty()) {
+			SearchNode node = frontier.pop();
+			if(node.state.isFinal()) {
+				node.printPath();
+				return true;
+			}
+			
+			List<SearchState> nextStates = node.state.expand();
+			for(SearchState s : nextStates) {
+				frontier.add(new SearchNode(s, node, 0));
+			}
+		}
+		
 		return false;
 	}
 }

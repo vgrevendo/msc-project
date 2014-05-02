@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import algorithms.Membership;
 import automata.RegisterAutomaton;
 import automata.State;
 
@@ -39,14 +40,29 @@ public class SearchState {
 		
 		//If search state is not terminal, find the adjacent search states
 		if(w.size() > 0) {
+			//Get the next symbol
 			int symbol = w.get(0);
 			
-			Map<Integer, List<State>> transitions = a.getTransitions(state);
+			//Update the registers and find the containing register (default -1)
+			int containingRegister = -1;
+			Integer assignmentRegister = -1;
 			
+			if((containingRegister = Membership.registersContain(registers, symbol)) < 0) {
+				//If a rho value is defined
+				if((assignmentRegister = a.getAssignmentRegister(state)) != null) {
+					containingRegister = assignmentRegister;
+					registers[containingRegister] = symbol;
+				}
+			}
+			
+			//Deduce possible transitions
+			List<State> adjacentStates = a.getNextStates(state, containingRegister);
+			
+			//Infer search states
+			for(State s: adjacentStates) {
+				adjacentSearchStates.add(new SearchState(s, registers.clone(), w.subList(1, w.size()), a));
+			}
 		}
-		
-		
-		
 		
 		return adjacentSearchStates;
 	}
