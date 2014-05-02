@@ -28,7 +28,7 @@ public class SearchNode {
 			currentNode = currentNode.parent;
 		}
 		
-		System.out.println("> Solution path:");
+		System.out.println("> Solution path (" + path.size() + " steps):");
 		do {
 			currentNode = path.pop();
 			

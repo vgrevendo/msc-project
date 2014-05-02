@@ -196,6 +196,8 @@ public class RegisterAutomaton extends Automaton {
 			}
 		}
 		
+		System.out.println("Number of registers: " + registers.length);
+		
 		System.out.println("Number of transitions: " + transitions);
 		System.out.println("Number of values defined for rho: " + rho.entrySet().size());
 		
