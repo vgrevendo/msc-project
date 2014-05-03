@@ -2,6 +2,8 @@ package automata.ldfts;
 
 import java.util.Stack;
 
+import algorithms.tools.ResultsContainer;
+
 /**
  * Just a wrapper around a search state to remember the path
  * @author vincent
@@ -19,6 +21,9 @@ public class SearchNode {
 		this.previousTransition = previousTransition;
 	}
 	
+	/**
+	 * Print the solution path to the results container
+	 */
 	public void printPath() {
 		Stack<SearchNode> path = new Stack<>();
 		
@@ -28,11 +33,14 @@ public class SearchNode {
 			currentNode = currentNode.parent;
 		}
 		
-		System.out.println("> Solution path (" + path.size() + " steps):");
+		ResultsContainer rc = ResultsContainer.getContainer();
+		rc.println("> Solution path (" + path.size() + " steps) for word " + path.peek().state.w.toString() + ":");
 		do {
 			currentNode = path.pop();
 			
-			System.out.println("  State: " + currentNode.state.state.name + (currentNode.state.isFinal() ? " (FINAL)" : ""));
+			rc.println("  State: " + currentNode.state.state.name + (currentNode.state.isFinal() ? " (FINAL)" : ""));
 		} while(!path.isEmpty());
+		
+		rc.commit();
 	}
 }

@@ -10,6 +10,13 @@ import automata.ldfts.SearchNode;
 import automata.ldfts.SearchState;
 
 public class Membership {
+	/**
+	 * A membership check which will first determine whether the automaton
+	 * is deterministic, then delegate to an already existing method.
+	 * @param a
+	 * @param w
+	 * @return
+	 */
 	public static boolean isMember(RegisterAutomaton a, int[] w) {
 		if(Tools.isDeterministic(a))
 			return deterministicMemberCheck(a, w);
@@ -24,7 +31,7 @@ public class Membership {
 	 * @param w
 	 * @return
 	 */
-	private static boolean deterministicMemberCheck(RegisterAutomaton a, int[] w) {
+	public static boolean deterministicMemberCheck(RegisterAutomaton a, int[] w) {
 		State currentState = a.getInitialState();
 		int[] registers = a.getInitialRegisters();
 		int containingRegister = 0;
@@ -71,7 +78,7 @@ public class Membership {
 	 * @param w
 	 * @return
 	 */
-	private static boolean nondeterministicMemberCheck(RegisterAutomaton a, int[] w) {
+	public static boolean nondeterministicMemberCheck(RegisterAutomaton a, int[] w) {
 		ArrayList<Integer> wl = new ArrayList<>();
 		for(int i : w) {
 			wl.add(i);
