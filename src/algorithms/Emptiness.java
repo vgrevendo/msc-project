@@ -1,7 +1,13 @@
 package algorithms;
 
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
+import java.util.Set;
 
+import algorithms.bfgs.SearchNode;
+import algorithms.bfgs.SearchState;
 import algorithms.emptiness.WordIterator;
 import automata.RegisterAutomaton;
 
@@ -22,7 +28,7 @@ public class Emptiness {
 	public static boolean empiricalEmptinessCheck(RegisterAutomaton a, int wordLengthLimit) {
 		boolean deterministic = Tools.isDeterministic(a);
 		
-		Integer[] sequence = computeMinimalSubset(a);
+		Integer[] sequence = computeMinimalAlphabet(a);
 		
 		System.out.println("EMPIRICAL EMPTINESS CHECK");
 		System.out.println("Alphabet subset size is " + sequence.length);
@@ -49,10 +55,40 @@ public class Emptiness {
 	
 	/**
 	 * The generative and complete version of the previous empirical emptiness check.
+	 * Returns true if the automaton is nonempty, false if the automaton is empty.
 	 * @param a
 	 * @return
 	 */
 	public static boolean generativeCompleteEmptinessCheck(RegisterAutomaton a) {
+		Set<SearchState> visitedStates = new HashSet<>();
+		SearchState initialState = new SearchState(a.getInitialState(), 
+												   a.getInitialRegisters(), 
+												   a, 
+												   -1);
+		visitedStates.add(initialState);
+		
+		//For BF(G)S we'll need a FIFO data structure. 
+		Queue<SearchNode> frontier = new LinkedList<>();
+		SearchNode initialNode = new SearchNode(initialState, null);
+		frontier.add(initialNode);
+		
+		while(!frontier.isEmpty()) {
+			SearchNode currentNode = frontier.poll();
+			
+			if(currentNode.state.isFinal()) {
+				currentNode.printPath();
+				return true;
+			}
+			
+			List<SearchState> adjacentStates = currentNode.state.expand();
+			for(SearchState aState : adjacentStates) {
+				if(!visitedStates.contains(aState)) {
+					visitedStates.add(aState);
+					frontier.add(new SearchNode(aState, currentNode));
+				}
+			}
+		}
+		
 		return false;
 	}
 	
@@ -62,7 +98,7 @@ public class Emptiness {
 	 * @param a
 	 * @return
 	 */
-	public static Integer[] computeMinimalSubset(RegisterAutomaton a) {
+	public static Integer[] computeMinimalAlphabet(RegisterAutomaton a) {
 		//Determine alphabet subset
 		int[] ir = a.getInitialRegisters();
 		HashSet<Integer> subset = new HashSet<>();
