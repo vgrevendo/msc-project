@@ -20,7 +20,8 @@ public class Testbench {
 			
 			System.out.println("File written to " + path);
 			
-			RegisterAutomaton ra = new RegisterAutomaton(path);
+			RegisterAutomaton ra = new RegisterAutomaton("res/example3.fma");
+			//RegisterAutomaton ra = new RegisterAutomaton(path);
 			ra.displayInfo();
 			
 			if(Membership.isMember(ra, new int[] {10,3,1,5,1,6,20,2,50,4,8,9})) {

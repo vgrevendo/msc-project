@@ -1,4 +1,4 @@
-package automata.ldfts;
+package algorithms.ldfts;
 
 import java.util.Stack;
 

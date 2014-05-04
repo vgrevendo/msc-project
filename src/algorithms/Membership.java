@@ -4,10 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 
+import algorithms.ldfts.SearchNode;
+import algorithms.ldfts.SearchState;
 import automata.RegisterAutomaton;
 import automata.State;
-import automata.ldfts.SearchNode;
-import automata.ldfts.SearchState;
 
 public class Membership {
 	/**
@@ -79,11 +79,13 @@ public class Membership {
 	 * @return
 	 */
 	public static boolean nondeterministicMemberCheck(RegisterAutomaton a, int[] w) {
+		//Convert the word into a list, better for later
 		ArrayList<Integer> wl = new ArrayList<>();
 		for(int i : w) {
 			wl.add(i);
 		}
 		
+		//Depth-first search implies a stack storing the frontier
 		Stack<SearchNode> frontier = new Stack<>();
 		SearchState initialSearchState = new SearchState(a.getInitialState(), 
 														 a.getInitialRegisters(), 
