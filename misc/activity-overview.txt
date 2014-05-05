@@ -13,7 +13,7 @@ Questions:
 Computational complexity of MEMD.
 Why use reduction while it's straightforward?
 
-See email dated today: ignore these questions, authors made some mistakes.
+See email dated today: ignore these questions, authors made some unclear assertions.
 
 05/01/14
 [coding nondeterministic membership]
@@ -54,7 +54,28 @@ WARNING: there might be unvoluntary cycles introduced if we go to the same state
 05/05/14
 Generative emptiness seems to work OK. Some mistakes have been made regarding permutations of register values (see previous WARNING).
 
-Meeting with supervisor:
-Deterministic membership is straightforward, agreed.
-Nondeterministic membership can be optimised by using an adapted version of BFTS: Breadth-First-Local-Graph-Search. LDFTS performs less good in a diamond-chain-shaped automaton's case. Try to find an example where LDFTS performs better (easy: choose a tree that has a lot of branches with a deep-found solution).
-Nondeterministic can also be solved by assigning hashmaps to each physical state, where a value (label?) points towards a set of configurations. 
+-> Meeting with supervisor; TODO:
+- Deterministic membership is straightforward, agreed.
+- Nondeterministic membership can be optimised by using an adapted version of BFTS: Breadth-First-Local-Graph-Search. LDFTS performs less good in a diamond-chain-shaped automaton's case: BFLGS will be linear in all cases, LDFTS will be exponential as usual. Try to find an example where LDFTS performs better; idea: choose a tree that has a lot of branches with a deep-found solution. This only works better if the word is part of the language.
+- Nondeterministic can also be solved by assigning hashmaps to each physical state, where a value (label?) points towards a set of configurations. To be explored and implemented.
+- Emptiness decision problem: the equality check should be reviewed as explained above.
+- Read the paper about emptiness, the proof is probably very similar to what's going on in the chosen algorithm.
+- Also try out a heuristic for emptiness checking (A*). This might speed up cases where the language is nonempty.
+- Explore language inclusion
+- All the previous algorithms should be tested on useful examples of automata. Random generation can be inspired from random graph generation. Then a good idea is to start with a small sticky manual example, and try to generalise it and automatise its generation. The diamond-chain-shaped automata are a good example of what kind of automaton can be automatically generated.
+
+Example 4 is a basic example where LDFTS is disastrous in case the word is not in the language.
+
+It seems that BFLGS is indeed useful in the case of a diamond-chain-shaped automaton, but how useful is it in average? And compared to LDFTS?
+STRATEGY: 
+1) Get tests up and running: 
+	a. Find interesting automata for testing
+	b. Improve the results container to get more interesting results:
+		- Number of nodes expanded
+		- Frontier size
+		- Operations performed
+2) Implement different algorithms for nondeterministic membership
+3) Compare on large automata
+
+So there we go:
+1) Random automata seem OK, but we have to find out how to choose the parameters that go with them. Quick cleanup of RAGenerator's structure.

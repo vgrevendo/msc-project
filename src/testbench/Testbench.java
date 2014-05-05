@@ -5,17 +5,17 @@ import java.text.ParseException;
 
 import algorithms.Emptiness;
 import algorithms.Membership;
-import algorithms.emptiness.WordIterator;
 import algorithms.tools.ResultsContainer;
 import automata.RegisterAutomaton;
-import automata.gen.RAGenerator;
+import automata.gen.AutomatonGenerator;
+import automata.gen.RandomGenerator;
 
 public class Testbench {
 	public static void main(String[] args) {
 		System.out.println("This is testbench, running...");
 		
 		try {
-			RAGenerator rag = new RAGenerator();
+			AutomatonGenerator rag = new RandomGenerator();
 			String path = rag.generate();
 			
 			System.out.println("File written to " + path);
