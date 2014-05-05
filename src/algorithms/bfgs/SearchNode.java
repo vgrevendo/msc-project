@@ -1,5 +1,8 @@
 package algorithms.bfgs;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Stack;
 
 import algorithms.tools.ResultsContainer;
@@ -24,15 +27,25 @@ public class SearchNode {
 	 */
 	public void printPath() {
 		Stack<SearchNode> path = new Stack<>();
+		Stack<Integer> wStack = new Stack<>();
 		
 		SearchNode currentNode = this;
 		while(currentNode != null) {
 			path.add(currentNode);
+			
+			int symbol = currentNode.state.trSymbol;
+			if(symbol >= 0)
+				wStack.add(symbol);
+			
 			currentNode = currentNode.parent;
 		}
 		
+		//Transform the symbol stack into a list
+		List<Integer> wList = new ArrayList<>(wStack);
+		Collections.reverse(wList);
+		
 		ResultsContainer rc = ResultsContainer.getContainer();
-		//rc.println("> Solution path (" + path.size() + " steps) for word " + path.peek().state.w.toString() + ":");
+		rc.println("> Solution path (" + path.size() + " steps) for word " + wList.toString() + ":");
 		do {
 			currentNode = path.pop();
 			

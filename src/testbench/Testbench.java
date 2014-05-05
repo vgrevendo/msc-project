@@ -24,17 +24,17 @@ public class Testbench {
 			//RegisterAutomaton ra = new RegisterAutomaton(path);
 			ra.displayInfo();
 			
-			if(Membership.isMember(ra, new int[] {10,3,1,5,1,6,20,2,50,4,8,9})) {
+			if(Membership.isMember(ra, new int[] {10,3,1,5,1,6,20,2,20,4,8,9})) {
 				System.out.println("Membership test is success");
 				ResultsContainer.getContainer().flush();
 			} else
 				System.out.println("Membership test failed");
 			
-			if(Emptiness.empiricalEmptinessCheck(ra, 10)) {
+			if(Emptiness.generativeCompleteEmptinessCheck(ra)) {
 				System.out.println("Emptiness check found a word that was accepted");
 				ResultsContainer.getContainer().flush();
 			} else {
-				System.out.println("Empirical emptiness check was not successful");
+				System.out.println("Automaton is empty");
 			}
 		} catch (FileNotFoundException | NumberFormatException | ParseException e) {
 			System.out.println("Test failed, here's why:");
