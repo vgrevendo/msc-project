@@ -1,0 +1,60 @@
+﻿04/30/14
+First basic implementation of an automaton. Question: which alphabet? We will here consider the integers. NO UPPER BOUND hypothesis must be made!
+Mu and Rho are (hash)maps.
+There seems to be a link with CNF and SAT solving problem; take a look later.
+For now, the transition set is seen as sparse: a matrix representation is therefore useless. We also maximise reading access times: the transition system is seen as a hashset (key: state) of a hashset (key: label) of a list of states.
+Each automaton object is seen as an automaton model; the object is immutable during any computation.
+First write deterministic algorithm.
+New question: how does one perform a quick check of whether there is a register that contains the current symbol? For now, we'll do it naïvely: check all the registers. Later on, an optimisation is to keep a record of the current registers' content in form of a (hash)set.
+This algorithm is/could be linear with the number of symbols to test. The number of registers and states does not impact the computation time.
+
+Questions:
+“A Turing machine can simulate membership for NFA in NLOG”: how?
+Computational complexity of MEMD.
+Why use reduction while it's straightforward?
+
+See email dated today: ignore these questions, authors made some mistakes.
+
+05/01/14
+[coding nondeterministic membership]
+Try:
+A basic BFS/other search algorithm. An interesting heuristic should be found.
+A different vision over the problem:
+
+A RA can be seen as an NFA over a finite word w over a finite alphabet E: w is composed of the register indices where symbols are progressively stored (or not); in the end a word is exactly a string of transition labels, as shown in the representation of a RA.
+
+[reflexion on emptiness]
+If there is a word in the language defined by an automaton A, then the following algorithm will return such a word:
+BFS/A* search from initial state to final state. Not to be confused with the search STATE.
+If the language is empty, this search will not terminate, which makes the algorithm/the method useless.
+
+FMA (Kaminski) has some mistakes, i.e. p 334 tau values do not have to be distinct (“abaaba” passes membership test).
+
+05/02/14
+Finished nondeterministic membership problem with a first naïve solution: just LDFTS. A next step would be to find a nice heuristic.
+
+Could it be possible to divide an automaton into two subsets, deterministic states and nondeterministic ones, and then see the problem as a “chance” game? Or a game with contingency plans? MINIMAX?
+
+05/03/14
+Empirical emptiness problem: PROPOSITION: it is only necessary to test the automaton with the following subset of the alphabet:
+{elements in the initial registers} U {other distinct elements}
+the total set size being the number of registers + 1.
+
+WHY: we always need the possibility of filling up all the registers and having new elements coming in, which is why there need to be at least NR+1 elements in the alphabet subset.
+The automaton can only remember seeing NR elements, so if there is always a new element, it will be seen as “new”.
+
+05/04/14
+The first version of a naïve empirical emptiness check works. It probably does way too much work: when all words of size N are refused, words of size N+1 are checked, and the work done on size N is forgotten and recomputed (very intensive).
+In each case it works perfectly, and for example for Example 3 (automaton recognising words with double repetition, ie two different symbols are repeated): [1,1,0,0] is returned.
+
+Idea: create a “generative” emptiness check, with the previous intuition; the decision algorithm would actually be complete given the previous PROPOSITION: the state space is big but not infinite.
+The decision algorithm would be based on a BFGS/A*G algorithm, where the G factor is very important: we are not interested in cycles. We can see the problem as a search problem from an initial state to whatever final state we reach first. A* could use a heuristic based on the physical distance of the state to a final state (to be precomputed).
+WARNING: there might be unvoluntary cycles introduced if we go to the same state, with the same registers assigned, but with different values. Since all assigned values are distinct, there might be some symmetry (isomorphism) in this CSP that could be avoided.
+
+05/05/14
+Generative emptiness seems to work OK. Some mistakes have been made regarding permutations of register values (see previous WARNING).
+
+Meeting with supervisor:
+Deterministic membership is straightforward, agreed.
+Nondeterministic membership can be optimised by using an adapted version of BFTS: Breadth-First-Local-Graph-Search. LDFTS performs less good in a diamond-chain-shaped automaton's case. Try to find an example where LDFTS performs better (easy: choose a tree that has a lot of branches with a deep-found solution).
+Nondeterministic can also be solved by assigning hashmaps to each physical state, where a value (label?) points towards a set of configurations. 
