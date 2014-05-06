@@ -70,6 +70,7 @@ public abstract class Test {
 	}
 	
 	protected void signalProgression() {
-		System.out.println("Test '" + name + "' progression: " + (((double)progression)/((double)maxProgression))*100.0 + "%");
+		if(progression*10 % maxProgression == 0)
+			System.out.println("Test '" + name + "' progression: " + (((double)progression)/((double)maxProgression))*100.0 + "%");
 	}
 }

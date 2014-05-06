@@ -3,10 +3,10 @@ package testbench;
 import java.io.FileNotFoundException;
 import java.text.ParseException;
 
+import algorithms.Membership;
 import algorithms.tools.ResultsContainer;
 import automata.RegisterAutomaton;
 import automata.gen.AutomatonGenerator;
-import automata.gen.DiamondChainGenerator;
 import automata.gen.RandomGenerator;
 
 public class Testbench {
@@ -23,6 +23,15 @@ public class Testbench {
 			mmt.test();
 			
 			ResultsContainer.getContainer().flush();
+			
+//			RegisterAutomaton ra = new RegisterAutomaton("res/example4.fma");
+//			ra.displayInfo();
+//			
+//			if(Membership.nondeterministicMemberCheck(ra, new int[]{1,1,1,2})) {
+//				System.out.println("Success");
+//			} else {
+//				System.out.println("Failure");
+//			}
 		} catch (FileNotFoundException | ParseException e) {
 			System.out.println("An error occurred:");
 			e.printStackTrace();

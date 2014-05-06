@@ -1,6 +1,6 @@
 package testbench;
 
-import java.util.Arrays;
+import java.util.List;
 
 import algorithms.Membership;
 import algorithms.Tools;
@@ -13,9 +13,9 @@ import automata.RegisterAutomaton;
  * @author vincent
  */
 public class MultiMembershipTest extends Test {
-	public static final int NUM_TESTED_WORDS = 1000;
-	public static final int MIN_LENGTH = 10;
-	public static final int MAX_LENGTH = 500;
+	public static final int NUM_TESTED_WORDS = 10000;
+	public static final int MIN_LENGTH = 1;
+	public static final int MAX_LENGTH = 50;
 	
 	private final Integer[] minimalAlphabet;
 	
@@ -23,6 +23,8 @@ public class MultiMembershipTest extends Test {
 	
 	//Results
 	private final boolean[] results = new boolean[NUM_TESTED_WORDS];
+	private final int[] nodesExpanded = new int[NUM_TESTED_WORDS];
+	private final int[] maxFrontierSize = new int[NUM_TESTED_WORDS];
 	private long ldftsTotalTime = 0L;
 	
 	public MultiMembershipTest(RegisterAutomaton a) {
@@ -43,13 +45,18 @@ public class MultiMembershipTest extends Test {
 		
 		//Step 2: time on LDFTS nondeterministic membership
 		for(int wIndex = 0; wIndex < NUM_TESTED_WORDS; wIndex++) {
-			if(wIndex % 100 == 0)
-				signalProgression();
+			signalProgression();
 			
 			long cTime = System.currentTimeMillis();			
 			results[wIndex] = Membership.nondeterministicMemberCheck(a, testWords[wIndex]);
 			long testTime = System.currentTimeMillis()-cTime;
 			ldftsTotalTime += testTime;
+			
+			List<Integer> numbers = rc.getNumbersList();
+			if(numbers.size() > 0) {
+				nodesExpanded[wIndex] = numbers.get(0);
+				maxFrontierSize[wIndex] = numbers.get(1);
+			}
 			
 			progression++;
 		}

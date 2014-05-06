@@ -6,6 +6,7 @@ import java.util.Stack;
 
 import algorithms.ldfts.SearchNode;
 import algorithms.ldfts.SearchState;
+import algorithms.tools.ResultsContainer;
 import automata.RegisterAutomaton;
 import automata.State;
 
@@ -79,6 +80,10 @@ public class Membership {
 	 * @return
 	 */
 	public static boolean nondeterministicMemberCheck(RegisterAutomaton a, int[] w) {
+		ResultsContainer rc = ResultsContainer.getContainer();
+		int maxFrontierSize = 0;
+		int nodesExpanded = 0;
+		
 		//Convert the word into a list, better for later
 		ArrayList<Integer> wl = new ArrayList<>();
 		for(int i : w) {
@@ -94,16 +99,25 @@ public class Membership {
 		
 		//Main search loop
 		while(!frontier.isEmpty()) {
+			maxFrontierSize = Math.max(maxFrontierSize, frontier.size());
+			
 			SearchNode node = frontier.pop();
 			if(node.state.isFinal()) {
+				rc.addNumber(nodesExpanded);
+				rc.addNumber(maxFrontierSize);
 				return true;
 			}
 			
 			List<SearchState> nextStates = node.state.expand();
+			nodesExpanded++;
+			
 			for(SearchState s : nextStates) {
 				frontier.add(new SearchNode(s, node, 0));
 			}
 		}
+		
+		rc.addNumber(nodesExpanded);
+		rc.addNumber(maxFrontierSize);
 		
 		return false;
 	}

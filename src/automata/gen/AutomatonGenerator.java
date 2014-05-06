@@ -131,6 +131,8 @@ public abstract class AutomatonGenerator {
 		transitionLines.clear();
 		stateLines.clear();
 		
+		System.out.println("Automaton output to " + filename);
+		
 		return filename;
 	}
 }

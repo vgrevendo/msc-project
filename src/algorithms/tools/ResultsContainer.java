@@ -22,10 +22,12 @@ public class ResultsContainer {
 	
 	//INSTANCE SIDE
 	private final List<String> outputList;
+	private List<Integer> numbersList;
 	private StringBuilder sb = new StringBuilder();
 	
 	private ResultsContainer() {
 		outputList = new ArrayList<>();
+		numbersList = new ArrayList<>();
 	}
 	
 	public void addResultString(String result) {
@@ -58,5 +60,15 @@ public class ResultsContainer {
 	public void clear() {
 		commit();
 		outputList.clear();
+	}
+
+	public void addNumber(int number) {
+		numbersList.add(number);
+	}
+	
+	public List<Integer> getNumbersList() {
+		List<Integer> nl = numbersList;
+		numbersList = new ArrayList<>();
+		return nl;
 	}
 }
