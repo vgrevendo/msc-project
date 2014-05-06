@@ -79,3 +79,8 @@ STRATEGY:
 
 So there we go:
 1) Random automata seem OK, but we have to find out how to choose the parameters that go with them. Quick cleanup of RAGenerator's structure.
+
+Finished Diamond-chain-shaped (DCS) automata.
+
+05/06/14
+Now improving test infrastructure.

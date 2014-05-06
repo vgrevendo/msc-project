@@ -96,7 +96,6 @@ public class Membership {
 		while(!frontier.isEmpty()) {
 			SearchNode node = frontier.pop();
 			if(node.state.isFinal()) {
-				node.printPath();
 				return true;
 			}
 			

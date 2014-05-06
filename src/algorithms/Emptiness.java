@@ -28,7 +28,7 @@ public class Emptiness {
 	public static boolean empiricalEmptinessCheck(RegisterAutomaton a, int wordLengthLimit) {
 		boolean deterministic = Tools.isDeterministic(a);
 		
-		Integer[] sequence = computeMinimalAlphabet(a);
+		Integer[] sequence = Tools.computeMinimalAlphabet(a);
 		
 		System.out.println("EMPIRICAL EMPTINESS CHECK");
 		System.out.println("Alphabet subset size is " + sequence.length);
@@ -90,38 +90,5 @@ public class Emptiness {
 		}
 		
 		return false;
-	}
-	
-	/**
-	 * As explained in the PROPOSITION, it is only necessary to work with a small subset 
-	 * of the infinite alphabet. This method computes a list representing that subset.
-	 * @param a
-	 * @return
-	 */
-	public static Integer[] computeMinimalAlphabet(RegisterAutomaton a) {
-		//Determine alphabet subset
-		int[] ir = a.getInitialRegisters();
-		HashSet<Integer> subset = new HashSet<>();
-		
-		int max = 0;
-		
-		for(int i : ir) {
-			if(i >= 0) {
-				subset.add(i);
-				if(i > max)
-					max = i+1;
-			}
-		}
-		
-		//See explanations in document
-		int toAdd = ir.length - subset.size() + 1;
-		
-		for(int j = max; j < max + toAdd; j++)
-			subset.add(j);
-		
-		Integer[] sequence = new Integer[subset.size()];
-		subset.toArray(sequence);
-		
-		return sequence;
 	}
 }
