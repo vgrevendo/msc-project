@@ -27,7 +27,7 @@ public abstract class Test {
 		
 		try {
 			run();
-		} catch(Exception e) {
+		} catch(TestException e) {
 			rc.println("An error occurred during the test:");
 			rc.print(e.getMessage());
 			e.printStackTrace();
@@ -41,7 +41,7 @@ public abstract class Test {
 	}
 	
 	//Implement/override these for more functionalities
-	protected abstract void run();
+	protected abstract void run() throws TestException;
 	protected void customPrint(ResultsContainer rc) {
 	}
 	

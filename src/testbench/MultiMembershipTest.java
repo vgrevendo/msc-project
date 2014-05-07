@@ -1,5 +1,6 @@
 package testbench;
 
+import java.util.Arrays;
 import java.util.List;
 
 import algorithms.Membership;
@@ -13,8 +14,8 @@ import automata.RegisterAutomaton;
  * @author vincent
  */
 public class MultiMembershipTest extends Test {
-	public static final int NUM_TESTED_WORDS = 10000;
-	public static final int MIN_LENGTH = 1;
+	public static final int NUM_TESTED_WORDS = 1000;
+	public static final int MIN_LENGTH = 10;
 	public static final int MAX_LENGTH = 50;
 	
 	private final Integer[] minimalAlphabet;
@@ -23,8 +24,9 @@ public class MultiMembershipTest extends Test {
 	
 	//Results
 	private final boolean[] results = new boolean[NUM_TESTED_WORDS];
-	private final int[] nodesExpanded = new int[NUM_TESTED_WORDS];
-	private final int[] maxFrontierSize = new int[NUM_TESTED_WORDS];
+	private final int[][] nodesExpanded = new int[2][NUM_TESTED_WORDS];
+	private final int[][] maxFrontierSize = new int[2][NUM_TESTED_WORDS];
+	private long bflgsTotalTime = 0L;
 	private long ldftsTotalTime = 0L;
 	
 	public MultiMembershipTest(RegisterAutomaton a) {
@@ -32,12 +34,15 @@ public class MultiMembershipTest extends Test {
 		
 		minimalAlphabet = Tools.computeMinimalAlphabet(a);
 		
-		maxProgression = NUM_TESTED_WORDS;
+		maxProgression = NUM_TESTED_WORDS*2; //Two algorithms to test
 		progression = 0;
 	}
 
 	@Override
-	protected void run() {
+	protected void run() throws TestException {
+		//Consistency checks are integrated in the tests themselves
+		boolean result = false;
+		
 		//Step 1: choose the words to be tested
 		for(int wIndex = 0; wIndex < NUM_TESTED_WORDS; wIndex++) {
 			testWords[wIndex] = computeRandomWord();
@@ -48,14 +53,37 @@ public class MultiMembershipTest extends Test {
 			signalProgression();
 			
 			long cTime = System.currentTimeMillis();			
-			results[wIndex] = Membership.nondeterministicMemberCheck(a, testWords[wIndex]);
+			result = Membership.ldftsMemberCheck(a, testWords[wIndex]);
 			long testTime = System.currentTimeMillis()-cTime;
 			ldftsTotalTime += testTime;
 			
+			results[wIndex] = result;
+			
 			List<Integer> numbers = rc.getNumbersList();
 			if(numbers.size() > 0) {
-				nodesExpanded[wIndex] = numbers.get(0);
-				maxFrontierSize[wIndex] = numbers.get(1);
+				nodesExpanded[0][wIndex] = numbers.get(0);
+				maxFrontierSize[0][wIndex] = numbers.get(1);
+			}
+			
+			progression++;
+		}
+		
+		//Step 3: time on BFLGS nondeterministic membership
+		for(int wIndex = 0; wIndex < NUM_TESTED_WORDS; wIndex++) {
+			signalProgression();
+			
+			long cTime = System.currentTimeMillis();			
+			result = Membership.ldftsMemberCheck(a, testWords[wIndex]);
+			long testTime = System.currentTimeMillis()-cTime;
+			bflgsTotalTime += testTime;
+			
+			if(result != results[wIndex]) 
+				throw new TestException("Consistency failure: algorithms disagree on " + Arrays.toString(testWords[wIndex]));
+			
+			List<Integer> numbers = rc.getNumbersList();
+			if(numbers.size() > 0) {
+				nodesExpanded[1][wIndex] = numbers.get(0);
+				maxFrontierSize[1][wIndex] = numbers.get(1);
 			}
 			
 			progression++;
@@ -82,6 +110,8 @@ public class MultiMembershipTest extends Test {
 		
 		rc.println("LDFTS total execution time:   " + prettyPrintMillis(ldftsTotalTime));
 		rc.println("LDFTS average execution time: " + prettyPrintMillis(ldftsTotalTime/NUM_TESTED_WORDS));
+		rc.println("BFLGS total execution time:   " + prettyPrintMillis(bflgsTotalTime));
+		rc.println("BFLGS average execution time: " + prettyPrintMillis(bflgsTotalTime/NUM_TESTED_WORDS));
 		rc.println("");
 		rc.println("Total number of success memberships: " + successMemberships + "/" + NUM_TESTED_WORDS);
 	}

@@ -1,6 +1,7 @@
-package algorithms.ldfts;
+package algorithms.membership;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import algorithms.Membership;
@@ -66,4 +67,39 @@ public class SearchState {
 		
 		return adjacentSearchStates;
 	}
+
+	
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + Arrays.hashCode(registers);
+		result = prime * result + ((state == null) ? 0 : state.hashCode());
+		result = prime * result + ((w == null) ? 0 : w.hashCode());
+		return result;
+	}
+
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		SearchState other = (SearchState) obj;
+		if (!Arrays.equals(registers, other.registers))
+			return false;
+		if (state != other.state)
+			return false;
+		if (w == null) {
+			if (other.w != null)
+				return false;
+		} else if (!w.equals(other.w))
+			return false;
+		return true;
+	}
+
+	
 }

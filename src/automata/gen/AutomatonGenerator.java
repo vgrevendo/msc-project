@@ -82,9 +82,9 @@ public abstract class AutomatonGenerator {
 		
 		if(rho < 0 && isFinal) {
 			stateString += " _ F";
-		} else if(rho > 0 && !isFinal) {
+		} else if(rho >= 0 && !isFinal) {
 			stateString += " " + (rho+1);
-		} else if(rho > 0 && isFinal) {
+		} else if(rho >= 0 && isFinal) {
 			stateString += " " + (rho+1) + " F";
 		}
 		

@@ -6,8 +6,8 @@ import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 
-import algorithms.bfgs.SearchNode;
-import algorithms.bfgs.SearchState;
+import algorithms.emptiness.SearchNode;
+import algorithms.emptiness.SearchState;
 import algorithms.emptiness.WordIterator;
 import automata.RegisterAutomaton;
 
@@ -42,7 +42,7 @@ public class Emptiness {
 			for(int[] word : wi) {
 				boolean member = deterministic ? 
 									Membership.deterministicMemberCheck(a, word) :
-									Membership.nondeterministicMemberCheck(a, word);
+									Membership.ldftsMemberCheck(a, word);
 				if(member)
 					return true;
 			}

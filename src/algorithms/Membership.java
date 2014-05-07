@@ -1,11 +1,13 @@
 package algorithms;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.Stack;
 
-import algorithms.ldfts.SearchNode;
-import algorithms.ldfts.SearchState;
+import algorithms.membership.SearchNode;
+import algorithms.membership.SearchState;
 import algorithms.tools.ResultsContainer;
 import automata.RegisterAutomaton;
 import automata.State;
@@ -22,7 +24,7 @@ public class Membership {
 		if(Tools.isDeterministic(a))
 			return deterministicMemberCheck(a, w);
 		
-		return nondeterministicMemberCheck(a, w);
+		return ldftsMemberCheck(a, w);
 	}
 	
 	/**
@@ -79,7 +81,7 @@ public class Membership {
 	 * @param w
 	 * @return
 	 */
-	public static boolean nondeterministicMemberCheck(RegisterAutomaton a, int[] w) {
+	public static boolean ldftsMemberCheck(RegisterAutomaton a, int[] w) {
 		ResultsContainer rc = ResultsContainer.getContainer();
 		int maxFrontierSize = 0;
 		int nodesExpanded = 0;
@@ -121,4 +123,74 @@ public class Membership {
 		
 		return false;
 	}
+	
+	/**
+	 * A second naïve version of nondeterministic membership checking, performing a
+	 * Breadth-First Local Graph Search into the automaton graph;  
+	 * BFLGS implies a double-set structure as a frontier. 
+	 * @param a
+	 * @param w
+	 * @return
+	 */
+	public static boolean bflgsMemberCheck(RegisterAutomaton a, int[] w) {
+		ResultsContainer rc = ResultsContainer.getContainer();
+		int maxFrontierSize = 0;
+		int nodesExpanded = 0;
+		
+		//Convert the word into a list, better for later
+		ArrayList<Integer> wl = new ArrayList<>();
+		for(int i : w) {
+			wl.add(i);
+		}
+		
+		//BFLGS implies a double set storing the frontier
+		List<HashSet<SearchNode>> sets = new ArrayList<>();
+		sets.add(new HashSet<SearchNode>());
+		sets.add(new HashSet<SearchNode>());
+		int activeSet = 0;
+		
+		Set<SearchNode> frontier = sets.get(activeSet);
+		
+		//Initial state
+		SearchState initialSearchState = new SearchState(a.getInitialState(), 
+														 a.getInitialRegisters(), 
+														 wl, a);
+		frontier.add(new SearchNode(initialSearchState, null, -1));
+		
+		//Main search loop
+		while(!frontier.isEmpty()) {
+			maxFrontierSize = Math.max(maxFrontierSize, frontier.size());
+
+			//See if a node is final, and 
+			// start filling up the next frontier
+			activeSet = (activeSet+1)%2;
+			Set<SearchNode> nextFrontier = sets.get(activeSet);
+			for(SearchNode node: frontier) {
+				if(node.state.isFinal()) {
+					rc.addNumber(nodesExpanded);
+					rc.addNumber(maxFrontierSize);
+					return true;
+				}
+
+				//Add the adjacent nodes to the new frontier
+				List<SearchState> nextStates = node.state.expand();
+				nodesExpanded++;
+				
+				for(SearchState s : nextStates) {
+					nextFrontier.add(new SearchNode(s, node, 0));
+				}
+			}
+
+			//Then start over with the next frontier
+			frontier.clear();
+			frontier = nextFrontier;
+		}
+		
+		rc.addNumber(nodesExpanded);
+		rc.addNumber(maxFrontierSize);
+		
+		return false;
+	}
+
+
 }

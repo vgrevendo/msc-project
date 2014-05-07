@@ -1,8 +1,5 @@
-package algorithms.bfgs;
+package algorithms.membership;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.Stack;
 
 import algorithms.tools.ResultsContainer;
@@ -15,11 +12,13 @@ import algorithms.tools.ResultsContainer;
 public class SearchNode {
 	public final SearchState state;
 	public final SearchNode parent;
+	public final int previousTransition;
 	
 	
-	public SearchNode(SearchState state, SearchNode parent) {
+	public SearchNode(SearchState state, SearchNode parent, int previousTransition) {
 		this.state = state;
 		this.parent = parent;
+		this.previousTransition = previousTransition;
 	}
 	
 	/**
@@ -27,25 +26,15 @@ public class SearchNode {
 	 */
 	public void printPath() {
 		Stack<SearchNode> path = new Stack<>();
-		Stack<Integer> wStack = new Stack<>();
 		
 		SearchNode currentNode = this;
 		while(currentNode != null) {
 			path.add(currentNode);
-			
-			int symbol = currentNode.state.trSymbol;
-			if(symbol >= 0)
-				wStack.add(symbol);
-			
 			currentNode = currentNode.parent;
 		}
 		
-		//Transform the symbol stack into a list
-		List<Integer> wList = new ArrayList<>(wStack);
-		Collections.reverse(wList);
-		
 		ResultsContainer rc = ResultsContainer.getContainer();
-		rc.println("> Solution path (" + path.size() + " steps) for word " + wList.toString() + ":");
+		rc.println("> Solution path (" + path.size() + " steps) for word " + path.peek().state.w.toString() + ":");
 		do {
 			currentNode = path.pop();
 			
@@ -54,4 +43,28 @@ public class SearchNode {
 		
 		rc.commit();
 	}
+
+	@Override
+	public int hashCode() {
+		return state.hashCode();
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		SearchNode other = (SearchNode) obj;
+		if (state == null) {
+			if (other.state != null)
+				return false;
+		} else if (!state.equals(other.state))
+			return false;
+		return true;
+	}
+
+	
 }
