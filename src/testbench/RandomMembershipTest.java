@@ -13,10 +13,10 @@ import automata.RegisterAutomaton;
  * Take a lot of words of various lengths and compare performances. 
  * @author vincent
  */
-public class MultiMembershipTest extends Test {
+public class RandomMembershipTest extends Test {
 	public static final int NUM_TESTED_WORDS = 1000;
 	public static final int MIN_LENGTH = 10;
-	public static final int MAX_LENGTH = 50;
+	public static final int MAX_LENGTH = 20;
 	
 	private final Integer[] minimalAlphabet;
 	
@@ -29,13 +29,12 @@ public class MultiMembershipTest extends Test {
 	private long bflgsTotalTime = 0L;
 	private long ldftsTotalTime = 0L;
 	
-	public MultiMembershipTest(RegisterAutomaton a) {
+	public RandomMembershipTest(RegisterAutomaton a) {
 		super("Multiple Membership Checks", a);
 		
 		minimalAlphabet = Tools.computeMinimalAlphabet(a);
 		
 		maxProgression = NUM_TESTED_WORDS*2; //Two algorithms to test
-		progression = 0;
 	}
 
 	@Override
@@ -48,10 +47,9 @@ public class MultiMembershipTest extends Test {
 			testWords[wIndex] = computeRandomWord();
 		}
 		
+		signalProgression();
 		//Step 2: time on LDFTS nondeterministic membership
 		for(int wIndex = 0; wIndex < NUM_TESTED_WORDS; wIndex++) {
-			signalProgression();
-			
 			long cTime = System.currentTimeMillis();			
 			result = Membership.ldftsMemberCheck(a, testWords[wIndex]);
 			long testTime = System.currentTimeMillis()-cTime;
@@ -64,16 +62,13 @@ public class MultiMembershipTest extends Test {
 				nodesExpanded[0][wIndex] = numbers.get(0);
 				maxFrontierSize[0][wIndex] = numbers.get(1);
 			}
-			
-			progression++;
+			signalProgression();
 		}
 		
 		//Step 3: time on BFLGS nondeterministic membership
 		for(int wIndex = 0; wIndex < NUM_TESTED_WORDS; wIndex++) {
-			signalProgression();
-			
 			long cTime = System.currentTimeMillis();			
-			result = Membership.ldftsMemberCheck(a, testWords[wIndex]);
+			result = Membership.bflgsMemberCheck(a, testWords[wIndex]);
 			long testTime = System.currentTimeMillis()-cTime;
 			bflgsTotalTime += testTime;
 			
@@ -86,8 +81,20 @@ public class MultiMembershipTest extends Test {
 				maxFrontierSize[1][wIndex] = numbers.get(1);
 			}
 			
-			progression++;
+			signalProgression();
 		}
+		
+		//Step 4: make sure all useful data is printed
+		addCsvColumn(nodesExpanded[0], "LDFTS nodes");
+		addCsvColumn(nodesExpanded[1], "BFLGS nodes");
+		addCsvColumn(maxFrontierSize[0], "LDFTS frontier");
+		addCsvColumn(maxFrontierSize[1], "BFLGS frontier");
+		
+		String[] testWordStrings = new String[NUM_TESTED_WORDS];
+		for(int i = 0; i < NUM_TESTED_WORDS; i++)
+			testWordStrings[i] = Arrays.toString(testWords[i]);
+		
+		addCsvColumn(testWordStrings, "Test word");
 	}
 	
 	private int[] computeRandomWord() {

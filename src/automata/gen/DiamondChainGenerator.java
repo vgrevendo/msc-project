@@ -18,7 +18,7 @@ package automata.gen;
 public class DiamondChainGenerator extends AutomatonGenerator {
 	//Instance parameters
 	public int targetDepth = 1000;
-	public int targetBranchingFactor = 10;
+	public int targetBranchingFactor = 2;
 	public int targetRegisters = 10;
 	
 	public double fProportion = 0.5;
@@ -40,7 +40,7 @@ public class DiamondChainGenerator extends AutomatonGenerator {
 		int cStateNumber = 1;
 		for(int d = 0; d < targetDepth; d++) {
 			//Choose number of intermediate states
-			int intermediaryStates = slackChoose(targetBranchingFactor);
+			int intermediaryStates = targetBranchingFactor;
 			int[] rhos = new int[intermediaryStates+2];
 			rhos[0] = previousRho;
 			

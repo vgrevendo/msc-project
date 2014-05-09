@@ -84,3 +84,51 @@ Finished Diamond-chain-shaped (DCS) automata.
 
 05/06/14
 Now improving test infrastructure.
+
+05/08/14
+Test infrastructure has been improved a lot. Some work still needs to be done (polymorphism of algorithms and search algorithms for instance).
+Diamond-chain-shaped automata seem to give the expected result: DFS is explosive (exponential increase) while SB-BFS is linear. Tests made with listed membership test infrastructure.
+
+Some questions:
+- How useful would it be to test all the algorithms?
+- Why is the DCS automaton's instance interesting?
+- Try to find a nice example where BFLGS loses all its efficiency.
+
+* The point is that DFS can be -asymptotically- worse than SB-BFS (see example 4).
+
+SB-BFS can be worse than DFS but not asymptotically. 
+Proof:
+
+We're going to show that SB-BFS has, in the worst case, always the same asymptotic performance as DFS. The case where membership fails is straightforward: DFS and SB-BFS expand all the nodes, and because of pruning, SB-BFS does always better. We're looking for a case where DFS decides faster, and that's only possible if membership succeeds.
+
+Reformulation:
+Let A be an automaton, with registers R and state set Q. Let (wn) be an infinite word list such that DFS finds a path in O(f(n)) nodes expanded for wn in A, and |wn| = n (i.e. the path is of length n). We suppose that, on this list, SB-BFS is worse in the number of nodes expanded. Let's show that SB-BFS's performance is in O(f(n)).
+
+Let S be a frontier at some point in SB-BFS's exploration. The search states in this frontier are distinguished by three criteria:
+- The sublist of letters in the word left to explore
+- The values in the registers
+- The name of the current physical state
+
+As it happens:
+- A frontier in BFS symbolises a circle in a state space where the distance is the number of nodes in the path to go from one space to the other; in other words, for every search state in S, the sublist of letters to explore is the same.
+- Let A be the set of letters in the initial word, and |A| its size. Then there are D = (|A|+1)^|R| possibilities of register assignments.
+- There are |Q| possible physical states.
+As a consequence, the maximum number of search states in S is D*|Q|.
+
+SB-BFS finds the solution in n frontier swaps. Therefore it must expand in the worst case D*|Q|*n nodes. But:
+- DFS has a better performance in this example. Let g(n) be the number of nodes DFS expands in search for the final state. Then g(n) <= D*|Q|*n.
+- DFS must at least expand n nodes. Therefore
+
+		n <= g(n) <= D*|Q|*n
+
+and two results are inferred:
+- g(m) = O(m) (i.e. a candidate for f is n → n)
+- since D*|Q|*m = O(m), SB-BFS has the same asymptotic performance as DFS.
+
+Therefore, in case DFS has a better performance than SB-BFS, even then SB-BFS does not have a worse asymptotic performance.
+
+A case where SB-BFS is worse than DFS: example5.fma. See test21.csv. This example is a fork between example 4 and another useless cyclic automaton. BFS's frontier will always be bigger, and therefore in DFS's optimal case, DFS is faster. Furthermore, there is just a factor 3 difference.
+
+DFS is always worse than SB-BFS when membership fails.
+
+

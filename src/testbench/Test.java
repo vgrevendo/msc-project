@@ -1,17 +1,33 @@
 package testbench;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.List;
+
 import algorithms.tools.ResultsContainer;
 import automata.RegisterAutomaton;
 
 public abstract class Test {
+	public static final int MIN_SIGNAL_PERIOD = 5; //in seconds
+	public static final String CSV_PATH_ROOT = "gen/test";
+	
 	protected final ResultsContainer rc;
 	private final String name;
 	protected final RegisterAutomaton a;
 	
 	//Characteristics
 	private long runtime = 0L;
-	protected int progression = 0;
+	private int progression = -1;
 	protected int maxProgression = 0;
+	
+	//Results storage
+	private final List<String> csvLabels = new ArrayList<>();
+	private final List<int[]> csvLists = new ArrayList<>();
+	private final List<String[]> csvStringLists = new ArrayList<>();
+	
+	private long lastSigTime = 0L; 
 	
 	public Test(String name, RegisterAutomaton a) {
 		this.name = name;
@@ -56,6 +72,16 @@ public abstract class Test {
 		
 		customPrint(rc);
 		
+		try {
+			String csvFileName = outputCsv();
+			if(csvFileName != null) {
+				rc.println("Test printed CSV datafile at " + csvFileName);
+			}
+		} catch (Exception e) {
+			rc.println("CSV output encountered an error: " + e.getMessage());
+			rc.println("CSV output aborted.");
+		}
+		
 		rc.println("------------------------------------------");
 		
 		rc.commit();
@@ -70,7 +96,60 @@ public abstract class Test {
 	}
 	
 	protected void signalProgression() {
-		if(progression*10 % maxProgression == 0)
-			System.out.println("Test '" + name + "' progression: " + (((double)progression)/((double)maxProgression))*100.0 + "%");
+		progression++;
+		
+		if(lastSigTime + MIN_SIGNAL_PERIOD*1000 < System.currentTimeMillis() || progression*10 % maxProgression == 0) {
+			System.out.print("Test '" + name + "' progression: " + (((double)progression)/((double)maxProgression))*100.0 + "% ");
+			System.out.println("|" + progression + " out of " + maxProgression + " problem instances");
+			lastSigTime = System.currentTimeMillis();
+		}
+	}
+
+	protected void addCsvColumn(int[] elements, String label) {
+		csvLabels.add(label);
+		csvLists.add(elements);
+	}
+	
+	protected void addCsvColumn(String[] elements, String label) {
+		csvLabels.add(label);
+		csvStringLists.add(elements);
+	}
+	
+	private String outputCsv() throws FileNotFoundException {
+		if(csvLists.isEmpty())
+			return null;
+		
+		String filename = chooseFileName();
+		PrintWriter pw = new PrintWriter(filename);
+		
+		final int length = csvLists.get(0).length;
+		
+		for(String label : csvLabels) {
+			pw.print(label + ";");
+		}
+		pw.print("\n");
+		
+		for(int i = 0; i < length; i++) {
+			for(int[] elements : csvLists) {
+				pw.print(elements[i] + ";");
+			}
+			for(String[] elements : csvStringLists) {
+				pw.print(elements[i] + ";");
+			}
+			pw.print("\n");
+		}
+		
+		pw.close();
+		return filename;
+	}
+	
+	private String chooseFileName() {
+		int id = 0;
+		
+		while((new File(CSV_PATH_ROOT + id + ".csv")).exists()) {
+			id ++;
+		}
+		
+		return CSV_PATH_ROOT + id + ".csv";
 	}
 }
