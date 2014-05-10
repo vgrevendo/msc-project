@@ -163,4 +163,8 @@ and f_q1 = sum(f_q1_q, q adjacent to q1).
 Each time an f_s is computed, its value is stored in an array (and not a hashset!) contained within the physical set, and can then be reused later. If adjacent values exist, this method is not too expensive. It is however impractical if, say, the aim is to test only one word of length 1,000, 10,000, …
 	* A third solution is to compute f_s for all states s for all lengths n < N before actually starting any membership tests. This is a linear operation in N. Then the automaton could be pruned from useless states as pointed out above.
 
-All in all these methods will take a lot of memory (one million states with one million-length words is one terabyte of necessary memory and is not computable; ten thousand states with word length a thousand is 10 million bytes (10M) which is still acceptable).
+All in all these methods will take a lot of memory (one million states with one million-length words is one terabyte of necessary memory and is not computable; ten thousand states with word length a thousand is 10 million bytes (10M) which is still acceptable), and the initial computation process (if present) might take some time.
+
+In the code repository, f will named “hscore”.
+
+→ A heuristic based on labels. Could make some kind of density in the label “1”, which could advise on a certain direction to take...

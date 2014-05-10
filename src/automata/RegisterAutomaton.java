@@ -19,7 +19,7 @@ import algorithms.Tools;
  */
 public class RegisterAutomaton extends Automaton {
 	
-	private State[] states;
+	protected State[] states;
 
 	private State initialState;
 	private int[] registers;
