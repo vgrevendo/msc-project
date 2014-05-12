@@ -48,6 +48,7 @@ public class ListedMembershipTest extends Test {
 		for(int[] testWord : twg) {
 			signalProgression();
 			
+			//LDFTS
 			long cTime = System.currentTimeMillis();			
 			result = Membership.ldftsMemberCheck(a, testWord);
 			long testTime = System.currentTimeMillis()-cTime;
@@ -63,7 +64,8 @@ public class ListedMembershipTest extends Test {
 			}
 			
 			signalProgression();
-			
+
+			//BFLGS
 			cTime = System.currentTimeMillis();			
 			result = Membership.bflgsMemberCheck(a, testWord);
 			testTime = System.currentTimeMillis()-cTime;

@@ -6,11 +6,13 @@ import java.util.List;
 import java.util.Set;
 import java.util.Stack;
 
+import algorithms.membership.PrioritySet;
 import algorithms.membership.SearchNode;
 import algorithms.membership.SearchState;
 import algorithms.tools.ResultsContainer;
 import automata.RegisterAutomaton;
 import automata.State;
+import automata.hra.HRAutomaton;
 
 public class Membership {
 	/**
@@ -192,5 +194,52 @@ public class Membership {
 		return false;
 	}
 
-
+	/**
+	 * A third less naive version, using the physical distance heuristic.
+	 * @param a
+	 * @param w
+	 * @return
+	 */
+	public static boolean astarMemberCheck(HRAutomaton a, int[] w) {
+		ResultsContainer rc = ResultsContainer.getContainer();
+		int maxFrontierSize = 0;
+		int nodesExpanded = 0;
+		
+		//Convert the word into a list, better for later
+		ArrayList<Integer> wl = new ArrayList<>();
+		for(int i : w) {
+			wl.add(i);
+		}
+		
+		//A* employs a heuristic-driven queue		
+		PrioritySet frontier = new PrioritySet(a);
+		SearchState initialSearchState = new SearchState(a.getInitialState(), 
+														 a.getInitialRegisters(), 
+														 wl, a);
+		frontier.add(new SearchNode(initialSearchState, null, -1));
+		
+		//Main search loop
+		while(!frontier.isEmpty()) {
+			maxFrontierSize = Math.max(maxFrontierSize, frontier.size());
+			
+			SearchNode node = frontier.pop();
+			if(node.state.isFinal()) {
+				rc.addNumber(nodesExpanded);
+				rc.addNumber(maxFrontierSize);
+				return true;
+			}
+			
+			List<SearchState> nextStates = node.state.expand();
+			nodesExpanded++;
+			
+			for(SearchState s : nextStates) {
+				frontier.add(new SearchNode(s, node, 0));
+			}
+		}
+		
+		rc.addNumber(nodesExpanded);
+		rc.addNumber(maxFrontierSize);
+		
+		return false;
+	}
 }

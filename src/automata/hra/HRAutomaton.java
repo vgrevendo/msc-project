@@ -2,12 +2,13 @@ package automata.hra;
 
 import java.io.FileNotFoundException;
 import java.text.ParseException;
-import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import algorithms.membership.SearchNode;
 import automata.RegisterAutomaton;
 import automata.State;
 
@@ -18,11 +19,10 @@ import automata.State;
  * @author vincent
  *
  */
-public class HRAutomaton extends RegisterAutomaton {
+public class HRAutomaton extends RegisterAutomaton implements Comparator<SearchNode> {
 	//Internal codes
-	private static final int UNSET = -1;
 	private static final int NONE = 0;
-	private static final int FINAL = -2;
+	private static final int FINAL = 1;
 	
 	//Storage
 	private final Map<State, int[]> hScores;
@@ -35,10 +35,21 @@ public class HRAutomaton extends RegisterAutomaton {
 		hScores = new HashMap<>();
 		
 		for(State s : states) {
-			int[] scores = new int[hlength];
-			//This step might be avoided by modifying the code above
-			Arrays.fill(scores, -1);
-			hScores.put(s, scores);
+			hScores.put(s, new int[hlength]);
+		}
+		
+		hLength = hlength;
+		
+		loadHScores();
+	}
+	
+	public HRAutomaton(RegisterAutomaton ra, int hlength) {
+		super(ra);
+		
+		hScores = new HashMap<>();
+		
+		for(State s : states) {
+			hScores.put(s, new int[hlength]);
 		}
 		
 		hLength = hlength;
@@ -57,8 +68,10 @@ public class HRAutomaton extends RegisterAutomaton {
 		}
 		
 		//Process all states
-		for(int n = 0; n < hLength; n++) {
-			
+		for(int n = 1; n < hLength; n++) {
+			for(State s: states) {
+				computeHScore(s, n);
+			}
 		}
 	}
 	
@@ -69,7 +82,11 @@ public class HRAutomaton extends RegisterAutomaton {
 		
 		//For each transition
 		for(Entry<Integer, List<State>> tr: transitions.entrySet()) {
-			
+			//For each transition's end state
+			for(State endState: tr.getValue()) {
+				int add = getHScore(endState, n-1);
+				score = Integer.MAX_VALUE - score > add ? score + add : Integer.MAX_VALUE;
+			}
 		}
 		
 		return score;
@@ -84,6 +101,11 @@ public class HRAutomaton extends RegisterAutomaton {
 	 */
 	public int getHScore(State s, int n) {
 		return hScores.get(s)[n];
+	}
+
+	@Override
+	public int compare(SearchNode o1, SearchNode o2) {
+		return this.getHScore(o1.state.state, o1.state.w.size()) - this.getHScore(o2.state.state, o2.state.w.size());
 	}
 
 }

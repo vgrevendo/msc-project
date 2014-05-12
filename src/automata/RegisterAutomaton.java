@@ -38,6 +38,20 @@ public class RegisterAutomaton extends Automaton {
 		loadFromFile(loadPath);
 	}
 	
+	/**
+	 * This constructor is useful if you want to extend this class
+	 * without copying the values of an automaton
+	 * @param ra
+	 */
+	public RegisterAutomaton(RegisterAutomaton ra) {
+		states = ra.states;
+		initialState = ra.initialState;
+		registers = ra.registers;
+		
+		rho = ra.rho;
+		mu = ra.mu;
+	}
+	
 	
 	//Load from files
 	

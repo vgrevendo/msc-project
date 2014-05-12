@@ -158,8 +158,11 @@ Note that this could lead to a lighter version of the automaton, with all termin
 f_s is difficult to find. The best way would be to have a real function making a computation using + and * operations, based on cycles detection. Is that possible? If not we'll have to find alternatives:
 	* A first solution consists in computing f_s(n) naïvely on the spot. A* expands a node, a few new configurations arrive, what is their f_s score? This results in a basic graph search for a path of determined length to final nodes (BFS: count all the final nodes at the bottom of the full search tree). This is very computationnally expensive and doesn't seem to add any performance.
 	* A second solution could be to compute f_s(n) on the spot, but by using peer f_s values: let q1 and q2 be two adjacent states, and suppose m transitions exist from q1 to q2. Then:
-	f_q1_q2(n) = m + f_q2(n-1) if f_q2(n-1) > 0 else 0
+	f_q1_q2(n) = m * f_q2(n-1) if f_q2(n-1) > 0 else 0
 and f_q1 = sum(f_q1_q, q adjacent to q1).
+
+(NB: suppose adjacent node s has p paths to final state. If we have one transition to s, that means still p paths. If we have two transitions, that means 2p paths, because for each path we can choose either the first or the second transition twice the number of possibilities).)
+
 Each time an f_s is computed, its value is stored in an array (and not a hashset!) contained within the physical set, and can then be reused later. If adjacent values exist, this method is not too expensive. It is however impractical if, say, the aim is to test only one word of length 1,000, 10,000, …
 	* A third solution is to compute f_s for all states s for all lengths n < N before actually starting any membership tests. This is a linear operation in N. Then the automaton could be pruned from useless states as pointed out above.
 
@@ -168,3 +171,25 @@ All in all these methods will take a lot of memory (one million states with one 
 In the code repository, f will named “hscore”.
 
 → A heuristic based on labels. Could make some kind of density in the label “1”, which could advise on a certain direction to take...
+
+05/12/14
+Meeting with supervisor.
+------------------------
+
+- Previous proof was OK but it's possible to find better asymptotically for DFS if the automaton varies as well. The idea is an automaton with n branches for the initial state, and it's actually a tree of depth n with all leaf states final: DFS finds the solution in n, and BFS in 3^n for example.
+
+- MORE on paper
+
+Implementing heuristic: physical distance.
+
+The Hscore value can be computed faster if all terminal states (without outgoing transitions) have their values set to 0 and are then ignored. 
+
+Practical question: would it be better to have a set instead of a list in the transition hashmap? A list allows to reach the same state twice or more from the same state with the same label, which is useless...
+
+Think about a speedup algorithm: reduce automata. Remove terminal states, double transitions, and think about more.
+
+It seems that the Hscore idea has a problem: the numbers are too large. Think about it: a one-state double recursion implies 2^1000 paths for a 1000-letter long word. It is impossible to store this number. However, we might want to store the saturated value just for the principle of making the point: “here are a lot of possibilities!”.
+
+Small optimisation: PrioritySet will not accept states with score 0.
+
+Test infrastructure needs to be improved further to make decision algorithms additions easier.
