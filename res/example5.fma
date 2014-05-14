@@ -1,3 +1,5 @@
+-- An example where DFS is better, but not asymptotically
+-- A generalised version of this automaton makes DFS asymptotically better
 q0 1
 q1 1
 q3 1

@@ -40,11 +40,11 @@ public class Emptiness {
 			System.out.println("Checking wordsize " + wordSize + " (" + wi.capacity + " words)");
 			
 			for(int[] word : wi) {
-				boolean member = deterministic ? 
-									Membership.deterministicMemberCheck(a, word) :
-									Membership.ldftsMemberCheck(a, word);
-				if(member)
-					return true;
+//				boolean member = deterministic ? 
+//									Membership.deterministicMemberCheck(a, word) :
+//									Membership.ldftsMemberCheck(a, word);
+//				if(member)
+//					return true;
 			}
 			
 		}

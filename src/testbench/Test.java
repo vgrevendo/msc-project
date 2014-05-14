@@ -39,6 +39,12 @@ public abstract class Test {
 	 * Run the underlying test and record the numbers.
 	 */
 	public void test() {
+		System.out.println("-- This is test [[" + name + "]] --");
+		System.out.println("> Preparing resources...");
+		prepare();
+		System.out.println("> Resources are ready for use.");
+		
+		System.out.println("> Running test core: acquisition...");
 		long currentTime = System.currentTimeMillis();
 		
 		try {
@@ -52,14 +58,20 @@ public abstract class Test {
 		runtime = System.currentTimeMillis() - currentTime;
 		signalProgression();
 		
+		System.out.println("> End of acquisition.");
+		
 		//Print to results container
+		System.out.println("> Outputting results to results containers...");
 		outputResults();
+		System.out.println("> End of test.");
+		System.out.println("-------------------------");
 	}
 	
 	//Implement/override these for more functionalities
 	protected abstract void run() throws TestException;
 	protected void customPrint(ResultsContainer rc) {
 	}
+	protected abstract void prepare() ;
 	
 	//Tools
 	private void outputResults() {

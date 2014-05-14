@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import algorithms.Membership;
+import algorithms.Tools;
 import automata.RegisterAutomaton;
 import automata.State;
 
@@ -47,7 +47,7 @@ public class SearchState {
 			int containingRegister = -1;
 			Integer assignmentRegister = -1;
 			
-			if((containingRegister = Membership.registersContain(registers, symbol)) < 0) {
+			if((containingRegister = Tools.registersContain(registers, symbol)) < 0) {
 				//If a rho value is defined
 				if((assignmentRegister = a.getAssignmentRegister(state)) != null) {
 					containingRegister = assignmentRegister;

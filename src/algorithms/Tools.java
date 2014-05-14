@@ -59,4 +59,12 @@ public class Tools {
 		
 		return sequence;
 	}
+
+	public static int registersContain(int[] registers, int symbol) {
+		for(int i = 0; i < registers.length; i++) {
+			if(registers[i] == symbol)
+				return i;
+		}
+		return -1;
+	}
 }

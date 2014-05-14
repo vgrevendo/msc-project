@@ -3,7 +3,7 @@ package testbench;
 import java.util.Arrays;
 import java.util.List;
 
-import algorithms.Membership;
+import algorithms.MBSDecisionAlgorithm;
 import algorithms.tools.ResultsContainer;
 import automata.RegisterAutomaton;
 
@@ -17,25 +17,29 @@ public class ListedMembershipTest extends Test {
 	public static final int MAX_LENGTH = 20;
 	
 	private final TestWordGenerator twg;
+	private final MBSDecisionAlgorithm[] algorithms;
 	
 	//Results
 	private final boolean[] results;
 	private final int[][] nodesExpanded;
 	private final int[][] maxFrontierSize;
 	private final int[][] times;
-	private long bflgsTotalTime = 0L;
-	private long ldftsTotalTime = 0L;
+	private final long[] totalTimes;
 	
-	public ListedMembershipTest(RegisterAutomaton a, TestWordGenerator twg) {
+	public ListedMembershipTest(RegisterAutomaton a, 
+								MBSDecisionAlgorithm[] algorithms, 
+								TestWordGenerator twg) {
 		super("Listed Membership Checks", a);
+		this.algorithms = algorithms;
 		this.twg = twg;
 		
-		maxProgression = twg.size()*2; //Two algorithms to test
+		maxProgression = twg.size()*algorithms.length;
 		
+		totalTimes = new long[algorithms.length];
 		results = new boolean[twg.size()];
-		nodesExpanded = new int[2][twg.size()];
-		maxFrontierSize = new int[2][twg.size()];
-		times = new int[2][twg.size()];
+		nodesExpanded = new int[algorithms.length][twg.size()];
+		maxFrontierSize = new int[algorithms.length][twg.size()];
+		times = new int[algorithms.length][twg.size()];
 	}
 
 	@Override
@@ -45,56 +49,48 @@ public class ListedMembershipTest extends Test {
 		String[] testWordStrings = new String[twg.size()];
 		
 		//make the tests
+		//For each word, test each algorithm
 		for(int[] testWord : twg) {
-			signalProgression();
-			
-			//LDFTS
-			long cTime = System.currentTimeMillis();			
-			result = Membership.ldftsMemberCheck(a, testWord);
-			long testTime = System.currentTimeMillis()-cTime;
-			ldftsTotalTime += testTime;
-			
-			times[0][twg.getWordIndex()] = (int) testTime;
-			results[twg.getWordIndex()] = result;
-			
-			List<Integer> numbers = rc.getNumbersList();
-			if(numbers.size() > 0) {
-				nodesExpanded[0][twg.getWordIndex()] = numbers.get(0);
-				maxFrontierSize[0][twg.getWordIndex()] = numbers.get(1);
-			}
-			
-			signalProgression();
-
-			//BFLGS
-			cTime = System.currentTimeMillis();			
-			result = Membership.bflgsMemberCheck(a, testWord);
-			testTime = System.currentTimeMillis()-cTime;
-			bflgsTotalTime += testTime;
-			
-			times[1][twg.getWordIndex()] = (int) testTime;
-			if(result != results[twg.getWordIndex()]) 
-				throw new TestException("Consistency failure: algorithms disagree on " + Arrays.toString(testWord));
-			
-			numbers = rc.getNumbersList();
-			if(numbers.size() > 0) {
-				nodesExpanded[1][twg.getWordIndex()] = numbers.get(0);
-				maxFrontierSize[1][twg.getWordIndex()] = numbers.get(1);
+			for(int algIndex = 0; algIndex < algorithms.length; algIndex++) {
+				signalProgression();
+				
+				MBSDecisionAlgorithm algorithm = algorithms[algIndex];
+				
+				//TEST CORE
+				long cTime = System.currentTimeMillis();			
+				result = algorithm.decide(a, testWord);
+				long testTime = System.currentTimeMillis()-cTime;
+				
+				//Record results
+				totalTimes[algIndex] += testTime;
+				times[algIndex][twg.getWordIndex()] = (int) testTime;
+				
+				if(algIndex > 0 && results[twg.getWordIndex()] != result)
+					throw new TestException("Consistency failure: algorithms disagree on " + Arrays.toString(testWord));
+				else
+					results[twg.getWordIndex()] = result;
+				
+				List<Integer> numbers = rc.getNumbersList();
+				if(numbers.size() > 0) {
+					nodesExpanded[algIndex][twg.getWordIndex()] = numbers.get(0);
+					maxFrontierSize[algIndex][twg.getWordIndex()] = numbers.get(1);
+				}
 			}
 			
 			testWordStrings[twg.getWordIndex()] = Arrays.toString(testWord);
-			
 		}
 		
 		signalProgression();
 		
 		
-		//Step 4: make sure all useful data is printed
-		addCsvColumn(nodesExpanded[0], "LDFTS nodes");
-		addCsvColumn(nodesExpanded[1], "BFLGS nodes");
-		addCsvColumn(maxFrontierSize[0], "LDFTS frontier");
-		addCsvColumn(maxFrontierSize[1], "BFLGS frontier");
-		addCsvColumn(times[0], "LDFTS time");
-		addCsvColumn(times[1], "BFLGS time");
+		//print all useful data
+		for(int algIndex = 0; algIndex < algorithms.length; algIndex++) {
+			MBSDecisionAlgorithm algorithm = algorithms[algIndex];
+			
+			addCsvColumn(nodesExpanded[algIndex], algorithm + " nodes");
+			addCsvColumn(maxFrontierSize[algIndex], algorithm + " frontier");
+			addCsvColumn(times[algIndex], algorithm + " time");
+		}
 		addCsvColumn(testWordStrings, "Test word");
 	}
 	
@@ -105,12 +101,25 @@ public class ListedMembershipTest extends Test {
 			successMemberships += b ? 1 : 0;
 		}
 		
-		rc.println("LDFTS total execution time:   " + prettyPrintMillis(ldftsTotalTime));
-		rc.println("LDFTS average execution time: " + prettyPrintMillis(ldftsTotalTime/twg.size()));
-		rc.println("BFLGS total execution time:   " + prettyPrintMillis(bflgsTotalTime));
-		rc.println("BFLGS average execution time: " + prettyPrintMillis(bflgsTotalTime/twg.size()));
+		for(int algIndex = 0; algIndex < algorithms.length; algIndex++) {
+			MBSDecisionAlgorithm algorithm = algorithms[algIndex];
+			
+			rc.println(algorithm + " total execution time:   " + prettyPrintMillis(totalTimes[algIndex]));
+			rc.println(algorithm + " average execution time: " + prettyPrintMillis(totalTimes[algIndex]/twg.size()));
+		}
+		
 		rc.println("");
 		rc.println("Total number of success memberships: " + successMemberships + "/" + twg.size());
+	}
+
+	@Override
+	protected void prepare() {
+		//This method will allow to pre-process automata if necessary.
+		for(MBSDecisionAlgorithm da : algorithms) {
+			System.out.print("Preparing " + da + "... ");
+			da.setAutomaton(a);
+			System.out.println("[OK]");
+		}
 	}
 
 }

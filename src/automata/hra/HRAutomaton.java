@@ -33,35 +33,31 @@ public class HRAutomaton extends RegisterAutomaton implements Comparator<SearchN
 		super(loadPath);
 		
 		hScores = new HashMap<>();
+		hLength = hlength+1;
 		
 		for(State s : states) {
-			hScores.put(s, new int[hlength]);
+			hScores.put(s, new int[hLength]);
 		}
 		
-		hLength = hlength;
-		
-		loadHScores();
 	}
 	
 	public HRAutomaton(RegisterAutomaton ra, int hlength) {
 		super(ra);
 		
 		hScores = new HashMap<>();
+		hLength = hlength+1;
 		
 		for(State s : states) {
-			hScores.put(s, new int[hlength]);
+			hScores.put(s, new int[hLength]);
 		}
 		
-		hLength = hlength;
-		
-		loadHScores();
 	}
 	
 	/**
 	 * Load all hscores by iterating over n, the considered
 	 * path distance
 	 */
-	private void loadHScores() {
+	public void loadHeuristic() {
 		//Process final states
 		for(State s: states) {
 			hScores.get(s)[0] = s.isFinal ? FINAL : NONE;
@@ -70,7 +66,7 @@ public class HRAutomaton extends RegisterAutomaton implements Comparator<SearchN
 		//Process all states
 		for(int n = 1; n < hLength; n++) {
 			for(State s: states) {
-				computeHScore(s, n);
+				hScores.get(s)[n] = computeHScore(s, n);
 			}
 		}
 	}

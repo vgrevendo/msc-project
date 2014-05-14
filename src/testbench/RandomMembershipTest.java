@@ -51,7 +51,7 @@ public class RandomMembershipTest extends Test {
 		//Step 2: time on LDFTS nondeterministic membership
 		for(int wIndex = 0; wIndex < NUM_TESTED_WORDS; wIndex++) {
 			long cTime = System.currentTimeMillis();			
-			result = Membership.ldftsMemberCheck(a, testWords[wIndex]);
+			//result = Membership.ldftsMemberCheck(a, testWords[wIndex]);
 			long testTime = System.currentTimeMillis()-cTime;
 			ldftsTotalTime += testTime;
 			
@@ -68,7 +68,7 @@ public class RandomMembershipTest extends Test {
 		//Step 3: time on BFLGS nondeterministic membership
 		for(int wIndex = 0; wIndex < NUM_TESTED_WORDS; wIndex++) {
 			long cTime = System.currentTimeMillis();			
-			result = Membership.bflgsMemberCheck(a, testWords[wIndex]);
+			//result = Membership.bflgsMemberCheck(a, testWords[wIndex]);
 			long testTime = System.currentTimeMillis()-cTime;
 			bflgsTotalTime += testTime;
 			
@@ -121,6 +121,12 @@ public class RandomMembershipTest extends Test {
 		rc.println("BFLGS average execution time: " + prettyPrintMillis(bflgsTotalTime/NUM_TESTED_WORDS));
 		rc.println("");
 		rc.println("Total number of success memberships: " + successMemberships + "/" + NUM_TESTED_WORDS);
+	}
+
+	@Override
+	protected void prepare() {
+		// TODO Auto-generated method stub
+		
 	}
 
 }

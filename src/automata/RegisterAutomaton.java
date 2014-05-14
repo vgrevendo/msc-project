@@ -77,7 +77,12 @@ public class RegisterAutomaton extends Automaton {
 		//Read from file and fill out the blanks
 		//States
 		while(sc.hasNext()) {
-			String[] tokens = sc.nextLine().split(" ");
+			String line = sc.nextLine();
+			
+			if(lineIsComment(line))
+				continue;
+				
+			String[] tokens = line.split(" ");
 			lineNumber++;
 			
 			switch(tokens.length) {
@@ -163,7 +168,12 @@ public class RegisterAutomaton extends Automaton {
 		//Read from file and fill out the blanks
 		//States
 		while(sc.hasNext()) {
-			String[] tokens = sc.nextLine().split(" ");
+			String line = sc.nextLine();
+
+			if(lineIsComment(line))
+				continue;
+			
+			String[] tokens = line.split(" ");
 			lineNumber++;
 			
 			if(tokens.length != 3) 
@@ -258,5 +268,10 @@ public class RegisterAutomaton extends Automaton {
 	
 	public List<State> getNextStates(State currentState, int label) {
 		return mu.get(currentState).get(label);
+	}
+
+	//Tools
+	private boolean lineIsComment(String line) {
+		return line.length() >= 2 && line.substring(0, 2).equalsIgnoreCase("--");
 	}
 }

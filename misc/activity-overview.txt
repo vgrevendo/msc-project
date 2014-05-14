@@ -193,3 +193,10 @@ It seems that the Hscore idea has a problem: the numbers are too large. Think ab
 Small optimisation: PrioritySet will not accept states with score 0.
 
 Test infrastructure needs to be improved further to make decision algorithms additions easier.
+
+05/13/14
+Question: is there a way, given the minimal alphabet subset, to transform an FMA into an NFA?
+
+Implemented better test infrastructure, algorithms are now objects.
+
+Debugging Best-First search.
