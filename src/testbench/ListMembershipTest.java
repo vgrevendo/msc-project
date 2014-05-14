@@ -3,7 +3,7 @@ package testbench;
 import java.util.Arrays;
 import java.util.List;
 
-import algorithms.MBSDecisionAlgorithm;
+import algorithms.membership.MBSDecisionAlgorithm;
 import algorithms.tools.ResultsContainer;
 import automata.RegisterAutomaton;
 
@@ -12,7 +12,7 @@ import automata.RegisterAutomaton;
  * Take a lot of words of various lengths and compare performances. 
  * @author vincent
  */
-public class ListedMembershipTest extends Test {
+public class ListMembershipTest extends Test {
 	public static final int MIN_LENGTH = 10;
 	public static final int MAX_LENGTH = 20;
 	
@@ -26,7 +26,7 @@ public class ListedMembershipTest extends Test {
 	private final int[][] times;
 	private final long[] totalTimes;
 	
-	public ListedMembershipTest(RegisterAutomaton a, 
+	public ListMembershipTest(RegisterAutomaton a, 
 								MBSDecisionAlgorithm[] algorithms, 
 								TestWordGenerator twg) {
 		super("Listed Membership Checks", a);

@@ -1,4 +1,4 @@
-package algorithms;
+package algorithms.membership;
 
 import algorithms.tools.ResultsContainer;
 import automata.RegisterAutomaton;

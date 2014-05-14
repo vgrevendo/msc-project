@@ -1,5 +1,6 @@
 package algorithms.membership;
 
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.PriorityQueue;
 
@@ -17,10 +18,10 @@ public class PrioritySet {
 	private final HashSet<SearchNode> set;
 	private final PriorityQueue<SearchNode> queue;
 
-	public PrioritySet(HRAutomaton automaton) {
+	public PrioritySet(HRAutomaton automaton, Comparator<SearchNode> comparator) {
 		this.automaton = automaton;
 		set = new HashSet<>();
-		queue = new PriorityQueue<>(automaton.getStates().length, automaton);
+		queue = new PriorityQueue<>(automaton.getStates().length, comparator);
 	}
 	
 	public SearchNode pop() {

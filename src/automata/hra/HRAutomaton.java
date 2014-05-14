@@ -2,13 +2,11 @@ package automata.hra;
 
 import java.io.FileNotFoundException;
 import java.text.ParseException;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import algorithms.membership.SearchNode;
 import automata.RegisterAutomaton;
 import automata.State;
 
@@ -19,7 +17,7 @@ import automata.State;
  * @author vincent
  *
  */
-public class HRAutomaton extends RegisterAutomaton implements Comparator<SearchNode> {
+public class HRAutomaton extends RegisterAutomaton {
 	//Internal codes
 	private static final int NONE = 0;
 	private static final int FINAL = 1;
@@ -97,11 +95,6 @@ public class HRAutomaton extends RegisterAutomaton implements Comparator<SearchN
 	 */
 	public int getHScore(State s, int n) {
 		return hScores.get(s)[n];
-	}
-
-	@Override
-	public int compare(SearchNode o1, SearchNode o2) {
-		return this.getHScore(o1.state.state, o1.state.w.size()) - this.getHScore(o2.state.state, o2.state.w.size());
 	}
 
 }

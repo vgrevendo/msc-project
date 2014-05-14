@@ -200,3 +200,22 @@ Question: is there a way, given the minimal alphabet subset, to transform an FMA
 Implemented better test infrastructure, algorithms are now objects.
 
 Debugging Best-First search.
+
+05/14/14
+Best-First search works.
+
+In which case(s) does it work better than BFLGS? For the handwritten examples, it expands less nodes, but is more costly time-wise.
+
+It obviously works better as the automaton's search tree grows “wider”; try to find an example for this.
+
+Suppose the automaton is a tree with several branches from the root but then only 1-width paths to final states. In that case Best-First search will entirely behave like BFLGS: the heuristic will push it to explore all the root's branches step by step. DFS would remain -asymptotically- better.
+
+→ Best-First search has to be improved! There must be a proximity factor included. 
+
+This proximity factor is easy to find: we know the distance from our goal. A suggestion for including this proximity factor is a lexicographical comparison in form of (distance, number of paths > 0).
+
+This implies modifying the frontier and create an A*ish version of best-first. Done.
+
+Let's now implement a new generator that, given n, generates a tree with n root signle branches terminated by final states.
+
+Most of the examples only have one or two registers; especially for the ones with one register, this kind of defeats the purpose of register automata: where's the difference with NFA?

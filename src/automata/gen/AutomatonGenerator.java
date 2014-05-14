@@ -28,12 +28,18 @@ public abstract class AutomatonGenerator {
 	//Generic file building
 	private final List<String> transitionLines;
 	private final List<String> stateLines;
+	private final List<String> commentLines;
 	private int initialState = 0;
 	private StringBuilder registersSb = new StringBuilder();  
 	
-	public AutomatonGenerator() {
+	public AutomatonGenerator(String name) {
 		stateLines = new ArrayList<>();
 		transitionLines = new ArrayList<>();
+		commentLines = new ArrayList<>();
+		
+		String date = "";
+		
+		commentLines.add("-- Generated on " + date + " by " + name);
 	}
 	
 	//Generation methods

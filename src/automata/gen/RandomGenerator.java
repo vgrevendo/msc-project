@@ -4,7 +4,6 @@ package automata.gen;
  * Generates a basic RA by following creating a
  */
 public class RandomGenerator extends AutomatonGenerator {
-
 	//Parameters with default values
 	public int targetNumStates = 1000;
 	public int targetNumTransitions = 7000;
@@ -18,6 +17,11 @@ public class RandomGenerator extends AutomatonGenerator {
 	 * The proportion of expected number of final states
 	 */
 	public double fProportion = 0.05;
+	
+	public RandomGenerator() {
+		super("Random Automaton Generator");
+	}
+	
 	
 	@Override
 	protected void build() {

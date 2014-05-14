@@ -24,6 +24,10 @@ public class DiamondChainGenerator extends AutomatonGenerator {
 	public double fProportion = 0.5;
 	public double labelIsRhoProportion = 0.7;
 	
+	public DiamondChainGenerator() {
+		super("Random-Width Diamond Chain Generator");
+	}
+	
 	@Override
 	protected void build() {
 		//Init registers

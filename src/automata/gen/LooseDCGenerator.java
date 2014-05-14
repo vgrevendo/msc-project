@@ -25,6 +25,10 @@ public class LooseDCGenerator extends AutomatonGenerator {
 	
 	public double labelIsRhoProportion = 0.7;
 	
+	public LooseDCGenerator() {
+		super("Loose Diamond Chain Generator");
+	}
+	
 	@Override
 	protected void build() {
 		int intermediaryStates = branchingFactor;

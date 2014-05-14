@@ -1,11 +1,13 @@
 package algorithms;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.Stack;
 
+import algorithms.membership.MBSDecisionAlgorithm;
 import algorithms.membership.PrioritySet;
 import algorithms.membership.SearchNode;
 import algorithms.membership.SearchState;
@@ -193,6 +195,7 @@ public class Membership {
 	 * A third less naive version, using the physical distance heuristic.
 	 */
 	public static final MBSDecisionAlgorithm bestFirstCheck = new MBSDecisionAlgorithm("Best-first-mbs") {
+		private Comparator<SearchNode> comparator;
 		private HRAutomaton a;
 		
 		@Override
@@ -208,8 +211,8 @@ public class Membership {
 				wl.add(i);
 			}
 			
-			//A* employs a heuristic-driven queue		
-			PrioritySet frontier = new PrioritySet(a);
+			//A* employs a heuristic-driven queue
+			PrioritySet frontier = new PrioritySet(a, comparator);
 			SearchState initialSearchState = new SearchState(a.getInitialState(), 
 															 a.getInitialRegisters(), 
 															 wl, a);
@@ -246,6 +249,89 @@ public class Membership {
 			
 			System.out.print("(building HRA heuristic) ");
 			a.loadHeuristic();
+
+			this.comparator = new Comparator<SearchNode>() {
+
+				@Override
+				public int compare(SearchNode o1, SearchNode o2) {
+					return a.getHScore(o1.state.state, o1.state.w.size()) - a.getHScore(o2.state.state, o2.state.w.size());
+				}
+			};
+		}
+	};
+
+	/**
+	 * The same as above but with a different comparator (and therefore a different heuristic).
+	 * Now there is a lexicographical comparison between (-distance, hscore diff): we always first
+	 * want to explore the path that is closest to the final state). 
+	 */
+	public static final MBSDecisionAlgorithm aStarCheck = new MBSDecisionAlgorithm("~A*-mbs") {
+		private Comparator<SearchNode> comparator;
+		private HRAutomaton a;
+		
+		@Override
+		public boolean decide(RegisterAutomaton automaton, int[] word) {
+			//Ignore the automaton given as an argument, we're going to use the one stored
+			ResultsContainer rc = ResultsContainer.getContainer();
+			int maxFrontierSize = 0;
+			int nodesExpanded = 0;
+			
+			//Convert the word into a list, better for later
+			ArrayList<Integer> wl = new ArrayList<>();
+			for(int i : word) {
+				wl.add(i);
+			}
+			
+			//A* employs a heuristic-driven queue
+			PrioritySet frontier = new PrioritySet(a, comparator);
+			SearchState initialSearchState = new SearchState(a.getInitialState(), 
+															 a.getInitialRegisters(), 
+															 wl, a);
+			frontier.add(new SearchNode(initialSearchState, null, -1));
+			
+			//Main search loop
+			while(!frontier.isEmpty()) {
+				maxFrontierSize = Math.max(maxFrontierSize, frontier.size());
+				
+				SearchNode node = frontier.pop();
+				if(node.state.isFinal()) {
+					rc.addNumber(nodesExpanded);
+					rc.addNumber(maxFrontierSize);
+					return true;
+				}
+				
+				List<SearchState> nextStates = node.state.expand();
+				nodesExpanded++;
+				
+				for(SearchState s : nextStates) {
+					frontier.add(new SearchNode(s, node, 0));
+				}
+			}
+			
+			rc.addNumber(nodesExpanded);
+			rc.addNumber(maxFrontierSize);
+			
+			return false;
+		}
+		
+		@Override
+		public void setAutomaton(RegisterAutomaton ra) {
+			this.a = (HRAutomaton) ra;
+			
+			System.out.print("(building HRA heuristic) ");
+			a.loadHeuristic();
+
+			this.comparator = new Comparator<SearchNode>() {
+
+				@Override
+				public int compare(SearchNode o1, SearchNode o2) {
+					int sizeDiff = o1.state.w.size() - o2.state.w.size();
+					
+					return sizeDiff == 0 ?							
+							a.getHScore(o1.state.state, o1.state.w.size()) - a.getHScore(o2.state.state, o2.state.w.size()) :
+							-sizeDiff;
+				}
+			};
 		}
 	};
 }

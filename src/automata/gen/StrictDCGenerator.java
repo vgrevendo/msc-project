@@ -25,6 +25,10 @@ public class StrictDCGenerator extends AutomatonGenerator {
 	
 	public double labelIsRhoProportion = 0.7;
 	
+	public StrictDCGenerator() {
+		super("Strict Diamonds Chain Generator");
+	}
+	
 	@Override
 	protected void build() {
 		int intermediaryStates = branchingFactor;
