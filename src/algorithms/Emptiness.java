@@ -26,8 +26,6 @@ public class Emptiness {
 	 * over all possibilities for membership checks.
 	 */
 	public static boolean empiricalEmptinessCheck(RegisterAutomaton a, int wordLengthLimit) {
-		boolean deterministic = Tools.isDeterministic(a);
-		
 		Integer[] sequence = Tools.computeMinimalAlphabet(a);
 		
 		System.out.println("EMPIRICAL EMPTINESS CHECK");
@@ -38,14 +36,6 @@ public class Emptiness {
 			WordIterator wi = new WordIterator(wordSize, sequence);
 			
 			System.out.println("Checking wordsize " + wordSize + " (" + wi.capacity + " words)");
-			
-			for(int[] word : wi) {
-//				boolean member = deterministic ? 
-//									Membership.deterministicMemberCheck(a, word) :
-//									Membership.ldftsMemberCheck(a, word);
-//				if(member)
-//					return true;
-			}
 			
 		}
 		

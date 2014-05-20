@@ -3,6 +3,9 @@ package testbench;
 import java.io.FileNotFoundException;
 import java.text.ParseException;
 
+import testbench.lister.TestLister;
+import testbench.tests.AsymptoticMembershipTest;
+import testbench.tests.ListMembershipTest;
 import algorithms.Membership;
 import algorithms.membership.MBSDecisionAlgorithm;
 import algorithms.tools.ResultsContainer;
@@ -18,7 +21,7 @@ public class Testbench {
 		System.out.println("This is testbench, running...");
 		
 		try {
-			generatorTests();
+			mbsAsymptTests();
 			
 			
 		} catch (FileNotFoundException | ParseException e) {
@@ -36,20 +39,74 @@ public class Testbench {
 		RegisterAutomaton ra = new HRAutomaton("res/example3.fma", TEST_LENGTH);
 		ra.displayInfo();
 		
-		TestWordGenerator twg = new TestWordGenerator() {
+		TestLister<int[]> twg = new TestLister<int[]>() {
 			@Override
 			public int size() {
 				return TEST_LENGTH-7;
 			}
 			
 			@Override
-			protected int[] nextWord() {
-				return new int[wordIndex+5];
+			protected int[] nextResource() {
+				return new int[index+5];
 			}
 		};
 		
 		Test lmt = new ListMembershipTest(ra, algorithms, twg);
 		lmt.test();
+		
+		ResultsContainer.getContainer().flush();
+	}
+	
+	/**
+	 * Tests for membership on sequences of (automaton, word)
+	 * @throws FileNotFoundException
+	 * @throws ParseException
+	 */
+	public static void mbsAsymptTests() throws FileNotFoundException, ParseException {
+		MBSDecisionAlgorithm[] algorithms = new MBSDecisionAlgorithm[] {
+				Membership.ldftsCheck,
+				Membership.bflgsCheck,
+				Membership.bestFirstCheck,
+				Membership.aStarCheck};
+		
+		final int numWords = 100;
+
+		TestLister<int[]> twg = new TestLister<int[]>() {
+			@Override
+			public int size() {
+				return numWords;
+			}
+			
+			@Override
+			protected int[] nextResource() {
+				return new int[index+5];
+			}
+		};
+		
+		TestLister<RegisterAutomaton> rag = new TestLister<RegisterAutomaton>() {
+			@Override
+			protected RegisterAutomaton nextResource() {
+				RootBranchGenerator rbg = new RootBranchGenerator(index+5);
+				String filename;
+				try {
+					filename = rbg.generate();
+					return new HRAutomaton(filename, index+10);
+				} catch (ParseException | FileNotFoundException e) {
+					e.printStackTrace();
+				}
+				
+				return null;
+				
+			}
+
+			@Override
+			public int size() {
+				return numWords;
+			}
+		};
+		
+		Test amt = new AsymptoticMembershipTest(rag, twg, algorithms);
+		amt.test();
 		
 		ResultsContainer.getContainer().flush();
 	}

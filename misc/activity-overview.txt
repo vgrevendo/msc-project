@@ -219,3 +219,33 @@ This implies modifying the frontier and create an A*ish version of best-first. D
 Let's now implement a new generator that, given n, generates a tree with n root signle branches terminated by final states.
 
 Most of the examples only have one or two registers; especially for the ones with one register, this kind of defeats the purpose of register automata: where's the difference with NFA?
+
+Best-First is dangerous because elements are placed randomly in the queue if they have the same heuristic. The frontier at that point is no longer a queue nor a stack. Rather than forcing this behaviour it seems more legitimate to actually abaondon the concept.
+
+05/16/14
+Reading, and trying to answer the following question: do FMAs include NFAs, or vice-versa, or not at all?
+
+FMAs include NFAs in a quite obvious manner (initialise registers of size of finite alphabet and deactivate all rhos).
+05/18/14
+For emptiness, there is an easy heuristic to apply as well: physical distance from any target. [TODO]
+
+Register content checking is very slow: linear check in the number of registers. Optimisation to get rid of this linear factor: instead of storing (regNumber → regSymbol), we store (regSymbol → regNumber, or <0 if not assigned). This has the same memory consumption if the alphabet is encoded intelligently (R elements and therefore a very small array).
+
+05/19/14
+Meeting with Radu:
+- HEURISTICS
+Need proof that it actually works well. Targetted word size, if automaton size doesn't change, is around a million.
+Try to find a workaround for the integer limit problem by using logarithms (which conserve order).
+- INCLUSION
+Read the paper about the inclusion proof: with more than two registers “the problem is undecidable”.
+Test inclusion up to a certain length by generating paths similarly to emptiness, and by testing membership. Test on both example automata.
+- JAVA TRACES
+Useful to test properties. Things to do:
+* Implement an RA for the hasNext property
+* Collect data and (filter) translate into a word that is understandable by the automaton
+* Test with different algorithms.
+* Implement more properties (Collections, HttpResponse)
+
+Also two papers to read about related subjects: Paths through graphs, and testing algorithms.
+
+Will start by gathering test data from Java programs.

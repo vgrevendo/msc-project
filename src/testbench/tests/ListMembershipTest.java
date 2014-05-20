@@ -1,8 +1,11 @@
-package testbench;
+package testbench.tests;
 
 import java.util.Arrays;
 import java.util.List;
 
+import testbench.Test;
+import testbench.TestException;
+import testbench.lister.TestLister;
 import algorithms.membership.MBSDecisionAlgorithm;
 import algorithms.tools.ResultsContainer;
 import automata.RegisterAutomaton;
@@ -13,10 +16,7 @@ import automata.RegisterAutomaton;
  * @author vincent
  */
 public class ListMembershipTest extends Test {
-	public static final int MIN_LENGTH = 10;
-	public static final int MAX_LENGTH = 20;
-	
-	private final TestWordGenerator twg;
+	private final TestLister<int[]> twg;
 	private final MBSDecisionAlgorithm[] algorithms;
 	
 	//Results
@@ -28,7 +28,7 @@ public class ListMembershipTest extends Test {
 	
 	public ListMembershipTest(RegisterAutomaton a, 
 								MBSDecisionAlgorithm[] algorithms, 
-								TestWordGenerator twg) {
+								TestLister<int[]> twg) {
 		super("Listed Membership Checks", a);
 		this.algorithms = algorithms;
 		this.twg = twg;
@@ -63,21 +63,21 @@ public class ListMembershipTest extends Test {
 				
 				//Record results
 				totalTimes[algIndex] += testTime;
-				times[algIndex][twg.getWordIndex()] = (int) testTime;
+				times[algIndex][twg.getIndex()] = (int) testTime;
 				
-				if(algIndex > 0 && results[twg.getWordIndex()] != result)
+				if(algIndex > 0 && results[twg.getIndex()] != result)
 					throw new TestException("Consistency failure: algorithms disagree on " + Arrays.toString(testWord));
 				else
-					results[twg.getWordIndex()] = result;
+					results[twg.getIndex()] = result;
 				
 				List<Integer> numbers = rc.getNumbersList();
 				if(numbers.size() > 0) {
-					nodesExpanded[algIndex][twg.getWordIndex()] = numbers.get(0);
-					maxFrontierSize[algIndex][twg.getWordIndex()] = numbers.get(1);
+					nodesExpanded[algIndex][twg.getIndex()] = numbers.get(0);
+					maxFrontierSize[algIndex][twg.getIndex()] = numbers.get(1);
 				}
 			}
 			
-			testWordStrings[twg.getWordIndex()] = Arrays.toString(testWord);
+			testWordStrings[twg.getIndex()] = Arrays.toString(testWord);
 		}
 		
 		signalProgression();

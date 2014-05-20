@@ -211,7 +211,7 @@ public class Membership {
 				wl.add(i);
 			}
 			
-			//A* employs a heuristic-driven queue
+			//Best-first employs a heuristic-driven queue
 			PrioritySet frontier = new PrioritySet(a, comparator);
 			SearchState initialSearchState = new SearchState(a.getInitialState(), 
 															 a.getInitialRegisters(), 
@@ -247,7 +247,6 @@ public class Membership {
 		public void setAutomaton(RegisterAutomaton ra) {
 			this.a = (HRAutomaton) ra;
 			
-			System.out.print("(building HRA heuristic) ");
 			a.loadHeuristic();
 
 			this.comparator = new Comparator<SearchNode>() {
@@ -318,7 +317,6 @@ public class Membership {
 		public void setAutomaton(RegisterAutomaton ra) {
 			this.a = (HRAutomaton) ra;
 			
-			System.out.print("(building HRA heuristic) ");
 			a.loadHeuristic();
 
 			this.comparator = new Comparator<SearchNode>() {
@@ -329,7 +327,7 @@ public class Membership {
 					
 					return sizeDiff == 0 ?							
 							a.getHScore(o1.state.state, o1.state.w.size()) - a.getHScore(o2.state.state, o2.state.w.size()) :
-							-sizeDiff;
+							sizeDiff;
 				}
 			};
 		}

@@ -71,7 +71,7 @@ public abstract class Test {
 	protected abstract void run() throws TestException;
 	protected void customPrint(ResultsContainer rc) {
 	}
-	protected abstract void prepare() ;
+	protected void prepare() {}
 	
 	//Tools
 	private void outputResults() {
