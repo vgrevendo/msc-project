@@ -267,4 +267,8 @@ All done. In case membership fails, even for the has-next property, LDFTS is una
 05/22/14
 In case of membership failure (which is what we are trying to prove), it's normal A* fails miserably: it will have the same behaviour as LDFTS.
 
-Trying with more complex 
+Trying with more complex example programs for HNP: Multiple Random Iterator Generation results in ultra large traces, and these take ages to process.
+
+A less naïve version of the translation (only relevant events) allow to 
+
+Weirdly enough, the number of expanded nodes increases linearly, and the time squarely.

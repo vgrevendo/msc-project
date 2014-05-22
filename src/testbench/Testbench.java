@@ -9,6 +9,8 @@ import java.util.Scanner;
 
 import testbench.lister.TestLister;
 import testbench.programs.translator.NaiveHasNextTranslator;
+import testbench.programs.translator.StrictHasNextTranslator;
+import testbench.programs.translator.Translator;
 import testbench.tests.AsymptoticMembershipTest;
 import testbench.tests.ListMembershipTest;
 import algorithms.Membership;
@@ -28,12 +30,13 @@ public class Testbench {
 		
 		try {
 			hasNextPropertyTest();
+			//strictHasNextPropertyTest();
 		} catch (FileNotFoundException | ParseException e) {
 			System.out.println("An error occurred:");
 			e.printStackTrace();
 		}
 		
-		//translationTest();
+//		translationTest();
 	}
 	
 	public static void mbsTests() throws FileNotFoundException, ParseException {
@@ -148,14 +151,14 @@ public class Testbench {
 			
 			@Override
 			public int size() {
-				return 20;
+				return 10;
 			}
 			
 			@Override
 			protected int[] nextResource() {
 				if(translation == null) {
 					try {
-						NaiveHasNextTranslator translator = new NaiveHasNextTranslator(HNP_TEST_TRACE_PATH);
+						Translator translator = new NaiveHasNextTranslator(HNP_TEST_TRACE_PATH);
 						translation = translator.translate();
 					} catch (FileNotFoundException e) {
 						System.out.println("Could not load word from trace...");
@@ -164,7 +167,57 @@ public class Testbench {
 					}
 				}
 				
-				return Arrays.copyOfRange(translation, 0, 1000*(index+1));
+				return Arrays.copyOfRange(translation, 0, translation.length*(index+1)/20);
+			}
+		};
+		
+		Test lmt = new ListMembershipTest(ra, algorithms, twg);
+		lmt.test();
+		
+		ResultsContainer.getContainer().flush();
+	}
+	
+	/**
+	 * Testing the hasNext property with the newly created automata example6.fma,
+	 * while translating the input trace intelligently
+	 * @throws ParseException 
+	 * @throws FileNotFoundException 
+	 */
+	public static void strictHasNextPropertyTest() throws FileNotFoundException, ParseException {
+		MBSDecisionAlgorithm[] algorithms = new MBSDecisionAlgorithm[] {
+				//Membership.ldftsCheck,
+				Membership.bflgsCheck,
+				//Membership.bestFirstCheck,
+				//Membership.aStarCheck
+				};
+
+		RegisterAutomaton ra = new HRAutomaton("res/example6.fma", 6000);
+		ra.displayInfo();
+		
+		TestLister<int[]> twg = new TestLister<int[]>() {
+			private int[] translation;
+			
+			@Override
+			public int size() {
+				return 10;
+			}
+			
+			@Override
+			protected int[] nextResource() {
+				if(translation == null) {
+					try {
+						Translator translator = new StrictHasNextTranslator(HNP_TEST_TRACE_PATH);
+						translation = translator.translate();
+					} catch (FileNotFoundException e) {
+						System.out.println("Could not load word from trace...");
+						e.printStackTrace();
+						translation = new int[100000];
+					}
+				}
+				
+				System.out.println("Translation yields word of size " + translation.length*(index+1)/size());
+				
+				return Arrays.copyOfRange(translation, 0, translation.length*(index+1)/20);
 			}
 		};
 		

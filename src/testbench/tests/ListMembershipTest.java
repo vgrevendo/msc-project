@@ -46,6 +46,7 @@ public class ListMembershipTest extends Test {
 	protected void run() throws TestException {
 		//Consistency checks are integrated in the tests themselves
 		boolean result = false;
+		int[] inputSizes = new int[twg.size()];
 		
 		//make the tests
 		//For each word, test each algorithm
@@ -75,12 +76,15 @@ public class ListMembershipTest extends Test {
 					maxFrontierSize[algIndex][twg.getIndex()] = numbers.get(1);
 				}
 			}
+			
+			inputSizes[twg.getIndex()] = testWord.length;
 		}
 		
 		signalProgression();
 		
 		
 		//print all useful data
+		addCsvColumn(inputSizes, "Word size");
 		for(int algIndex = 0; algIndex < algorithms.length; algIndex++) {
 			MBSDecisionAlgorithm algorithm = algorithms[algIndex];
 			
