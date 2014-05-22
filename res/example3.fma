@@ -1,3 +1,5 @@
+-- An automaton recognising words where at least two distinct
+-- letters are repeated
 q0 1
 q1 2
 q2 3

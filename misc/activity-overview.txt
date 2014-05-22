@@ -161,6 +161,7 @@ f_s is difficult to find. The best way would be to have a real function making a
 	f_q1_q2(n) = m * f_q2(n-1) if f_q2(n-1) > 0 else 0
 and f_q1 = sum(f_q1_q, q adjacent to q1).
 
+
 (NB: suppose adjacent node s has p paths to final state. If we have one transition to s, that means still p paths. If we have two transitions, that means 2p paths, because for each path we can choose either the first or the second transition twice the number of possibilities).)
 
 Each time an f_s is computed, its value is stored in an array (and not a hashset!) contained within the physical set, and can then be reused later. If adjacent values exist, this method is not too expensive. It is however impractical if, say, the aim is to test only one word of length 1,000, 10,000, …
@@ -249,3 +250,21 @@ Useful to test properties. Things to do:
 Also two papers to read about related subjects: Paths through graphs, and testing algorithms.
 
 Will start by gathering test data from Java programs.
+
+05/20/14
+Succeeded in creating a JDI implementation to monitor a program's acitvity. Now possible to translate into intelligent integers, for property checking.
+
+05/21/14
+1. Write translator
+2. Write automaton example
+3. Extend test infrastructure for 1 word only
+4. Test with different program examples
+
+Tests made on single-iterator example: single-iterator.tr
+
+All done. In case membership fails, even for the has-next property, LDFTS is unable to terminate in time. A* has terrible performance as well; the only one more or less reasonable is BFLGS.
+
+05/22/14
+In case of membership failure (which is what we are trying to prove), it's normal A* fails miserably: it will have the same behaviour as LDFTS.
+
+Trying with more complex 

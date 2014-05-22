@@ -1,3 +1,4 @@
+-- A miniature diamond automaton where BFS is asymptotically better
 q0 1
 q1 2
 q2 1 F

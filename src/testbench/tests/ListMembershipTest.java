@@ -46,7 +46,6 @@ public class ListMembershipTest extends Test {
 	protected void run() throws TestException {
 		//Consistency checks are integrated in the tests themselves
 		boolean result = false;
-		String[] testWordStrings = new String[twg.size()];
 		
 		//make the tests
 		//For each word, test each algorithm
@@ -76,8 +75,6 @@ public class ListMembershipTest extends Test {
 					maxFrontierSize[algIndex][twg.getIndex()] = numbers.get(1);
 				}
 			}
-			
-			testWordStrings[twg.getIndex()] = Arrays.toString(testWord);
 		}
 		
 		signalProgression();
@@ -91,7 +88,6 @@ public class ListMembershipTest extends Test {
 			addCsvColumn(maxFrontierSize[algIndex], algorithm + " frontier");
 			addCsvColumn(times[algIndex], algorithm + " time");
 		}
-		addCsvColumn(testWordStrings, "Test word");
 	}
 	
 	@Override

@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 
 import com.sun.jdi.Bootstrap;
-import com.sun.jdi.IncompatibleThreadStateException;
 import com.sun.jdi.Location;
 import com.sun.jdi.Method;
 import com.sun.jdi.ReferenceType;
@@ -40,7 +39,7 @@ import com.sun.jdi.request.MethodExitRequest;
 public class Tracer {
 	public static final String PATH_ROOT = "gen/trace";
 	public static final int DISPLAY_PROGRESS_MILESTONE = 1000;
-	public static final int MAX_NUM_ENTRIES = 10000;
+	public static final int MAX_NUM_ENTRIES = 100000;
 	
 	private VirtualMachine vm;
 	private PrintWriter output;

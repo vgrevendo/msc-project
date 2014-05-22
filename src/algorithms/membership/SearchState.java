@@ -101,5 +101,10 @@ public class SearchState {
 		return true;
 	}
 
+	@Override
+	public String toString() {
+		return state.name + " " + Arrays.toString(registers)
+				+ ", w:" + w.subList(0, Math.min(4, w.size())).toString(); 
+	}
 	
 }

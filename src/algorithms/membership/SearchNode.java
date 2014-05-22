@@ -1,5 +1,6 @@
 package algorithms.membership;
 
+import java.util.Arrays;
 import java.util.Stack;
 
 import algorithms.tools.ResultsContainer;
@@ -66,5 +67,8 @@ public class SearchNode {
 		return true;
 	}
 
-	
+	@Override
+	public String toString() {
+		return state.toString();
+	}
 }
