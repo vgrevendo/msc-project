@@ -289,3 +289,12 @@ SAT subsuming.
 ---
 
 No need for word comparison when computing hashcodes for BFLGS: for each state in a frontier, all word-to-explore lengths are the same.
+
+Action plan:
+------------
+1. Go over BFLGS for some low-level optimisations and run the same tests again for comparison. Use profiler if necessary.
+2.a Look at return values for traces; modify the hasNext property test.
+2.b Implement garbage collection given this: extend the automaton.
+2. Implement the properties on Wikipedia and test them.
+3. Ask for Radu's paper.
+4. Explore new ways of automaton exploration: Bloom filters? belief states? sets in registers? Can be useful for emptiness.
