@@ -272,3 +272,20 @@ Trying with more complex example programs for HNP: Multiple Random Iterator Gene
 A less naïve version of the translation (only relevant events) allow to 
 
 Weirdly enough, the number of expanded nodes increases linearly, and the time squarely.
+
+05/26/14
+Email Runtime Verification owner: to get properties. [DONE]
+DaCapo: traces from other projects, run with custom debugger.
+More properties.
+Paper: API usage patterns + Radu's paper
+Translation including garbage collection preprocessing: grabage state.
+Use profiler to accelerate
+
+Bloom Filters: fast membership checking in a set.
+
+Sets in registers
+SAT subsuming.
+
+---
+
+No need for word comparison when computing hashcodes for BFLGS: for each state in a frontier, all word-to-explore lengths are the same.

@@ -29,8 +29,8 @@ public class Testbench {
 		System.out.println("This is testbench, running...");
 		
 		try {
-			hasNextPropertyTest();
-			//strictHasNextPropertyTest();
+			//hasNextPropertyTest();
+			strictHasNextPropertyTest();
 		} catch (FileNotFoundException | ParseException e) {
 			System.out.println("An error occurred:");
 			e.printStackTrace();
@@ -199,7 +199,7 @@ public class Testbench {
 			
 			@Override
 			public int size() {
-				return 10;
+				return 6;
 			}
 			
 			@Override
