@@ -1,6 +1,5 @@
 package testbench.tests;
 
-import java.util.Arrays;
 import java.util.List;
 
 import testbench.Test;
@@ -16,7 +15,7 @@ import automata.RegisterAutomaton;
  * @author vincent
  */
 public class ListMembershipTest extends Test {
-	private final TestLister<int[]> twg;
+	private final TestLister<List<Integer>> twg;
 	private final MBSDecisionAlgorithm[] algorithms;
 	
 	//Results
@@ -28,7 +27,7 @@ public class ListMembershipTest extends Test {
 	
 	public ListMembershipTest(RegisterAutomaton a, 
 								MBSDecisionAlgorithm[] algorithms, 
-								TestLister<int[]> twg) {
+								TestLister<List<Integer>> twg) {
 		super("Listed Membership Checks", a);
 		this.algorithms = algorithms;
 		this.twg = twg;
@@ -50,7 +49,9 @@ public class ListMembershipTest extends Test {
 		
 		//make the tests
 		//For each word, test each algorithm
-		for(int[] testWord : twg) {
+		for(List<Integer> testWord : twg) {
+			System.out.println("Current word size: " + testWord.size() + " symbols");
+			
 			for(int algIndex = 0; algIndex < algorithms.length; algIndex++) {
 				signalProgression();
 				
@@ -66,7 +67,7 @@ public class ListMembershipTest extends Test {
 				times[algIndex][twg.getIndex()] = (int) testTime;
 				
 				if(algIndex > 0 && results[twg.getIndex()] != result)
-					throw new TestException("Consistency failure: algorithms disagree on " + Arrays.toString(testWord));
+					throw new TestException("Consistency failure: algorithms disagree on " + testWord.toString());
 				else
 					results[twg.getIndex()] = result;
 				
@@ -77,7 +78,7 @@ public class ListMembershipTest extends Test {
 				}
 			}
 			
-			inputSizes[twg.getIndex()] = testWord.length;
+			inputSizes[twg.getIndex()] = testWord.size();
 		}
 		
 		signalProgression();

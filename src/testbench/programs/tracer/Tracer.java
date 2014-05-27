@@ -39,13 +39,11 @@ import com.sun.jdi.request.MethodExitRequest;
 public class Tracer {
 	public static final String PATH_ROOT = "gen/trace";
 	public static final int DISPLAY_PROGRESS_MILESTONE = 1000;
-	public static final int MAX_NUM_ENTRIES = 100000;
 	
 	private VirtualMachine vm;
 	private PrintWriter output;
 	private int entries = 0;
 	private String mainClassName;
-	
 	
 	//Instance
  	public void connect(int portNumber) throws Exception {
@@ -174,11 +172,6 @@ public class Tracer {
 				
 				if(entries % DISPLAY_PROGRESS_MILESTONE == 0) {
 					System.out.println(entries + " entries recorded");
-				}
-				
-				if(entries >= MAX_NUM_ENTRIES) {
-					vm.exit(0);
-					return;
 				}
 			}
 			

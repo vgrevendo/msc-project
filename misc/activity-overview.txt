@@ -297,4 +297,25 @@ Action plan:
 2.b Implement garbage collection given this: extend the automaton.
 2. Implement the properties on Wikipedia and test them.
 3. Ask for Radu's paper.
-4. Explore new ways of automaton exploration: Bloom filters? belief states? sets in registers? Can be useful for emptiness.
+4.a Look at assigning hash maps to each state in order not to compute “expand”.
+4.b Explore new ways of automaton exploration: Bloom filters? belief states? sets in registers? Can be useful for emptiness.
+5. Look at Runtime Verification papers: can their techniques be used with RA? How do logic languages behave regarding RA?
+
+05/27/14
+Idea to be explored later: set-based BFS puts word-to-explore lengths on the same level. What if a search algorithm did the same but with the configuration's “current state” or the configuration's “register contents” (up to isomorphism)? To be tried out...
+
+Go for action plan:
+1. Going through BFLGS for optimisations.
+Will clone search state and search node code for direct optimisations.
+
+Stripped BFLGS (now opti BFLGS) from redundant hashcode checking: performance is skyrocketting! Will acquire more test data because currently insufficient.
+
+Maximum test data length is now 30,000 symbols. Now 50,000! But the JVM seems to be doing plenty of stuff during the tests, therefore killing the performance for some words.
+
+VisualVM says the most used methods are “decide” and “expand”, which is not a surprise. Trying to optimise now...
+
+To be tested: replace the array list by a linked list for the left-over word. Try generating all the search states and choose from them, rather than creating new objects each time. Try collapsing search states and nodes.
+
+Tried right away: change decision function type from “int[]” to “list<int>” where the implementation of the list is not important.
+
+Analysing the performance increase pooling could have on this memory issue: Garbage Collection seems to happen at the wrong moment, killing measures. How to circumvent this by reusing objects?

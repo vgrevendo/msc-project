@@ -2,6 +2,7 @@ package testbench.programs.translator;
 
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.List;
 
 public class StrictHasNextTranslator extends Translator {
 
@@ -10,7 +11,7 @@ public class StrictHasNextTranslator extends Translator {
 	}
 
 	@Override
-	public int[] translate() {
+	public List<Integer> translate() {
 		ArrayList<Integer> word = new ArrayList<>();
 		
 		removeHeaderComments();
@@ -56,7 +57,7 @@ public class StrictHasNextTranslator extends Translator {
 		} while(nextIfNext());
 		
 		sc.close();
-		return listToArray(word);
+		return word;
 	}
 
 }

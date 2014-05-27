@@ -4,7 +4,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.text.ParseException;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
 import testbench.lister.TestLister;
@@ -23,14 +24,29 @@ import automata.hra.HRAutomaton;
 
 public class Testbench {
 	public final static int TEST_LENGTH = 1500;
-	public final static String HNP_TEST_TRACE_PATH = "gen/trace3.tr";
+	public final static String HNP_TEST_TRACE_PATH = "gen/trace4.tr";
 	
+	/**
+	 * A stub for parameter parsing has been implemented here,
+	 * to make launches from the command line easier.
+	 * @param args
+	 */
 	public static void main(String[] args) {
 		System.out.println("This is testbench, running...");
 		
 		try {
+			
+			switch(args[0]) {
+			case "hasNextProperty-STRICT":
+			default:
+				double p = Double.parseDouble(args[2]);
+				if(args[1].equals("LATEST"))
+					strictHasNextPropertyTest(findLatestFilename("gen/trace", "tr"), p);
+				else
+					strictHasNextPropertyTest(args[1], p);
+			}
+			
 			//hasNextPropertyTest();
-			strictHasNextPropertyTest();
 		} catch (FileNotFoundException | ParseException e) {
 			System.out.println("An error occurred:");
 			e.printStackTrace();
@@ -48,15 +64,19 @@ public class Testbench {
 		RegisterAutomaton ra = new HRAutomaton("res/example3.fma", TEST_LENGTH);
 		ra.displayInfo();
 		
-		TestLister<int[]> twg = new TestLister<int[]>() {
+		TestLister<List<Integer>> twg = new TestLister<List<Integer>>() {
 			@Override
 			public int size() {
 				return TEST_LENGTH-7;
 			}
 			
 			@Override
-			protected int[] nextResource() {
-				return new int[index+5];
+			protected List<Integer> nextResource() {
+				List<Integer> l = new ArrayList<>(index+5);
+				for(int i = 0; i < index + 5; i++) {
+					l.add(0);
+				}
+				return l;
 			}
 		};
 		
@@ -80,15 +100,19 @@ public class Testbench {
 		
 		final int numWords = 100;
 
-		TestLister<int[]> twg = new TestLister<int[]>() {
+		TestLister<List<Integer>> twg = new TestLister<List<Integer>>() {
 			@Override
 			public int size() {
-				return numWords;
+				return TEST_LENGTH-7;
 			}
 			
 			@Override
-			protected int[] nextResource() {
-				return new int[index+5];
+			protected List<Integer> nextResource() {
+				List<Integer> l = new ArrayList<>(index+5);
+				for(int i = 0; i < index + 5; i++) {
+					l.add(0);
+				}
+				return l;
 			}
 		};
 		
@@ -146,28 +170,31 @@ public class Testbench {
 		RegisterAutomaton ra = new HRAutomaton("res/example6.fma", 6000);
 		ra.displayInfo();
 		
-		TestLister<int[]> twg = new TestLister<int[]>() {
-			private int[] translation;
+		TestLister<List<Integer>> twg = new TestLister<List<Integer>>() {
+			private final static double TRANSLATION_PERCENTAGE = 0.4D;
+			private final static double ANALYSIS_STEP = 0.05D;
+			private List<Integer> translation;
 			
 			@Override
 			public int size() {
-				return 10;
+				return (int) (1.0/ANALYSIS_STEP);
 			}
 			
 			@Override
-			protected int[] nextResource() {
+			protected List<Integer> nextResource() {
 				if(translation == null) {
 					try {
 						Translator translator = new NaiveHasNextTranslator(HNP_TEST_TRACE_PATH);
 						translation = translator.translate();
+						System.out.println("Translation size: " + translation.size());
 					} catch (FileNotFoundException e) {
 						System.out.println("Could not load word from trace...");
 						e.printStackTrace();
-						translation = new int[100000];
+						System.exit(-1);
 					}
 				}
 				
-				return Arrays.copyOfRange(translation, 0, translation.length*(index+1)/20);
+				return translation.subList(0, Math.min((int)(translation.size()*(index+1)*ANALYSIS_STEP*TRANSLATION_PERCENTAGE), translation.size()));
 			}
 		};
 		
@@ -183,10 +210,11 @@ public class Testbench {
 	 * @throws ParseException 
 	 * @throws FileNotFoundException 
 	 */
-	public static void strictHasNextPropertyTest() throws FileNotFoundException, ParseException {
+	public static void strictHasNextPropertyTest(final String tracePath, final double tracePercentage) throws FileNotFoundException, ParseException {
 		MBSDecisionAlgorithm[] algorithms = new MBSDecisionAlgorithm[] {
 				//Membership.ldftsCheck,
-				Membership.bflgsCheck,
+				//Membership.bflgsCheck,
+				Membership.optiBflgsCheck,
 				//Membership.bestFirstCheck,
 				//Membership.aStarCheck
 				};
@@ -194,30 +222,30 @@ public class Testbench {
 		RegisterAutomaton ra = new HRAutomaton("res/example6.fma", 6000);
 		ra.displayInfo();
 		
-		TestLister<int[]> twg = new TestLister<int[]>() {
-			private int[] translation;
+		TestLister<List<Integer>> twg = new TestLister<List<Integer>>() {
+			private final static double ANALYSIS_STEP = 0.1D;
+			private List<Integer> translation;
 			
 			@Override
 			public int size() {
-				return 6;
+				return (int) (1.0/ANALYSIS_STEP);
 			}
 			
 			@Override
-			protected int[] nextResource() {
+			protected List<Integer> nextResource() {
 				if(translation == null) {
 					try {
-						Translator translator = new StrictHasNextTranslator(HNP_TEST_TRACE_PATH);
+						Translator translator = new StrictHasNextTranslator(tracePath);
 						translation = translator.translate();
+						System.out.println("Translation size: " + translation.size());
 					} catch (FileNotFoundException e) {
 						System.out.println("Could not load word from trace...");
 						e.printStackTrace();
-						translation = new int[100000];
+						System.exit(-1);
 					}
 				}
 				
-				System.out.println("Translation yields word of size " + translation.length*(index+1)/size());
-				
-				return Arrays.copyOfRange(translation, 0, translation.length*(index+1)/20);
+				return translation.subList(0, Math.min((int)(translation.size()*(index+1)*ANALYSIS_STEP*tracePercentage), translation.size()));
 			}
 		};
 		
@@ -233,7 +261,7 @@ public class Testbench {
 	public static void translationTest() {
 		try {
 			Scanner sc = new Scanner(new File(HNP_TEST_TRACE_PATH));
-			int[] word = (new NaiveHasNextTranslator(HNP_TEST_TRACE_PATH)).translate();
+			List<Integer> word = (new NaiveHasNextTranslator(HNP_TEST_TRACE_PATH)).translate();
 			PrintWriter pw = new PrintWriter("gen/translationtest.tr");
 			
 			int i = 0;
@@ -243,7 +271,7 @@ public class Testbench {
 					continue;
 				}
 				
-				pw.println(word[2*i] + " " + word[2*i+1] + " " + line);
+				pw.println(word.get(2*i) + " " + word.get(2*i+1) + " " + line);
 				i++;
 			}
 			
@@ -254,5 +282,15 @@ public class Testbench {
 		}
 		
 		System.out.println("DONE");
+	}
+
+	private static String findLatestFilename(String root, String extension) {
+		int id = 0;
+		
+		while((new File(root + id + "." + extension)).exists()) {
+			id ++;
+		}
+		
+		return root + (id-1) + "." + extension;
 	}
 }

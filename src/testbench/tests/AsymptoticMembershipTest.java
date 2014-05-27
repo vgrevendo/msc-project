@@ -1,6 +1,5 @@
 package testbench.tests;
 
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
@@ -18,7 +17,7 @@ import testbench.lister.TestLister;
  *
  */
 public class AsymptoticMembershipTest extends Test {
-	private final TestLister<int[]> twg;
+	private final TestLister<List<Integer>> twg;
 	private final TestLister<RegisterAutomaton> ag;
 	private final MBSDecisionAlgorithm[] algorithms;
 	
@@ -31,7 +30,7 @@ public class AsymptoticMembershipTest extends Test {
 	private final int[] ns;
 
 	public AsymptoticMembershipTest(TestLister<RegisterAutomaton> ag, 
-									TestLister<int[]> twg,
+									TestLister<List<Integer>> twg,
 									MBSDecisionAlgorithm[] algorithms) {
 		//We don't give an automaton to the super class, because we don't need any
 		super("Asymptotic MBS", null);
@@ -57,14 +56,14 @@ public class AsymptoticMembershipTest extends Test {
 		if(twg.size() != ag.size()) 
 			throw new TestException("Word lister and automaton lister have different sizes!");
 		
-		Iterator<int[]> twgIt = twg.iterator();
+		Iterator<List<Integer>> twgIt = twg.iterator();
 		Iterator<RegisterAutomaton> ragIt = ag.iterator();
 		
 		//make the tests
 		//For each word and automaton, test each algorithm
 		while(twgIt.hasNext() && ragIt.hasNext()) {
 			RegisterAutomaton a = ragIt.next();
-			int[] testWord = twgIt.next();
+			List<Integer> testWord = twgIt.next();
 			
 			for(int algIndex = 0; algIndex < algorithms.length; algIndex++) {
 				signalProgression();
@@ -87,7 +86,7 @@ public class AsymptoticMembershipTest extends Test {
 				runTimes[algIndex][twg.getIndex()] = (int) testTime;
 				
 				if(algIndex > 0 && results[twg.getIndex()] != result)
-					throw new TestException("Consistency failure: algorithms disagree on " + Arrays.toString(testWord));
+					throw new TestException("Consistency failure: algorithms disagree on " + testWord.toString());
 				else
 					results[twg.getIndex()] = result;
 				
@@ -98,7 +97,7 @@ public class AsymptoticMembershipTest extends Test {
 				}
 			}
 			
-			ns[twg.getIndex()] = testWord.length;
+			ns[twg.getIndex()] = testWord.size();
 		}
 		
 		signalProgression();

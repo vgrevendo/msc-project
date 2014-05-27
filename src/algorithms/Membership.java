@@ -11,6 +11,8 @@ import algorithms.membership.MBSDecisionAlgorithm;
 import algorithms.membership.PrioritySet;
 import algorithms.membership.SearchNode;
 import algorithms.membership.SearchState;
+import algorithms.membership.bflgs.BFLGSSearchNode;
+import algorithms.membership.bflgs.BFLGSSearchState;
 import algorithms.tools.ResultsContainer;
 import automata.RegisterAutomaton;
 import automata.State;
@@ -24,7 +26,7 @@ public class Membership {
 	public static final MBSDecisionAlgorithm intelligentCheck = new MBSDecisionAlgorithm("Intelli-mbs") {
 
 		@Override
-		public boolean decide(RegisterAutomaton automaton, int[] word) {
+		public boolean decide(RegisterAutomaton automaton, List<Integer> word) {
 			if(Tools.isDeterministic(automaton))
 				return deterministicCheck.decide(automaton, word);
 			
@@ -39,11 +41,18 @@ public class Membership {
 	public static final MBSDecisionAlgorithm deterministicCheck = new MBSDecisionAlgorithm("Det-mbs") {
 		
 		@Override
-		public boolean decide(RegisterAutomaton automaton, int[] word) {
+		public boolean decide(RegisterAutomaton automaton, List<Integer> w) {
 			State currentState = automaton.getInitialState();
 			int[] registers = automaton.getInitialRegisters();
 			int containingRegister = 0;
 			Integer assignmentRegister = 0;
+			
+			int[] word = new int[w.size()];
+			int i = 0;
+			for(int l : w) {
+				word[i] = l;
+				i++;
+			}
 			
 			//Simply follow the path
 			for(int wcursor = 0; wcursor < word.length; wcursor++) {
@@ -78,22 +87,16 @@ public class Membership {
 	 */
 	public static final MBSDecisionAlgorithm ldftsCheck = new MBSDecisionAlgorithm("Ldfts-mbs") {
 		@Override
-		public boolean decide(RegisterAutomaton automaton, int[] word) {
+		public boolean decide(RegisterAutomaton automaton, List<Integer> word) {
 			ResultsContainer rc = ResultsContainer.getContainer();
 			int maxFrontierSize = 0;
 			int nodesExpanded = 0;
-			
-			//Convert the word into a list, better for later
-			ArrayList<Integer> wl = new ArrayList<>();
-			for(int i : word) {
-				wl.add(i);
-			}
 			
 			//Depth-first search implies a stack storing the frontier
 			Stack<SearchNode> frontier = new Stack<>();
 			SearchState initialSearchState = new SearchState(automaton.getInitialState(), 
 															 automaton.getInitialRegisters(), 
-															 wl, automaton);
+															 word, automaton);
 			frontier.add(new SearchNode(initialSearchState, null, -1));
 			
 			//Main search loop
@@ -130,16 +133,10 @@ public class Membership {
 	public static final MBSDecisionAlgorithm bflgsCheck = new MBSDecisionAlgorithm("Bflgs-mbs") {
 		
 		@Override
-		public boolean decide(RegisterAutomaton automaton, int[] word) {
+		public boolean decide(RegisterAutomaton automaton, List<Integer> word) {
 			ResultsContainer rc = ResultsContainer.getContainer();
 			int maxFrontierSize = 0;
 			int nodesExpanded = 0;
-			
-			//Convert the word into a list, better for later
-			ArrayList<Integer> wl = new ArrayList<>();
-			for(int i : word) {
-				wl.add(i);
-			}
 			
 			//BFLGS implies a double set storing the frontier
 			List<HashSet<SearchNode>> sets = new ArrayList<>();
@@ -152,7 +149,7 @@ public class Membership {
 			//Initial state
 			SearchState initialSearchState = new SearchState(automaton.getInitialState(), 
 															 automaton.getInitialRegisters(), 
-															 wl, automaton);
+															 word, automaton);
 			frontier.add(new SearchNode(initialSearchState, null, -1));
 			
 			//Main search loop
@@ -190,6 +187,63 @@ public class Membership {
 			return false;
 		}
 	};
+	
+	/**
+	 * (The optimised version of the previous one)
+	 * A second naïve version of nondeterministic membership checking, performing a
+	 * Breadth-First Local Graph Search into the automaton graph;  
+	 * BFLGS implies a double-set structure as a frontier. 
+	 */
+	public static final MBSDecisionAlgorithm optiBflgsCheck = new MBSDecisionAlgorithm("Opti-Bflgs-mbs") {
+		
+		@Override
+		public boolean decide(RegisterAutomaton automaton, List<Integer> word) {
+			ResultsContainer rc = ResultsContainer.getContainer();
+			int maxFrontierSize = 0;
+			int nodesExpanded = 0;
+			
+			//BFLGS implies a double set storing the frontier
+			Set<BFLGSSearchNode> frontier = new HashSet<BFLGSSearchNode>();
+			
+			//Initial state
+			BFLGSSearchState initialSearchState = new BFLGSSearchState(automaton.getInitialState(), 
+															 automaton.getInitialRegisters(), 
+															 word, automaton);
+			frontier.add(new BFLGSSearchNode(initialSearchState, null));
+			
+			//Main search loop
+			while(!frontier.isEmpty()) {
+				maxFrontierSize = Math.max(maxFrontierSize, frontier.size());
+
+				//See if a node is final, and 
+				// start filling up the next frontier
+				Set<BFLGSSearchNode> nextFrontier = new HashSet<BFLGSSearchNode>();
+				for(BFLGSSearchNode node: frontier) {
+					if(node.state.isFinal()) {
+						rc.addNumber(nodesExpanded);
+						rc.addNumber(maxFrontierSize);
+						return true;
+					}
+
+					//Add the adjacent nodes to the new frontier
+					List<BFLGSSearchState> nextStates = node.state.expand();
+					nodesExpanded++;
+					
+					for(BFLGSSearchState s : nextStates) {
+						nextFrontier.add(new BFLGSSearchNode(s, node));
+					}
+				}
+
+				//Then start over with the next frontier
+				frontier = nextFrontier;
+			}
+			
+			rc.addNumber(nodesExpanded);
+			rc.addNumber(maxFrontierSize);
+			
+			return false;
+		}
+	};
 
 	/**
 	 * A third less naive version, using the physical distance heuristic.
@@ -199,23 +253,17 @@ public class Membership {
 		private HRAutomaton a;
 		
 		@Override
-		public boolean decide(RegisterAutomaton automaton, int[] word) {
+		public boolean decide(RegisterAutomaton automaton, List<Integer> word) {
 			//Ignore the automaton given as an argument, we're going to use the one stored
 			ResultsContainer rc = ResultsContainer.getContainer();
 			int maxFrontierSize = 0;
 			int nodesExpanded = 0;
 			
-			//Convert the word into a list, better for later
-			ArrayList<Integer> wl = new ArrayList<>();
-			for(int i : word) {
-				wl.add(i);
-			}
-			
 			//Best-first employs a heuristic-driven queue
 			PrioritySet frontier = new PrioritySet(a, comparator);
 			SearchState initialSearchState = new SearchState(a.getInitialState(), 
 															 a.getInitialRegisters(), 
-															 wl, a);
+															 word, a);
 			frontier.add(new SearchNode(initialSearchState, null, -1));
 			
 			//Main search loop
@@ -269,23 +317,17 @@ public class Membership {
 		private HRAutomaton a;
 		
 		@Override
-		public boolean decide(RegisterAutomaton automaton, int[] word) {
+		public boolean decide(RegisterAutomaton automaton, List<Integer> word) {
 			//Ignore the automaton given as an argument, we're going to use the one stored
 			ResultsContainer rc = ResultsContainer.getContainer();
 			int maxFrontierSize = 0;
 			int nodesExpanded = 0;
 			
-			//Convert the word into a list, better for later
-			ArrayList<Integer> wl = new ArrayList<>();
-			for(int i : word) {
-				wl.add(i);
-			}
-			
 			//A* employs a heuristic-driven queue
 			PrioritySet frontier = new PrioritySet(a, comparator);
 			SearchState initialSearchState = new SearchState(a.getInitialState(), 
 															 a.getInitialRegisters(), 
-															 wl, a);
+															 word, a);
 			frontier.add(new SearchNode(initialSearchState, null, -1));
 			
 			//Main search loop

@@ -1,5 +1,7 @@
 package algorithms.membership;
 
+import java.util.List;
+
 import algorithms.tools.ResultsContainer;
 import automata.RegisterAutomaton;
 
@@ -29,11 +31,11 @@ public abstract class MBSDecisionAlgorithm {
 		this.ra = ra;
 	}
 	
-	public boolean decide(int[] word) {
+	public boolean decide(List<Integer> word) {
 		return decide(ra, word);
 	}
 	
-	public abstract boolean decide(RegisterAutomaton automaton, int[] word);
+	public abstract boolean decide(RegisterAutomaton automaton, List<Integer> word);
 
 	@Override
 	public String toString() {

@@ -14,7 +14,7 @@ public abstract class Translator {
 	}
 
 	//To be implemented by the extending class
-	public abstract int[] translate();
+	public abstract List<Integer> translate();
 
 	protected void removeHeaderComments() {
 		String line = sc.nextLine();

@@ -2,6 +2,7 @@ package testbench.programs.translator;
 
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Keep IDs as they are, and give the following codes to method calls:
@@ -19,7 +20,7 @@ public class NaiveHasNextTranslator extends Translator  {
 	}
 	
 	@Override
-	public int[] translate() {
+	public List<Integer> translate() {
 		ArrayList<Integer> word = new ArrayList<>();
 		
 		removeHeaderComments();
@@ -61,6 +62,6 @@ public class NaiveHasNextTranslator extends Translator  {
 		} while(nextIfNext());
 		
 		sc.close();
-		return listToArray(word);
+		return word;
 	}
 }

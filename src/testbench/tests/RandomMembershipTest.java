@@ -1,5 +1,8 @@
 package testbench.tests;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import testbench.Test;
 import testbench.TestException;
 import testbench.lister.TestLister;
@@ -20,7 +23,7 @@ public class RandomMembershipTest extends Test {
 	private final RegisterAutomaton a;
 	private final MBSDecisionAlgorithm[] algorithms;
 	private Integer[] minimalAlphabet;
-	private TestLister<int[]> twg;
+	private TestLister<List<Integer>> twg;
 	private ListMembershipTest lmt;
 	
 	//methods
@@ -40,12 +43,12 @@ public class RandomMembershipTest extends Test {
 		signalProgression();
 	}
 	
-	private int[] computeRandomWord() {
+	private List<Integer> computeRandomWord() {
 		int length = pickFrom(MAX_LENGTH-MIN_LENGTH) + MIN_LENGTH;
-		int[] word = new int[length];
+		List<Integer> word = new ArrayList<>(length);
 		
 		for(int sIndex = 0; sIndex < length; sIndex++) {
-			word[sIndex] = minimalAlphabet[pickFrom(minimalAlphabet.length)]+1;
+			word.add(minimalAlphabet[pickFrom(minimalAlphabet.length)]+1);
 		}
 		
 		return word;
@@ -55,7 +58,7 @@ public class RandomMembershipTest extends Test {
 	protected void prepare() {
 		minimalAlphabet = Tools.computeMinimalAlphabet(a);
 		
-		twg = new TestLister<int[]>() {
+		twg = new TestLister<List<Integer>>() {
 			
 			@Override
 			public int size() {
@@ -63,7 +66,7 @@ public class RandomMembershipTest extends Test {
 			}
 			
 			@Override
-			protected int[] nextResource() {
+			protected List<Integer> nextResource() {
 				return computeRandomWord();
 			}
 		};
