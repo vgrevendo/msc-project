@@ -208,7 +208,7 @@ public class Membership {
 			//Initial state
 			BFLGSSearchState initialSearchState = new BFLGSSearchState(automaton.getInitialState(), 
 															 automaton.getInitialRegisters(), 
-															 word, automaton);
+															 word, 0, automaton);
 			frontier.add(new BFLGSSearchNode(initialSearchState, null));
 			
 			//Main search loop

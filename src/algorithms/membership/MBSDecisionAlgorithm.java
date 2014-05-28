@@ -1,6 +1,7 @@
 package algorithms.membership;
 
 import java.util.List;
+import java.util.RandomAccess;
 
 import algorithms.tools.ResultsContainer;
 import automata.RegisterAutomaton;
@@ -32,6 +33,8 @@ public abstract class MBSDecisionAlgorithm {
 	}
 	
 	public boolean decide(List<Integer> word) {
+		if(!(word instanceof RandomAccess))
+			System.err.println("WARNING: " + name + " received slow-access list, algorithm will perform badly");
 		return decide(ra, word);
 	}
 	

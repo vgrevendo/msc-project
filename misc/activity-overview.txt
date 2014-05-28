@@ -318,4 +318,13 @@ To be tested: replace the array list by a linked list for the left-over word. Tr
 
 Tried right away: change decision function type from “int[]” to “list<int>” where the implementation of the list is not important.
 
-Analysing the performance increase pooling could have on this memory issue: Garbage Collection seems to happen at the wrong moment, killing measures. How to circumvent this by reusing objects?
+Analysing the performance increase pooling could have on this memory issue: Garbage Collection seems to happen at the wrong moment, killing measures. How to circumvent this by reusing objects? 
+
+05/28/14
+Article below claims this has no use, which makes sense. Maybe the question is rather, how to benchmark with Java?
+
+THE ERROR: two-fold:
+- by remembering the path of node parents, all nodes are kept! (Inform Peter Jeavons)
+- by making sublists of sublists, all the sublists are kept in memory, the whole tree!
+
+Taking out the sublists is a 10% gain on time.

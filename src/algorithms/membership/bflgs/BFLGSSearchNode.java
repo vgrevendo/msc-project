@@ -32,7 +32,7 @@ public class BFLGSSearchNode {
 		}
 		
 		ResultsContainer rc = ResultsContainer.getContainer();
-		rc.println("> Solution path (" + path.size() + " steps) for word " + path.peek().state.w.toString() + ":");
+		rc.println("> Solution path (" + path.size() + " steps) for word " + path.peek().state.fullWord.toString() + ":");
 		do {
 			currentNode = path.pop();
 			

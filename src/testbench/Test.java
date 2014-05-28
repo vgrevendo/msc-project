@@ -56,7 +56,6 @@ public abstract class Test {
 		}
 		
 		runtime = System.currentTimeMillis() - currentTime;
-		signalProgression();
 		
 		System.out.println("> End of acquisition.");
 		
@@ -65,6 +64,9 @@ public abstract class Test {
 		outputResults();
 		System.out.println("> End of test.");
 		System.out.println("-------------------------");
+		
+		//Clear the field
+		System.gc();
 	}
 	
 	//Implement/override these for more functionalities

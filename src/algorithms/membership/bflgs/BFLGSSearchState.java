@@ -26,29 +26,35 @@ import automata.State;
 public class BFLGSSearchState {
 	public final State state;
 	public final int[] registers;
-	public final List<Integer> w;
+	public final List<Integer> fullWord;
+	public final int nextIdx;
 	public final RegisterAutomaton a;
 	
-	public BFLGSSearchState(State state, int[] registers, List<Integer> word, RegisterAutomaton a) {
+	public BFLGSSearchState(State state, 
+							int[] registers, 
+							List<Integer> fullWord,
+							int nextIdx,
+							RegisterAutomaton a) {
 		this.state = state;
 		this.registers = registers;
-		this.w = word;
+		this.nextIdx = nextIdx;
 		this.a = a;
+		this.fullWord = fullWord;
 	}
 	
 	public boolean isFinal() {
-		return w.size() == 0 && state.isFinal;
+		return nextIdx >= fullWord.size() && state.isFinal;
 	}
 	
 	public List<BFLGSSearchState> expand() {
-		if(w.size() <= 0)
+		if(nextIdx >= fullWord.size())
 			return new ArrayList<>();
 			
 		//If search state is not terminal, find the adjacent search states
 		List<BFLGSSearchState> adjacentSearchStates = new ArrayList<>();
 		
 		//Get the next symbol
-		int symbol = w.get(0);
+		int symbol = fullWord.get(nextIdx);
 		
 		//Update the registers and find the containing register (default -1)
 		int containingRegister = -1;
@@ -68,7 +74,7 @@ public class BFLGSSearchState {
 		//Infer search states
 		if(adjacentStates != null)
 			for(State s: adjacentStates) {
-				adjacentSearchStates.add(new BFLGSSearchState(s, registers.clone(), w.subList(1, w.size()), a));
+				adjacentSearchStates.add(new BFLGSSearchState(s, registers.clone(), fullWord, nextIdx+1, a));
 			}
 		
 		return adjacentSearchStates;
@@ -106,7 +112,7 @@ public class BFLGSSearchState {
 	@Override
 	public String toString() {
 		return state.name + " " + Arrays.toString(registers)
-				+ ", w:" + w.subList(0, Math.min(4, w.size())).toString(); 
+				+ ", w:" + fullWord.subList(nextIdx, Math.min(nextIdx+4, fullWord.size())).toString(); 
 	}
 	
 }
