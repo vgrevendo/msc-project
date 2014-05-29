@@ -214,7 +214,8 @@ public class Testbench {
 		MBSDecisionAlgorithm[] algorithms = new MBSDecisionAlgorithm[] {
 				//Membership.ldftsCheck,
 				//Membership.bflgsCheck,
-				Membership.optiBflgsCheck,
+				//Membership.optiBflgsCheck,
+				Membership.forgetfulBflgsCheck,
 				//Membership.bestFirstCheck,
 				//Membership.aStarCheck
 				};

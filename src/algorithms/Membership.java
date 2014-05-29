@@ -244,6 +244,63 @@ public class Membership {
 			return false;
 		}
 	};
+	
+	/**
+	 * (This version is also optimised, but forgets about paths)
+	 * A second naïve version of nondeterministic membership checking, performing a
+	 * Breadth-First Local Graph Search into the automaton graph;  
+	 * BFLGS implies a double-set structure as a frontier. No paths are remembered.
+	 */
+	public static final MBSDecisionAlgorithm forgetfulBflgsCheck = new MBSDecisionAlgorithm("F-Bflgs-mbs") {
+		
+		@Override
+		public boolean decide(RegisterAutomaton automaton, List<Integer> word) {
+			ResultsContainer rc = ResultsContainer.getContainer();
+			int maxFrontierSize = 0;
+			int nodesExpanded = 0;
+			
+			//BFLGS implies a double set storing the frontier
+			Set<BFLGSSearchState> frontier = new HashSet<BFLGSSearchState>();
+			
+			//Initial state
+			BFLGSSearchState initialSearchState = new BFLGSSearchState(automaton.getInitialState(), 
+															 automaton.getInitialRegisters(), 
+															 word, 0, automaton);
+			frontier.add(initialSearchState);
+			
+			//Main search loop
+			while(!frontier.isEmpty()) {
+				maxFrontierSize = Math.max(maxFrontierSize, frontier.size());
+
+				//See if a node is final, and 
+				// start filling up the next frontier
+				Set<BFLGSSearchState> nextFrontier = new HashSet<BFLGSSearchState>();
+				for(BFLGSSearchState node: frontier) {
+					if(node.isFinal()) {
+						rc.addNumber(nodesExpanded);
+						rc.addNumber(maxFrontierSize);
+						return true;
+					}
+
+					//Add the adjacent nodes to the new frontier
+					List<BFLGSSearchState> nextStates = node.expand();
+					nodesExpanded++;
+					
+					for(BFLGSSearchState s : nextStates) {
+						nextFrontier.add(s);
+					}
+				}
+
+				//Then start over with the next frontier
+				frontier = nextFrontier;
+			}
+			
+			rc.addNumber(nodesExpanded);
+			rc.addNumber(maxFrontierSize);
+			
+			return false;
+		}
+	};
 
 	/**
 	 * A third less naive version, using the physical distance heuristic.

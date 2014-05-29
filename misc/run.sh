@@ -18,7 +18,7 @@ javac -d bin -sourcepath src src/testbench/Testbench.java
 #  insufficient.
 #  The two parameters at the end are "maximum number of elts in the list",
 #  and "maximum numbers of iterators" over those elements.
-java -cp bin -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=42890 testbench/programs/HasNextPropertyTracer MULTIPLE 50 50 &
+java -cp bin -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=42890 testbench/programs/HasNextPropertyTracer MULTIPLE 200 200 &
 
 # -- 2. Attach debugger --
 #  Target program is now waiting, and we want to attach
@@ -26,6 +26,4 @@ java -cp bin -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=42890
 java -cp bin:/usr/lib/jvm/java-7-openjdk-amd64/lib/tools.jar testbench/programs/tracer/Tracer 42890 testbench.programs.HasNextPropertyTracer
 
 # -- 3. Perform verification --
-#  With these parameters, the verification is bound to fail.
-#  For 60,000 symbols analysed, my machine had a "GC overhead limit exceed" OutOfMemoryError thrown.
-java -cp bin testbench/Testbench hasNextProperty-STRICT LATEST 0.5
+java -cp bin testbench/Testbench hasNextProperty-STRICT LATEST 1.0

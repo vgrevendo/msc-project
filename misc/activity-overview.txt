@@ -328,3 +328,9 @@ THE ERROR: two-fold:
 - by making sublists of sublists, all the sublists are kept in memory, the whole tree!
 
 Taking out the sublists is a 10% gain on time.
+Taking out paths allows to handle 100,000 symbols in under 10s, probably because GC issues are no longer.
+
+05/29/14
+Tiny optimisation: when considering checking a property, to know whether a search state is final, no need to check the word size: if it is possible to reach a final state with the current trace, the property check fails!
+
+
