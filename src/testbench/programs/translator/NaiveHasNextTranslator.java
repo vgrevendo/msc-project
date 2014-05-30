@@ -11,6 +11,7 @@ import java.util.List;
  * 3 to Iterator next
  * 4 to *
  * Give 0 to UNKNOWN or STATIC IDs
+ * @deprecated
  * @author vincent
  *
  */

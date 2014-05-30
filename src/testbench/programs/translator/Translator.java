@@ -40,6 +40,17 @@ public abstract class Translator {
 		return currentTokens[1];
 	}
 	
+	protected String nextReturnValue() {
+		if(currentTokens.length > 4) {
+			if(currentTokens[3].contains("void"))
+				return "void";
+			else
+				return "object";
+		}
+		
+		return currentTokens[3];
+	}
+	
 	protected void next() {
 		currentTokens = sc.nextLine().split(" ");
 	}

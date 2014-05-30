@@ -2,11 +2,10 @@ package testbench;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.PrintWriter;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Scanner;
 
 import testbench.lister.TestLister;
 import testbench.programs.translator.NaiveHasNextTranslator;
@@ -52,7 +51,7 @@ public class Testbench {
 			e.printStackTrace();
 		}
 		
-//		translationTest();
+		//translationTest();
 	}
 	
 	public static void mbsTests() throws FileNotFoundException, ParseException {
@@ -261,23 +260,14 @@ public class Testbench {
 	 */
 	public static void translationTest() {
 		try {
-			Scanner sc = new Scanner(new File(HNP_TEST_TRACE_PATH));
-			List<Integer> word = (new NaiveHasNextTranslator(HNP_TEST_TRACE_PATH)).translate();
-			PrintWriter pw = new PrintWriter("gen/translationtest.tr");
-			
-			int i = 0;
-			while(sc.hasNextLine()) {
-				String line = sc.nextLine();
-				if(line.contains("--")) {
-					continue;
+			List<Integer> translation = (new StrictHasNextTranslator("gen/trace6.tr")).translate();
+			Iterator<Integer> it = translation.iterator();
+			while(it.hasNext()) {
+				int i = it.next();
+				if(i == 416 && it.hasNext()) {
+					System.out.println(i + " - " + it.next());
 				}
-				
-				pw.println(word.get(2*i) + " " + word.get(2*i+1) + " " + line);
-				i++;
 			}
-			
-			pw.close();
-			sc.close();
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}

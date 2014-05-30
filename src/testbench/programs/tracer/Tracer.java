@@ -31,8 +31,11 @@ import com.sun.jdi.request.MethodEntryRequest;
 import com.sun.jdi.request.MethodExitRequest;
 
 /**
- * A debugging tool designed to make a trace of all(?) method calls in target
- * application, over the network.
+ * <p>A debugging tool designed to make a trace of all method calls in target
+ * application, over the network.</p>
+ * 
+ * <p>This new version now only listens to method exits, so that return values can be
+ * signalled as well. This should not change anything to property checking.</p>
  * @author vincent
  *
  */
@@ -81,6 +84,10 @@ public class Tracer {
 		}
 		
 		System.out.println("Successfully attached to " + vm.name());
+		if(vm.canGetMethodReturnValues())
+			System.out.println("This virtual machine can report method return values");
+		else
+			System.out.println("This virtual machine can't report method return values!");
 	}
 	
 	public List<Method> getAllMethods() {
@@ -104,21 +111,8 @@ public class Tracer {
 		return locations;
 	}
 	
-	public void setBreakPoints(List<Location> locations) {
-		EventRequestManager evtRqManager = vm.eventRequestManager();
-	}
-	
-	public void setBreakPointsAtEntry(List<Method> methods) {
-		EventRequestManager evtRqManager = vm.eventRequestManager();
-		for(Method m: methods) {
-			MethodEntryRequest entryRequest = evtRqManager.createMethodEntryRequest();
-			entryRequest.setSuspendPolicy(MethodEntryRequest.SUSPEND_ALL);
-			entryRequest.enable();
-		}
-	}
-	
-	public void listenForMethodEntries() throws InterruptedException {
-		output.println("-- Listening for method entries");
+	public void listenForMethodExits() throws InterruptedException {
+		output.println("-- Listening for method exits");
 		
 		EventRequestManager evtRqManager = vm.eventRequestManager();
 		EventQueue evtQueue = vm.eventQueue();
@@ -126,10 +120,10 @@ public class Tracer {
 		//Jump to main class
 		EventSet toResume = jumpToMainClass();
 		
-		//Create event request once
-		MethodEntryRequest entryRequest = evtRqManager.createMethodEntryRequest();
-		entryRequest.setSuspendPolicy(MethodEntryRequest.SUSPEND_ALL);
-		entryRequest.enable();
+		//Create method exit event request oncentry
+		MethodExitRequest exitRequest = evtRqManager.createMethodExitRequest();
+		exitRequest.setSuspendPolicy(MethodEntryRequest.SUSPEND_ALL);
+		exitRequest.enable();
 		
 		toResume.resume();
 		
@@ -142,32 +136,36 @@ public class Tracer {
 			while(evtIt.hasNext()) {
 				Event event = evtIt.next();
 				
-				if(!(event instanceof MethodEntryEvent)) {
-					if(event instanceof MethodExitEvent) {
-						MethodExitEvent exitEvent = (MethodExitEvent) event;
-						if(exitEvent.method().name().equals("main")) {
-							//Signal end
-							System.out.println("All method calls processed (" + entries + " calls)");
-							vm.exit(0);
-							return;
-						}
-					} else
-						continue;
-				}
+				//Only method exits are interesting to us, here.
+				if(!(event instanceof MethodExitEvent))
+					continue;
 				
-				MethodEntryEvent entryEvent = (MethodEntryEvent)event;
+				MethodExitEvent exitEvent = (MethodExitEvent) event;
+
+				//Handle the case where we 
+				if(exitEvent.method().name().equals("main")) {
+					//Signal end
+					System.out.println("All method calls processed (" + entries + " calls)");
+					vm.exit(0);
+					return;
+				}
 				
 				try {
-					if(entryEvent.method().isStatic())
-						output.println("[STATIC] " + entryEvent.method().declaringType().name() + " " + entryEvent.method().name());
+					if(exitEvent.method().isStatic())
+						output.print("[STATIC]");
 					else {
 						StackFrame frame;
-						frame = entryEvent.thread().frame(0);
-						output.println("[" + frame.thisObject().uniqueID() + "] " + entryEvent.method().declaringType().name() + " " + entryEvent.method().name());
+						frame = exitEvent.thread().frame(0);
+						output.print("[" + frame.thisObject().uniqueID() + "]");
 					}
 				} catch (Exception e) {
-					output.println("[UNKNOWN] " + entryEvent.method().declaringType().name() + " " + entryEvent.method().name());
+					output.print("[UNKNOWN]");
 				}
+				
+				output.println(" " + exitEvent.method().declaringType().name() + 
+							   " " + exitEvent.method().name() + 
+						       " " + exitEvent.returnValue());
+				
 				entries ++;
 				
 				if(entries % DISPLAY_PROGRESS_MILESTONE == 0) {
@@ -215,17 +213,11 @@ public class Tracer {
 				
 				//Signal success
 				System.out.println("Jump to main class is complete.");
-				output.println("[STATIC] " + entryEvent.method().declaringType().name() + " " + entryEvent.method().name());
+				output.println("-- Now recording method exits in " + entryEvent.method().declaringType().name() + "." + entryEvent.method().name());
 				entries ++;
 				
 				//Kill event request
 				initialEntryRequest.disable();
-				
-				//Add event request for when exiting main class
-				MethodExitRequest finalExitRequest = evtRqManager.createMethodExitRequest();
-				finalExitRequest.addClassFilter(mainClassName);
-				finalExitRequest.setSuspendPolicy(MethodExitRequest.SUSPEND_ALL);
-				finalExitRequest.enable();
 				
 				return evtSet;
 			}
@@ -261,10 +253,11 @@ public class Tracer {
 			initOutputFile();
 			
 			//Listen for events
-			listenForMethodEntries();
+			listenForMethodExits();
 			
 		} catch (Exception e) {
 			System.out.println("Trace failed: " + e.getMessage());
+			e.printStackTrace();
 		}
 		
 		//Close file

@@ -200,10 +200,24 @@ public class RegisterAutomaton extends Automaton {
 				throw new ParseException("Could not resolve reference to states " + tokens[0] + ", " + tokens[2], lineNumber);
 			}
 			
-			int label = Integer.parseInt(tokens[1])-1;
-			if(!mu.get(state1).containsKey(label))
-				mu.get(state1).put(label, new ArrayList<State>());
-			mu.get(state1).get(label).add(state2);
+			//Handle multi-labels
+			// Parse
+			ArrayList<Integer> labels = new ArrayList<>();
+			if(tokens[1].equals("*")) {
+				for(int l = 0; l < registers.length; l++)
+					labels.add(l);
+			} else {
+				String[] labelTokens = tokens[1].split(",");
+				for(String labelToken : labelTokens)
+					labels.add(Integer.parseInt(labelToken)-1);
+			}
+			
+			// Insert
+			for(int label : labels) {
+				if(!mu.get(state1).containsKey(label))
+					mu.get(state1).put(label, new ArrayList<State>());
+				mu.get(state1).get(label).add(state2);
+			}
 		}
 		
 		return lineNumber;

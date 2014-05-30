@@ -333,4 +333,9 @@ Taking out paths allows to handle 100,000 symbols in under 10s, probably because
 05/29/14
 Tiny optimisation: when considering checking a property, to know whether a search state is final, no need to check the word size: if it is possible to reach a final state with the current trace, the property check fails!
 
+2.a Replaced all entry events by exit events, in order to have their return value has well.
 
+Adapting translator to incorporate return values from hasNext: done. Now rewriting automaton.
+
+05/30/14
+There is a performance loss because of the paradigm: “Any symbol should either be present or stored”. The model should be extended with the possibility to ignore the next symbol.
