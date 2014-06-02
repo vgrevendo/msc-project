@@ -1,5 +1,6 @@
 package testbench.programs;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -76,11 +77,18 @@ public class HasNextPropertyTracer {
 			for(Iterator<Integer> it: toPop) {
 				sum += it.next();
 			}
+			
+			try {
+				System.in.read();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 		
 		System.out.println(numIterators + " iterators processed over " + length + " elements");
 		System.out.println("Expected sum: " + (numIterators*length*(length-1)/2));
 		System.out.println("Real sum:     " + sum);
+		
 	}
 
 }

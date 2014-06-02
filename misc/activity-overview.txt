@@ -338,4 +338,39 @@ Tiny optimisation: when considering checking a property, to know whether a searc
 Adapting translator to incorporate return values from hasNext: done. Now rewriting automaton.
 
 05/30/14
-There is a performance loss because of the paradigm: “Any symbol should either be present or stored”. The model should be extended with the possibility to ignore the next symbol.
+There is a performance loss because of the paradigm: “Any symbol should either be present or stored”. The model should be extended with the possibility to ignore the next symbol. But this is really a tiny optimisation.
+
+2.a Automaton rewritten, it works.
+
+2.b Unable to find where “finalize” is supposed to come in... Iterators seem to be destroyed without this method being called.
+
+06/01/14
+Reading paper, “A Theoretician's Guide to the Experimental Analysis of Algorithms” by David S. Johnson.
+
+Some random notes: 
+* Need to explore the optimisation of replacing linear read search by double memory usage (sparse array) for registers.
+* Useful to explore compatibility with multi-core? OpenCL?
+* Need to get rid of variability in algorithm tests. In particular, GC's behaviour should be predicted.
+* Implement runtime verification properties, and reimplement solutions that were already given. THEN compare to newly found algorithms/register automata's case.
+* Optimise algorithms as much as possible: do not “claim not enough programming was done” and let the reader figure it out for themselves.
+* Our measure of performance will be the number of nodes expanded (time spent in bottleneck) and frontier size (number of nodes in memory). This is reproducible because machine-independent.
+* Use benchmark program to benchmark processor speed once the report will be written.
+* Format results numbers in an intelligent way (not too much digits) and explain doing so.
+* Display graphs by manipulating data: rescale axes, such as by applying a log scale or something else: the nice result is the one with a line instead of a curve.
+
+How to transform LTL in a register automaton? Nice introduction for final report here. Should be fairly easy. It's a way to say runtime verification properties are easily implementable in this manner.
+
+– Now reading “Garbage Collection for Monitoring Parametric Properties”, by D. Jin et al. 
+
+The introduction starts with saying runtime verification of parametric properties is made by slicing the trace and checking each parameter with a different monitor. This is of course very satisfactory here: we don't have to take into account parameters.
+It is unsure Register Automata will yield better performance: there has to be some ID checking which infers more intermediary operations. However, we will have to take into account the “slicing” phase.
+There is a lot of BS about the genericity of the system the authors have created, but it does not seem relevant: that's engineering, not research.
+
+Also another incentive to implement abstract garbage collection. Garbage collection is in our case much easier because it simply includes the 
+
+BFS is good because we know its runtime in advance.
+
+It seems it will be hard comparing figures with this paper, because this is an online analysis (aka of “overhead” problems). With what could this algorithm be compared?
+
+06/02/14
+For future properties to be tested, sometimes more than one type of object is employed (Collection and Iterator, ...), which is not currently a possibility. Add a custom translation module?

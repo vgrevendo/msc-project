@@ -25,10 +25,11 @@ import automata.State;
  */
 public class BFLGSSearchState {
 	public final State state;
-	public final int[] registers;
 	public final List<Integer> fullWord;
 	public final int nextIdx;
 	public final RegisterAutomaton a;
+	
+	public final int[] registers;
 	
 	public BFLGSSearchState(State state, 
 							int[] registers, 
