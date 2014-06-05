@@ -18,7 +18,9 @@ import algorithms.membership.MBSDecisionAlgorithm;
 import algorithms.tools.ResultsContainer;
 import automata.RegisterAutomaton;
 import automata.gen.AutomatonGenerator;
+import automata.gen.BuildException;
 import automata.gen.RootBranchGenerator;
+import automata.gen.SpecificationSynthGenerator;
 import automata.hra.HRAutomaton;
 
 public class Testbench {
@@ -36,6 +38,9 @@ public class Testbench {
 		try {
 			
 			switch(args[0]) {
+			case "synth":
+				synthesisTest();
+				break;
 			case "hasNextProperty-STRICT":
 			default:
 				double p = Double.parseDouble(args[2]);
@@ -46,7 +51,7 @@ public class Testbench {
 			}
 			
 			//hasNextPropertyTest();
-		} catch (FileNotFoundException | ParseException e) {
+		} catch (FileNotFoundException | ParseException | BuildException e) {
 			System.out.println("An error occurred:");
 			e.printStackTrace();
 		}
@@ -123,7 +128,7 @@ public class Testbench {
 				try {
 					filename = rbg.generate();
 					return new HRAutomaton(filename, index+10);
-				} catch (ParseException | FileNotFoundException e) {
+				} catch (ParseException | FileNotFoundException | BuildException e) {
 					e.printStackTrace();
 				}
 				
@@ -143,7 +148,7 @@ public class Testbench {
 		ResultsContainer.getContainer().flush();
 	}
 	
-	public static void generatorTests() throws FileNotFoundException, ParseException {
+	public static void generatorTests() throws FileNotFoundException, ParseException, BuildException {
 		System.out.println("This is GENERATOR TESTBENCH");
 		
 		AutomatonGenerator ag = new RootBranchGenerator(5);
@@ -213,8 +218,8 @@ public class Testbench {
 		MBSDecisionAlgorithm[] algorithms = new MBSDecisionAlgorithm[] {
 				//Membership.ldftsCheck,
 				//Membership.bflgsCheck,
-				//Membership.optiBflgsCheck,
-				Membership.forgetfulBflgsCheck,
+				Membership.optiBflgsCheck,
+				//Membership.forgetfulBflgsCheck,
 				//Membership.bestFirstCheck,
 				//Membership.aStarCheck
 				};
@@ -283,5 +288,10 @@ public class Testbench {
 		}
 		
 		return root + (id-1) + "." + extension;
+	}
+
+	private static void synthesisTest() throws FileNotFoundException, BuildException {
+		AutomatonGenerator propRAGen = new SpecificationSynthGenerator("res/safe_iter.mra");
+		propRAGen.generate();
 	}
 }

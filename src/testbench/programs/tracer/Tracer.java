@@ -42,6 +42,7 @@ import com.sun.jdi.request.MethodExitRequest;
 public class Tracer {
 	public static final String PATH_ROOT = "gen/trace";
 	public static final int DISPLAY_PROGRESS_MILESTONE = 1000;
+	public static final int MAX_NUM_ENTRIES = 1_000_000;
 	
 	private VirtualMachine vm;
 	private PrintWriter output;
@@ -142,14 +143,6 @@ public class Tracer {
 				
 				MethodExitEvent exitEvent = (MethodExitEvent) event;
 
-				//Handle the case where we 
-				if(exitEvent.method().name().equals("main")) {
-					//Signal end
-					System.out.println("All method calls processed (" + entries + " calls)");
-					vm.exit(0);
-					return;
-				}
-				
 				try {
 					if(exitEvent.method().isStatic())
 						output.print("[STATIC]");
@@ -168,8 +161,18 @@ public class Tracer {
 				
 				entries ++;
 				
+				if(exitEvent.method().declaringType().name().equals(mainClassName) && exitEvent.method().name().equals("stop")) {
+					System.out.println("Reached STOP method of class " + mainClassName + ": exiting.");
+					vm.exit(0);
+				}
+				
 				if(entries % DISPLAY_PROGRESS_MILESTONE == 0) {
 					System.out.println(entries + " entries recorded");
+				}
+				
+				if(entries >= MAX_NUM_ENTRIES) {
+					System.out.println("Hit maximum number of entries: " + MAX_NUM_ENTRIES);
+					vm.exit(0);
 				}
 			}
 			
@@ -206,20 +209,21 @@ public class Tracer {
 				
 				MethodEntryEvent entryEvent = (MethodEntryEvent)event;
 				
-				if(!entryEvent.method().name().equals("main")) {
-					System.out.println("Skipped method " + entryEvent.method().name());
+				if(entryEvent.method().name().equals("start")) {
+					//Signal success
+					System.out.println("Jump to main class is complete.");
+					output.println("-- Now recording method exits in " + entryEvent.method().declaringType().name() + "." + entryEvent.method().name());
+					entries ++;
+					
+					//Kill event request
+					initialEntryRequest.disable();
+					
+					return evtSet;
+				} else {
+					System.out.println("Skipped method " + entryEvent.method().name() + " from class " + entryEvent.method().declaringType().name());
 					continue;
 				}
 				
-				//Signal success
-				System.out.println("Jump to main class is complete.");
-				output.println("-- Now recording method exits in " + entryEvent.method().declaringType().name() + "." + entryEvent.method().name());
-				entries ++;
-				
-				//Kill event request
-				initialEntryRequest.disable();
-				
-				return evtSet;
 			}
 			
 			evtSet.resume();

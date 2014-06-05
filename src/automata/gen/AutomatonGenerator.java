@@ -3,7 +3,10 @@ package automata.gen;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -37,9 +40,10 @@ public abstract class AutomatonGenerator {
 		transitionLines = new ArrayList<>();
 		commentLines = new ArrayList<>();
 		
-		String date = "";
+		DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+		Date date = new Date();
 		
-		commentLines.add("-- Generated on " + date + " by " + name);
+		commentLines.add("Generated on " + dateFormat.format(date) + " by " + name);
 	}
 	
 	//Generation methods
@@ -47,15 +51,17 @@ public abstract class AutomatonGenerator {
 	 * This method should be implemented by the subclass, which
 	 * should make use of building methods like addState and
 	 * addTransition
+	 * @throws BuildException 
 	 */
-	protected abstract void build();
+	protected abstract void build() throws BuildException ;
 	
 	/**
 	 * Generate an automaton as defined by the subclass
 	 * @return
 	 * @throws FileNotFoundException 
+	 * @throws BuildException 
 	 */
-	public String generate() throws FileNotFoundException {
+	public String generate() throws FileNotFoundException, BuildException {
 		build();
 		return produce();
 	}
@@ -80,11 +86,19 @@ public abstract class AutomatonGenerator {
 	}
 	
 	protected void addTransition(int s1, int s2, int label) {
-		transitionLines.add("q" + s1 + " " + (label+1) + " q" + s2);
+		addTransition("q" + s1, "q" + s2, label);
+	}
+	
+	protected void addTransition(String s1, String s2, int label) {
+		transitionLines.add(s1 + " " + (label+1) + " " + s2);
 	}
 	
 	protected void addState(int number, int rho, boolean isFinal) {
-		String stateString = "q" + number;
+		addState("q" + number, rho, isFinal);
+	}
+	
+	protected void addState(String name, int rho, boolean isFinal) {
+		String stateString = name;
 		
 		if(rho < 0 && isFinal) {
 			stateString += " _ F";
@@ -108,10 +122,19 @@ public abstract class AutomatonGenerator {
 		registersSb.append(initSymbol < 0 ? "#" : Integer.toString(initSymbol));
 	}
 	
+	protected void addComment(String comment) {
+		commentLines.add(comment);
+	}
+	
 	private String produce() throws FileNotFoundException {
 		//Init output file
 		String filename = chooseFileName();
 		PrintWriter file = new PrintWriter(filename);
+		
+		//Output comment lines
+		for(String comment : commentLines) {
+			file.println("-- " + comment);
+		}
 		
 		//Describe states
 		for(String stateString : stateLines) {

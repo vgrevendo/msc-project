@@ -374,3 +374,19 @@ It seems it will be hard comparing figures with this paper, because this is an o
 
 06/02/14
 For future properties to be tested, sometimes more than one type of object is employed (Collection and Iterator, ...), which is not currently a possibility. Add a custom translation module?
+
+Compare with JavaMOP.
+
+06/04/14
+Comparison drastically failed: JavaMOP is basically a black box, and it will be difficult to use it.
+
+A new automaton generator is being created, to recognise the Advanced Finite Memory statements language (AMA). This will ease up the process of creating property-recognising automata (which get pretty big after a while). The current property being implemented is SafeIteration: the collection must not be modified while an interator is still calling next.
+
+It is now possible to collect traces from DaCapo: the trace is based on the Callback class starting and ending points.
+
+LTL formulas are converted to Buchi automata. Is it useful to actually compare prefixes of the word?
+
+For empirical language inclusion: could go very fast! The two automata have to be updated at the same time, one's changes to be tried in the other.
+
+
+Emptiness could get very fast as well by introducing forgetfulness...

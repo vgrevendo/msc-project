@@ -4,3 +4,5 @@ bin
 res/gen*
 misc/.*
 gen/*
+*.jar
+scratch
