@@ -390,3 +390,10 @@ For empirical language inclusion: could go very fast! The two automata have to b
 
 
 Emptiness could get very fast as well by introducing forgetfulness...
+
+06/05/14
+Naive specification translator is now working, it has now to be tested. Tomorrow:
+- test with SafeIteration property and hope that it works
+- test with HasNext property and hope that it works
+
+For this some extra trace translations will have to be implemented.
