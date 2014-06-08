@@ -32,7 +32,7 @@ public abstract class AutomatonGenerator {
 	private final List<String> transitionLines;
 	private final List<String> stateLines;
 	private final List<String> commentLines;
-	private int initialState = 0;
+	private String initialState = "q0";
 	private StringBuilder registersSb = new StringBuilder();  
 	
 	public AutomatonGenerator(String name) {
@@ -112,6 +112,10 @@ public abstract class AutomatonGenerator {
 	}
 	
 	protected void setInitialState(int initialState) {
+		this.initialState = "q" + initialState;
+	}
+	
+	protected void setInitialState(String initialState) {
 		this.initialState = initialState;
 	}
 
@@ -143,7 +147,7 @@ public abstract class AutomatonGenerator {
 		
 		//Describe initial state and registers
 		file.println("-");
-		file.println("q" + initialState);
+		file.println(initialState);
 		file.println(registersSb.toString());
 		file.println("-");
 		
@@ -155,7 +159,7 @@ public abstract class AutomatonGenerator {
 		file.close();
 		
 		//Prepare for new generation
-		initialState = 0;
+		initialState = "q0";
 		registersSb = new StringBuilder();
 		transitionLines.clear();
 		stateLines.clear();

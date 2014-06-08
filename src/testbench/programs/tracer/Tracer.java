@@ -48,6 +48,8 @@ public class Tracer {
 	private PrintWriter output;
 	private int entries = 0;
 	private String mainClassName;
+	private String mainMethodName;
+	private String exitMethodName;
 	
 	//Instance
  	public void connect(int portNumber) throws Exception {
@@ -161,7 +163,7 @@ public class Tracer {
 				
 				entries ++;
 				
-				if(exitEvent.method().declaringType().name().equals(mainClassName) && exitEvent.method().name().equals("stop")) {
+				if(exitEvent.method().declaringType().name().equals(mainClassName) && exitEvent.method().name().equals(exitMethodName)) {
 					System.out.println("Reached STOP method of class " + mainClassName + ": exiting.");
 					vm.exit(0);
 				}
@@ -209,7 +211,7 @@ public class Tracer {
 				
 				MethodEntryEvent entryEvent = (MethodEntryEvent)event;
 				
-				if(entryEvent.method().name().equals("start")) {
+				if(entryEvent.method().name().equals(mainMethodName)) {
 					//Signal success
 					System.out.println("Jump to main class is complete.");
 					output.println("-- Now recording method exits in " + entryEvent.method().declaringType().name() + "." + entryEvent.method().name());
@@ -249,6 +251,8 @@ public class Tracer {
 		try {
 			//Set some params
 			mainClassName = args[1];
+			mainMethodName = args[2];
+			exitMethodName = args[3];
 			
 			//Connect to the VM
 			connect(Integer.parseInt(args[0]));

@@ -397,3 +397,29 @@ Naive specification translator is now working, it has now to be tested. Tomorrow
 - test with HasNext property and hope that it works
 
 For this some extra trace translations will have to be implemented.
+
+06/07/14
+There seems to be a lot of translation work going on, so the decision has been taken to implement a translation language interpreter (TRF, Translation Rules File). With this language the aim is to:
+- detect subclasses from classes (quickly)
+- retrieve IDs where necessary
+- interpret certain interesting return values
+- give codes to all useful methods
+
+On the implementation level:
+- static methods will always be ignored
+
+TRF language shape:
+TEXT <- LINE*
+LINE <- “--” comments <ENDLINE>
+LINE <- “subclass:”<class_name> <method_name>:<number> <RETURN_RULE>+ <ENDLINE>
+LINE <- “equals:”<contain_string> <method_name>:<number> 
+									<RETURN_RULE>+ <ENDLINE>
+RETURN_RULE <- <number>
+RETURN_RULE <- “object:”(“ID” | <number>)
+RETURN_RULE <- “equals:”<contain_string>“:”<number>
+
+No spaces unless specified.
+
+Since there is no ambiguity this will be implemented as usual, with feeling.
+
+

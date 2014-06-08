@@ -90,6 +90,8 @@ public class SpecificationSynthGenerator extends AutomatonGenerator {
 		if(initialState == null)
 			throw new BuildException("Initial state does not refer to any known state!");
 		
+		setInitialState(initialState.name);
+		
 		//Extract registers
 		if(!sc.hasNext())
 			throw new BuildException("Expected registers description!");

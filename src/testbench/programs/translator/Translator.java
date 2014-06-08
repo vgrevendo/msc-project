@@ -45,7 +45,7 @@ public abstract class Translator {
 			if(currentTokens[3].contains("void"))
 				return "void";
 			else
-				return "object";
+				return "object " + currentTokens[currentTokens.length-1];
 		}
 		
 		return currentTokens[3];
