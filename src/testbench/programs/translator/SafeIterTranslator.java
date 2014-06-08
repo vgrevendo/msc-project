@@ -12,12 +12,8 @@ import java.util.Set;
  * <p>Translate the input trace by taking into account the object's identifier,
  * the class's name, the method's name and its return value. Only consider calls
  * that are linked to collections and iterators.</p>
- * <p>Iterator method calls are encoded the following way: * 
+ * <p>Iterator method calls are encoded the following way:
  * <ul>
- * <li>1 for an init call over an iterator;</li>
- * <li>2 for a hasNext call over an iterator, returning false;</li>
- * <li>3 for a hasNext call over an iterator, returning true;</li>
- * <li>4 for a next call over an iterator.</li>
  * </ul></p>
  * @author vincent
  *

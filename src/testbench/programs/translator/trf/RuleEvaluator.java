@@ -86,7 +86,7 @@ public abstract class RuleEvaluator {
 			if(defaultNumber >= 0)
 				return encode(defaultNumber);
 			
-			if(input.contains("instance of"))
+			if(input.contains("## "))
 				switch(objectAction) {
 				case ID:
 					onObjectNumber = Integer.parseInt(input.replaceAll("[^0-9]", ""));

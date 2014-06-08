@@ -1,0 +1,9 @@
+----------------------------------------
+-- Translation Rules File for SafeIter
+----------------------------------------
+subclass:java.util.Collection <init>:1 0
+subclass:java.util.Collection add:2 0
+subclass:java.util.Collection remove:2 0
+subclass:java.util.Collection iterator:3 object:ID
+subclass:java.util.Iterator next:4 0
+subclass:java.util.Iterator finalize:5 0

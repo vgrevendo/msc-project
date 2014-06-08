@@ -8,9 +8,11 @@ import java.util.Iterator;
 import java.util.List;
 
 import testbench.lister.TestLister;
+import testbench.lister.TestWordLister;
 import testbench.programs.translator.NaiveHasNextTranslator;
 import testbench.programs.translator.SafeIterTranslator;
 import testbench.programs.translator.StrictHasNextTranslator;
+import testbench.programs.translator.TRFTranslator;
 import testbench.programs.translator.Translator;
 import testbench.tests.AsymptoticMembershipTest;
 import testbench.tests.ListMembershipTest;
@@ -27,6 +29,8 @@ import automata.hra.HRAutomaton;
 public class Testbench {
 	public final static int TEST_LENGTH = 1500;
 	public final static String HNP_TEST_TRACE_PATH = "gen/trace4.tr";
+	
+	public final static boolean DEBUG = false;
 	
 	/**
 	 * A stub for parameter parsing has been implemented here,
@@ -54,14 +58,21 @@ public class Testbench {
 					safeIterTest(args[1], p);
 				break;
 			case "hasNextProperty-STRICT":
-			default:
 				p = Double.parseDouble(args[2]);
 				if(args[1].equals("LATEST"))
 					strictHasNextPropertyTest(findLatestFilename("gen/trace", "tr"), p);
 				else
 					strictHasNextPropertyTest(args[1], p);
+			case "auto":
+			default:
+				if(args.length != 5) {
+					System.out.println("Unexpected number of arguments on command line.");
+					return;
+				}
+				
+				fullyAutomaticPropertyTest(args[1], args[2], args[3], args[4]);
 			}
-		} catch (FileNotFoundException | ParseException | BuildException e) {
+		} catch (Exception e) {
 			System.out.println("An error occurred:");
 			e.printStackTrace();
 		}
@@ -270,23 +281,47 @@ public class Testbench {
 
 	/**
 	 * Just a test to see what the translation gives
+	 * @throws Exception 
 	 */
-	public static void translationTest() {
+	public static void translationTest() throws Exception {
+		int errors = 0;
+		int line = 1;
+		int tsize = 0;
 		try {
-			List<Integer> translation = (new SafeIterTranslator("gen/trace0.tr")).translate();
-			Iterator<Integer> it = translation.iterator();
-			while(it.hasNext()) {
-				int i = it.next();
-				int j = it.next();
-				int k = it.next();
+			List<Integer> translation  = (new SafeIterTranslator("gen/trace0.tr")).translate();
+			List<Integer> translation2 = (new TRFTranslator("gen/trace0.tr", "res/safe_iter.trf")).translate();
+			Iterator<Integer> it  = translation.iterator();
+			Iterator<Integer> it2 = translation2.iterator();
+			System.out.println("Real trace size is " + (tsize = translation.size()));
+			
+			while(true) {
+				if(!(it.hasNext() && it2.hasNext())) {
+					if(it.hasNext()) {
+						System.err.println("IT2 is shorter than IT1!");
+					}
+					if(it2.hasNext()) {
+						System.err.println("IT1 is shorter than IT2!");
+					}
+					break;
+				}
 				
-				if(i == 132)
-					System.out.println(i +" - " + j + " - " + k);
+				int i1, i2;
+				if((i1 = it.next()) != (i2 = it2.next())) {
+					errors++;
+					if(errors < 10)
+						System.err.println("A mistake occurred (line=" + line + "): " + i1 + " vs " + i2);
+				}
+				
+				line++;
 			}
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
 		
+		if(errors >= 10) {
+			System.out.println("... and " + (errors - 10) + " more errors occurred");
+		}
+		System.out.println((line-1) +"/" + tsize + " symbols were analysed, " + (line-errors-1) + " were agreed upon.");
 		System.out.println("DONE");
 	}
 
@@ -301,7 +336,7 @@ public class Testbench {
 	}
 
 	private static void synthesisTest() throws FileNotFoundException, BuildException {
-		AutomatonGenerator propRAGen = new SpecificationSynthGenerator("res/safe_iter.mra");
+		AutomatonGenerator propRAGen = new SpecificationSynthGenerator("res/has_next.mra");
 		propRAGen.generate();
 	}
 
@@ -349,5 +384,101 @@ public class Testbench {
 		lmt.test();
 		
 		ResultsContainer.getContainer().flush();
+	}
+	/**
+	 * A tool for automatic and quick testing.
+	 * A trace should be provided, as well as a translation rules file,
+	 * and an MRA macro automaton.
+	 * @param traceCommand - can be "LATEST" or the path to a trace
+	 * @param translationPath - the path to the TRF translations file
+	 * @param propertyCommand - can be "SYNTH" or the path to a bas FMA automaton file
+	 */
+	public static void fullyAutomaticPropertyTest(String traceCommand, 
+												  String translationPath, 
+												  String propertyCommand,
+												  String testCommand) {
+		try {
+			//Collect resource paths
+			// Property command
+			String automatonPath = "";
+			
+			if(propertyCommand.contains("SYNTH:")) {
+				AutomatonGenerator synthesiser = new SpecificationSynthGenerator(propertyCommand.split(":")[1]);
+				automatonPath = synthesiser.generate();
+			} else
+				automatonPath = propertyCommand;
+			
+			// Translation path is OK
+			// Trace command
+			String tracePath = "";
+			if(traceCommand.equals("LATEST")) {
+				tracePath = findLatestFilename("gen/trace", "tr");
+			} else
+				tracePath = traceCommand;
+			
+			//Setup resources
+			RegisterAutomaton automaton = new RegisterAutomaton(automatonPath);
+			automaton.displayInfo();
+			
+			MBSDecisionAlgorithm[] algorithms = new MBSDecisionAlgorithm[] {
+					//Membership.ldftsCheck,
+					//Membership.bflgsCheck,
+					//Membership.optiBflgsCheck,
+					Membership.forgetfulBflgsCheck,
+					//Membership.bestFirstCheck,
+					//Membership.aStarCheck
+					};
+			
+			double testStep = 0.1D;
+			double tracePercentage = 1.0D;
+			
+			if(testCommand.contains(":")) {
+				String[] tokens = testCommand.split(":");
+				tracePercentage = Double.parseDouble(tokens[0]);
+				testStep = Double.parseDouble(tokens[1]);
+			}
+			
+			Translator translator = new TRFTranslator(tracePath, translationPath);
+			TestLister<List<Integer>> twg = null;
+			if(DEBUG)
+				twg = new TestLister<List<Integer>>() {
+
+				@Override
+				protected List<Integer> nextResource() {
+					List<Integer> l = new ArrayList<>();
+					l.add(512);
+					l.add(1);
+					l.add(0);
+					
+					l.add(512);
+					l.add(2);
+					l.add(5);
+					
+					l.add(512);
+					l.add(3);
+					l.add(0);
+					return l;
+				}
+
+				@Override
+				public int size() {
+					return 1;
+				}
+			};
+			
+			else
+				twg = new TestWordLister(testStep, tracePercentage, translator);
+			
+			//Make test
+			Test lmt = new ListMembershipTest(automaton, algorithms, twg);
+			lmt.test();
+			
+			ResultsContainer.getContainer().flush();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		System.out.println("Test finished with success");
+		
 	}
 }

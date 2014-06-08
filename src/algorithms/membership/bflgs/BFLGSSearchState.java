@@ -44,7 +44,7 @@ public class BFLGSSearchState {
 	}
 	
 	public boolean isFinal() {
-		return nextIdx >= fullWord.size() && state.isFinal;
+		return state.isFinal;
 	}
 	
 	public List<BFLGSSearchState> expand() {

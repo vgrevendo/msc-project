@@ -198,7 +198,10 @@ public class SpecificationSynthGenerator extends AutomatonGenerator {
 				rho = numRegisters-1;
 			} else {
 				String labelString = t.substring(0, t.length()-1);
-				rho = Integer.parseInt(labelString)-1;
+				if(labelString.equals("t"))
+					rho = numRegisters - 1;
+				else
+					rho = Integer.parseInt(labelString)-1;
 				labels.add(rho);
 			}
 		} else if(t.equals("*")) {
@@ -207,7 +210,10 @@ public class SpecificationSynthGenerator extends AutomatonGenerator {
 		} else {
 			String[] tokens = t.split(",");
 			for(String token : tokens) {
-				labels.add(Integer.parseInt(token)-1);
+				if(token.equals("t"))
+					labels.add(numRegisters-1);
+				else
+					labels.add(Integer.parseInt(token)-1);
 			}
 		}
 		

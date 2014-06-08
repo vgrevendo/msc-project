@@ -1,0 +1,33 @@
+--------------------------------------------------
+-- The HasNext macro property checker
+--------------------------------------------------
+-- Method encoding:
+-- 1: Iterator ID
+-- 2: Iterator.<init> (1)
+-- 3: Iterator.hasNext (2)
+-- 4: Iterator.next (3)
+-- Value encoding:
+-- 5: true (4)
+-- 6: false (5)
+-- 7: Trash (default)
+--------------------------------------------------
+start
+unknown
+none
+safe
+error F
+-
+start
+# 1 2 3 4 5 #
+-
+start * *! *! start
+start 1! 2 *! unknown
+unknown t! *! *! unknown
+unknown 1 3 5 safe
+unknown 1 4 *! error
+unknown 1 3 6 none
+safe t! *! *! safe
+safe 1 4 *! unknown
+none 1 4 *! error
+none t! *! *! none
+error *! *! *! error
