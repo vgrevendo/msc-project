@@ -13,7 +13,9 @@ import algorithms.membership.SearchNode;
 import algorithms.membership.SearchState;
 import algorithms.membership.bflgs.BFLGSSearchNode;
 import algorithms.membership.bflgs.BFLGSSearchState;
+import algorithms.membership.obflgs.OBFLGSSearchState;
 import algorithms.tools.ResultsContainer;
+import automata.OptimisedRA;
 import automata.RegisterAutomaton;
 import automata.State;
 import automata.hra.HRAutomaton;
@@ -252,6 +254,7 @@ public class Membership {
 	 * BFLGS implies a double-set structure as a frontier. No paths are remembered.
 	 */
 	public static final MBSDecisionAlgorithm forgetfulBflgsCheck = new MBSDecisionAlgorithm("F-Bflgs-mbs") {
+		private OptimisedRA a;
 		
 		@Override
 		public boolean decide(RegisterAutomaton automaton, List<Integer> word) {
@@ -260,12 +263,12 @@ public class Membership {
 			int nodesExpanded = 0;
 			
 			//BFLGS implies a double set storing the frontier
-			Set<BFLGSSearchState> frontier = new HashSet<BFLGSSearchState>();
+			Set<OBFLGSSearchState> frontier = new HashSet<OBFLGSSearchState>();
 			
 			//Initial state
-			BFLGSSearchState initialSearchState = new BFLGSSearchState(automaton.getInitialState(), 
+			OBFLGSSearchState initialSearchState = new OBFLGSSearchState(automaton.getInitialState(), 
 															 automaton.getInitialRegisters(), 
-															 word, 0, automaton);
+															 word, 0, a);
 			frontier.add(initialSearchState);
 			
 			//Main search loop
@@ -274,8 +277,8 @@ public class Membership {
 
 				//See if a node is final, and 
 				// start filling up the next frontier
-				Set<BFLGSSearchState> nextFrontier = new HashSet<BFLGSSearchState>();
-				for(BFLGSSearchState node: frontier) {
+				Set<OBFLGSSearchState> nextFrontier = new HashSet<OBFLGSSearchState>();
+				for(OBFLGSSearchState node: frontier) {
 					if(node.isFinal()) {
 						rc.addNumber(nodesExpanded);
 						rc.addNumber(maxFrontierSize);
@@ -283,10 +286,10 @@ public class Membership {
 					}
 
 					//Add the adjacent nodes to the new frontier
-					List<BFLGSSearchState> nextStates = node.expand();
+					List<OBFLGSSearchState> nextStates = node.expand();
 					nodesExpanded++;
 					
-					for(BFLGSSearchState s : nextStates) {
+					for(OBFLGSSearchState s : nextStates) {
 						nextFrontier.add(s);
 					}
 				}
@@ -299,6 +302,14 @@ public class Membership {
 			rc.addNumber(maxFrontierSize);
 			
 			return false;
+		}
+
+		@Override
+		public void setAutomaton(RegisterAutomaton ra) {
+			
+			OptimisedRA ora = new OptimisedRA(ra);
+			this.a = ora;
+			super.setAutomaton(ora);
 		}
 	};
 

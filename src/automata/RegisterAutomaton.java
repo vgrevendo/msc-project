@@ -21,18 +21,18 @@ public class RegisterAutomaton extends Automaton {
 	
 	protected State[] states;
 
-	private State initialState;
-	private int[] registers;
+	protected State initialState;
+	protected int[] registers;
 	/**
 	 * Instead of a function, rho is a relation as well.
 	 * This avoids creating function objects.
 	 */
-	private Map<State, Integer> rho;
+	protected Map<State, Integer> rho;
 	/**
 	 * Mu is the relation as defined in the paper.
 	 * Nullpointers will have to be handled intelligently here.
 	 */
-	private Map<State, Map<Integer, List<State>>> mu;
+	protected Map<State, Map<Integer, List<State>>> mu;
 	
 	public RegisterAutomaton(String loadPath) throws FileNotFoundException, ParseException {
 		loadFromFile(loadPath);

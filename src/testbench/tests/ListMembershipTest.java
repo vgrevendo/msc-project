@@ -59,7 +59,7 @@ public class ListMembershipTest extends Test {
 				
 				//TEST CORE
 				long cTime = System.currentTimeMillis();			
-				result = algorithm.decide(a, testWord);
+				result = algorithm.decide(testWord);
 				long testTime = System.currentTimeMillis()-cTime;
 				
 				//Record results

@@ -422,4 +422,10 @@ No spaces unless specified.
 
 Since there is no ambiguity this will be implemented as usual, with feeling.
 
+06/08/14
+This all works now.
+Next optimisation to be tested: disable copy of “fixed” registers.
 
+06/10/14
+Optimisation about fixed registers worked a little time-wise, but is probably much more efficient memory-wise.
+Now trying to revert fixed registers to map from symbol to register index.

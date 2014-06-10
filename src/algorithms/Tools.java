@@ -67,4 +67,19 @@ public class Tools {
 		}
 		return -1;
 	}
+	
+	public static int registersContain(int[] fixedRegisters, int[] registers, int symbol) {
+		int i = 0;
+		for(int s : fixedRegisters) {
+			if(s == symbol)
+				return i;
+			i++;
+		}
+		for(int s : registers) {
+			if(s == symbol)
+				return i;
+			i++;
+		}
+		return -1;
+	}
 }
