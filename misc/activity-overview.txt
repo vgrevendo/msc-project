@@ -429,3 +429,47 @@ Next optimisation to be tested: disable copy of “fixed” registers.
 06/10/14
 Optimisation about fixed registers worked a little time-wise, but is probably much more efficient memory-wise.
 Now trying to revert fixed registers to map from symbol to register index.
+This seems to work remarkably well (10s win on a hundred!)
+
+There is now a need for comparison. Things that need to be done:
+- solve the finalize problem
+- Try to run RVMonitor on a trace for COMPARISON!
+- try more alternative stuff for membership detection
+
+We will start with the second problem.
+
+It seems that this method will always be slower... Indeed, for each event we need 10,000 updates in this instance!
+
+06/12/14
+The finalization problem doesn't make any sense given the lack of performance of this method.
+
+Third problem: Bloom filters improve memory usage for set checking. Do we need to test membership in a set? We do, at the moment where a symbol needs to be checked against the symbols in registers. But bloom filters cannot be stripped from elements. Will try with regular hashmaps but unsure this will improve performance (there is a tradeoff between keeping the hashmap updated and copying it, and better reading performance. It is likely this will actually make things worse). In each case this optimisation would be much too low-level, we need something more radically effective.
+
+Meeting w/ Radu:
+1. Main idea: update the frontier only where necessary. This will lead to a comparable performance vis-à-vis the RVMonitor thing
+2. Make a pre-study of the automaton to determine if at some point registers are read-only, and then think of a system to shift registers from read-only to read-write and vice-versa.
+3. If read-only values are 1-5, why not translate them 0-4 and then not bother about symbols at all? i.e. symbol = register number.
+4. Bloom filters could be used to test “newness” of a symbol quickly regarding a set of registers. To be explored...
+5. Also hashmap<Int,Int> allows perfect reg-symbol and symbol-reg mapping
+
+06/13/14
+In order of proceedings:
+1. Idea worked much less well than expected, but it is saveable. It will proceed in several steps:
+- Preprocess the automaton to find which states are stable, and which are unstable.
+- Preprocess the automaton to sort transitions between strictly outgoing and self-transitions.
+- Preprocess the automaton to know, per physical state, which register symbols have to be declared for quick updates.
+- Modify the automaton to destroy the whole ternary side, making sure this does not create problems.
+- Modify the search algorithm:
+	- Pop new symbol.
+	- Expand unstable configs (configs with unstable states). This will clean out all the mortal ones, and expand unstable ones which will need to be expanded whatever happens.
+	- Expand configs which declare needing the symbol for a strictly outgoing transition. This information depends on the configuration. Update the rho register with previous value on expand. (????)
+	- Expand configs that have strictly outgoing transitions which are enabled by adding the current symbol with a rho value. This information depends on the physical automaton state.
+	- Update the information necessary to the previous steps. Make sure to update only stuff that is strictly config-dependent (as opposed to state-dependent). Only ask from configurations that were recently updated, which are now stable, and which also remember what they said previously.
+
+06/15/14
+- Stable states need to exist in form of a list rather than an in-state attribute: they are to be processed linearly.
+
+(Optimisation to be made: remember hashcodes when nothing changes).
+(The test infrastructure will have to be cleaned up at some point: the new algorithm does not require the automaton to be a register automaton).
+
+The frontier will now be made up of a set, which stores search states that are NOT on the same word distance.

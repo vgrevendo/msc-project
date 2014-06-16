@@ -25,7 +25,7 @@ public class TestWordLister extends TestLister<List<Integer>> {
 
 	@Override
 	public int size() {
-		return (int) (1.0D/testStep);
+		return (int) (testPercentage/testStep);
 	}
 
 }

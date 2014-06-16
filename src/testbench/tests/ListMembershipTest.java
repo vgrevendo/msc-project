@@ -7,7 +7,7 @@ import testbench.TestException;
 import testbench.lister.TestLister;
 import algorithms.membership.MBSDecisionAlgorithm;
 import algorithms.tools.ResultsContainer;
-import automata.RegisterAutomaton;
+import automata.Automaton;
 
 /**
  * A multiple membership test, comparing several algorithms (LDFTS, BFLGS, ...).
@@ -25,7 +25,7 @@ public class ListMembershipTest extends Test {
 	private final int[][] times;
 	private final long[] totalTimes;
 	
-	public ListMembershipTest(RegisterAutomaton a, 
+	public ListMembershipTest(Automaton a, 
 								MBSDecisionAlgorithm[] algorithms, 
 								TestLister<List<Integer>> twg) {
 		super("Listed Membership Checks", a);

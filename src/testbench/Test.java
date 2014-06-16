@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import algorithms.tools.ResultsContainer;
-import automata.RegisterAutomaton;
+import automata.Automaton;
 
 public abstract class Test {
 	public static final int MIN_SIGNAL_PERIOD = 5; //in seconds
@@ -15,7 +15,7 @@ public abstract class Test {
 	
 	protected final ResultsContainer rc;
 	private final String name;
-	protected final RegisterAutomaton a;
+	protected final Automaton a;
 	
 	//Characteristics
 	private long runtime = 0L;
@@ -29,7 +29,7 @@ public abstract class Test {
 	
 	private long lastSigTime = 0L; 
 	
-	public Test(String name, RegisterAutomaton a) {
+	public Test(String name, Automaton a) {
 		this.name = name;
 		this.a = a;
 		this.rc = ResultsContainer.getContainer();

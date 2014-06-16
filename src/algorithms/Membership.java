@@ -13,28 +13,19 @@ import algorithms.membership.SearchNode;
 import algorithms.membership.SearchState;
 import algorithms.membership.bflgs.BFLGSSearchNode;
 import algorithms.membership.bflgs.BFLGSSearchState;
+import algorithms.membership.greedy.GreedyConfiguration;
+import algorithms.membership.greedy.GreedyFrontier;
 import algorithms.membership.obflgs.OBFLGSSearchState;
 import algorithms.tools.ResultsContainer;
+import automata.Automaton;
 import automata.OptimisedRA;
 import automata.RegisterAutomaton;
 import automata.State;
+import automata.greedy.GreedyRA;
 import automata.hra.HRAutomaton;
 
 public class Membership {
 	/**
-	  * A membership check which will first determine whether the automaton
-	  * is deterministic, then delegate to an already existing method.
-	  */
-	public static final MBSDecisionAlgorithm intelligentCheck = new MBSDecisionAlgorithm("Intelli-mbs") {
-
-		@Override
-		public boolean decide(RegisterAutomaton automaton, List<Integer> word) {
-			if(Tools.isDeterministic(automaton))
-				return deterministicCheck.decide(automaton, word);
-			
-			return ldftsCheck.decide(automaton, word);
-		}
-	};
 	
 	 /**
 	   * A tiny method that needs a deterministic automaton in order to function (faster
@@ -43,7 +34,8 @@ public class Membership {
 	public static final MBSDecisionAlgorithm deterministicCheck = new MBSDecisionAlgorithm("Det-mbs") {
 		
 		@Override
-		public boolean decide(RegisterAutomaton automaton, List<Integer> w) {
+		public boolean decide(Automaton a, List<Integer> w) {
+			RegisterAutomaton automaton = (RegisterAutomaton) a;
 			State currentState = automaton.getInitialState();
 			int[] registers = automaton.getInitialRegisters();
 			int containingRegister = 0;
@@ -89,7 +81,8 @@ public class Membership {
 	 */
 	public static final MBSDecisionAlgorithm ldftsCheck = new MBSDecisionAlgorithm("Ldfts-mbs") {
 		@Override
-		public boolean decide(RegisterAutomaton automaton, List<Integer> word) {
+		public boolean decide(Automaton a, List<Integer> word) {
+			RegisterAutomaton automaton = (RegisterAutomaton) a;
 			ResultsContainer rc = ResultsContainer.getContainer();
 			int maxFrontierSize = 0;
 			int nodesExpanded = 0;
@@ -135,7 +128,8 @@ public class Membership {
 	public static final MBSDecisionAlgorithm bflgsCheck = new MBSDecisionAlgorithm("Bflgs-mbs") {
 		
 		@Override
-		public boolean decide(RegisterAutomaton automaton, List<Integer> word) {
+		public boolean decide(Automaton a, List<Integer> word) {
+			RegisterAutomaton automaton = (RegisterAutomaton) a;
 			ResultsContainer rc = ResultsContainer.getContainer();
 			int maxFrontierSize = 0;
 			int nodesExpanded = 0;
@@ -199,7 +193,8 @@ public class Membership {
 	public static final MBSDecisionAlgorithm optiBflgsCheck = new MBSDecisionAlgorithm("Opti-Bflgs-mbs") {
 		
 		@Override
-		public boolean decide(RegisterAutomaton automaton, List<Integer> word) {
+		public boolean decide(Automaton a, List<Integer> word) {
+			RegisterAutomaton automaton = (RegisterAutomaton) a;
 			ResultsContainer rc = ResultsContainer.getContainer();
 			int maxFrontierSize = 0;
 			int nodesExpanded = 0;
@@ -257,7 +252,7 @@ public class Membership {
 		private OptimisedRA a;
 		
 		@Override
-		public boolean decide(RegisterAutomaton automaton, List<Integer> word) {
+		public boolean decide(Automaton automaton, List<Integer> word) {
 			ResultsContainer rc = ResultsContainer.getContainer();
 			int maxFrontierSize = 0;
 			int nodesExpanded = 0;
@@ -266,8 +261,8 @@ public class Membership {
 			Set<OBFLGSSearchState> frontier = new HashSet<OBFLGSSearchState>();
 			
 			//Initial state
-			OBFLGSSearchState initialSearchState = new OBFLGSSearchState(automaton.getInitialState(), 
-															 automaton.getInitialRegisters(), 
+			OBFLGSSearchState initialSearchState = new OBFLGSSearchState(a.getInitialState(), 
+															 a.getInitialRegisters(), 
 															 word, 0, a);
 			frontier.add(initialSearchState);
 			
@@ -305,9 +300,9 @@ public class Membership {
 		}
 
 		@Override
-		public void setAutomaton(RegisterAutomaton ra) {
+		public void setAutomaton(Automaton ra) {
 			
-			OptimisedRA ora = new OptimisedRA(ra);
+			OptimisedRA ora = new OptimisedRA((RegisterAutomaton)ra);
 			this.a = ora;
 			super.setAutomaton(ora);
 		}
@@ -321,7 +316,7 @@ public class Membership {
 		private HRAutomaton a;
 		
 		@Override
-		public boolean decide(RegisterAutomaton automaton, List<Integer> word) {
+		public boolean decide(Automaton automaton, List<Integer> word) {
 			//Ignore the automaton given as an argument, we're going to use the one stored
 			ResultsContainer rc = ResultsContainer.getContainer();
 			int maxFrontierSize = 0;
@@ -360,7 +355,7 @@ public class Membership {
 		}
 		
 		@Override
-		public void setAutomaton(RegisterAutomaton ra) {
+		public void setAutomaton(Automaton ra) {
 			this.a = (HRAutomaton) ra;
 			
 			a.loadHeuristic();
@@ -385,7 +380,7 @@ public class Membership {
 		private HRAutomaton a;
 		
 		@Override
-		public boolean decide(RegisterAutomaton automaton, List<Integer> word) {
+		public boolean decide(Automaton automaton, List<Integer> word) {
 			//Ignore the automaton given as an argument, we're going to use the one stored
 			ResultsContainer rc = ResultsContainer.getContainer();
 			int maxFrontierSize = 0;
@@ -424,7 +419,7 @@ public class Membership {
 		}
 		
 		@Override
-		public void setAutomaton(RegisterAutomaton ra) {
+		public void setAutomaton(Automaton ra) {
 			this.a = (HRAutomaton) ra;
 			
 			a.loadHeuristic();
@@ -440,6 +435,83 @@ public class Membership {
 							sizeDiff;
 				}
 			};
+		}
+	};
+
+	/**
+	 * <p>A version of BFLGS where the frontier is not completely expanded at each new symbol:
+	 * only some configurations are intelligently chosen from the frontier.</P>
+	 * 
+	 * <p>This is still based on alternation between two frontiers, the "sender" and "receiver".
+	 * </p> 
+	 */
+	public static final MBSDecisionAlgorithm greedyCheck = new MBSDecisionAlgorithm("Greedy-mbs") {
+		private GreedyRA a;
+		
+		@Override
+		public boolean decide(Automaton automaton, List<Integer> word) {
+			//Monitoring
+			ResultsContainer rc = ResultsContainer.getContainer();
+			int maxFrontierSize = 1;
+			int nodesExpanded = 0;
+			
+			//This time the frontier is a custom one (and has a complex structure)
+			GreedyFrontier frontier = new GreedyFrontier();
+			
+			//Initial state
+			GreedyConfiguration initialConfig = 
+					new GreedyConfiguration(a.getInitialState(), a.getInitialRegisters(), a, -1);
+			
+			if(initialConfig.isFinal()) {
+				rc.addNumber(1); //Maximum frontier size
+				rc.addNumber(0); //Nodes expanded
+			}
+			
+			frontier.add(initialConfig);
+			
+			//Main search loop
+			int symbolIdx = 0;
+			int previousSymbol = 0;
+			final int wordSize = word.size();
+			while(symbolIdx < wordSize && !frontier.isEmpty()) {
+				GreedyFrontier nextFrontier = new GreedyFrontier();
+				Integer symbol = word.get(symbolIdx);
+				
+				//Fill up the next frontier by reading the current one
+				for(GreedyConfiguration gc : frontier.filter(symbol)) {
+
+					//Add the adjacent nodes to the new frontier
+					List<GreedyConfiguration> nextGCs = gc.expand(symbol, symbolIdx, previousSymbol);
+					nodesExpanded++;
+					
+					for(GreedyConfiguration nextGC : nextGCs) {
+						if(nextGC.isFinal()) {
+							rc.addNumber(nodesExpanded);
+							rc.addNumber(maxFrontierSize);
+							return true;
+						}
+						//Add to frontier (automatic filtering)
+						nextFrontier.add(nextGC);
+					}
+				}
+
+				//Some stats
+				maxFrontierSize = Math.max(maxFrontierSize, frontier.strictSize());
+				//Then start over with the next frontier
+				frontier.absorb(nextFrontier);
+				symbolIdx++;
+				previousSymbol = symbol;
+			}
+			
+			rc.addNumber(nodesExpanded);
+			rc.addNumber(maxFrontierSize);
+			
+			return false;
+		}
+		
+		@Override
+		public void setAutomaton(Automaton ra) {
+			a = (GreedyRA) ra;
 		}
 	};
 }

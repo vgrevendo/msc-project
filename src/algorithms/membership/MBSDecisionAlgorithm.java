@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.RandomAccess;
 
 import algorithms.tools.ResultsContainer;
+import automata.Automaton;
 import automata.RegisterAutomaton;
 
 /**
@@ -12,11 +13,11 @@ import automata.RegisterAutomaton;
  *
  */
 public abstract class MBSDecisionAlgorithm {
-	private RegisterAutomaton ra;
+	private Automaton ra;
 	protected final ResultsContainer rc;
 	public final String name;
 	
-	public MBSDecisionAlgorithm(RegisterAutomaton ra, String name) {
+	public MBSDecisionAlgorithm(Automaton ra, String name) {
 		setAutomaton(ra);
 		rc = ResultsContainer.getContainer();
 		this.name = name;
@@ -28,7 +29,7 @@ public abstract class MBSDecisionAlgorithm {
 		this.name = name;
 	}
 	
-	public void setAutomaton(RegisterAutomaton ra) {
+	public void setAutomaton(Automaton ra) {
 		this.ra = ra;
 	}
 	
@@ -38,7 +39,7 @@ public abstract class MBSDecisionAlgorithm {
 		return decide(ra, word);
 	}
 	
-	public abstract boolean decide(RegisterAutomaton automaton, List<Integer> word);
+	public abstract boolean decide(Automaton automaton, List<Integer> word);
 
 	@Override
 	public String toString() {

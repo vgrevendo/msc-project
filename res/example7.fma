@@ -1,0 +1,55 @@
+-- An automaton recognising the HasNext property
+-- as described in the corresponding translator.
+-- This one is compliant with the latest version
+-- of has_next.trf
+--------------------------------------------------
+-- To filter out actions corresponding to the 
+-- current iterator object, intermediary states 
+-- are used which are accessible by the register
+-- containing the current iterator's identifier
+--------------------------------------------------
+-- This version is updated with the method return
+-- values, giving the following encoding:
+-- Method encoding:
+-- 1: Iterator ID
+-- 2: Iterator.<init> (1)
+-- 3: Iterator.hasNext (2)
+-- 4: Iterator.next (3)
+-- Value encoding:
+-- 5: true (4)
+-- 6: false (5)
+-- 7: Trash (default)
+-- This FMA file also supports the new multi-label
+-- notation.
+-------------------------------------------------
+start 1
+unknown 7
+int0 7
+int10
+safe 7
+int1
+int4
+error 7 F
+int2
+int3
+none
+-
+start
+# 1 2 3 4 5 #
+-
+start * start
+start 2 unknown
+unknown 2,3,4,5,6,7 unknown
+unknown 1 int2
+unknown 1 int4
+unknown 1 int0
+int2 3 int3
+int3 6 none
+int4 4 error
+error * error
+int0 3 int10
+int0 7 unknown
+int10 5 safe
+safe 2,3,4,5,6,7 safe
+safe 1 int1
+int1 4 unknown
