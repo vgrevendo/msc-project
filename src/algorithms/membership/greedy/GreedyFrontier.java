@@ -1,13 +1,11 @@
 package algorithms.membership.greedy;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 
 import algorithms.tools.ResultsContainer;
 import testbench.Testbench;
@@ -19,10 +17,10 @@ import testbench.Testbench;
  */
 public class GreedyFrontier {
 	//unstables
-	public final Set<GreedyConfiguration> unstables;
+	public final List<GreedyConfiguration> unstables;
 	//stables
-	public final Set<GreedyConfiguration> onRhoStates;
-	public final Map<Integer, Set<GreedyConfiguration>> symbolNeeders;
+	public final List<GreedyConfiguration> onRhoStates;
+	public final Map<Integer, List<GreedyConfiguration>> symbolNeeders;
 
 	//Internal monitoring
 	
@@ -36,8 +34,8 @@ public class GreedyFrontier {
 	private static int deadConfigs = 0;
 	
 	public GreedyFrontier() {
-		unstables = new HashSet<>();
-		onRhoStates = new HashSet<>();
+		unstables = new LinkedList<>();
+		onRhoStates = new LinkedList<>();
 		symbolNeeders = new HashMap<>();
 	}
 	
@@ -64,7 +62,7 @@ public class GreedyFrontier {
 		//If s-outgoing symbols
 		for(Integer s : gc.getOutgoingSymbols()) {
 			if(!symbolNeeders.containsKey(s))
-				symbolNeeders.put(s, new HashSet<GreedyConfiguration>());
+				symbolNeeders.put(s, new LinkedList<GreedyConfiguration>());
 			symbolNeeders.get(s).add(gc);
 			size++;
 			if(Testbench.COLLECT_STATS)
@@ -86,7 +84,7 @@ public class GreedyFrontier {
 		unstables.addAll(otherFrontier.unstables);
 		onRhoStates.addAll(otherFrontier.onRhoStates);
 		
-		for(Entry<Integer, Set<GreedyConfiguration>> e: otherFrontier.symbolNeeders.entrySet()) {
+		for(Entry<Integer, List<GreedyConfiguration>> e: otherFrontier.symbolNeeders.entrySet()) {
 			if(!symbolNeeders.containsKey(e.getKey()))
 				symbolNeeders.put(e.getKey(), e.getValue());
 			else
@@ -106,7 +104,7 @@ public class GreedyFrontier {
 		public Iterator<GreedyConfiguration> iterator() {
 			
 			return new Iterator<GreedyConfiguration>() {
-				private List<Set<GreedyConfiguration>> collections;
+				private List<List<GreedyConfiguration>> collections;
 				private Iterator<GreedyConfiguration> currentIt;
 				private GreedyConfiguration nextItem;
 				
@@ -117,7 +115,7 @@ public class GreedyFrontier {
 				public boolean hasNext() {
 					if(collections == null) {
 						collections = new LinkedList<>();
-						Set<GreedyConfiguration> snSet = symbolNeeders.remove(nextSymbol);
+						List<GreedyConfiguration> snSet = symbolNeeders.remove(nextSymbol);
 						if(snSet != null)
 							collections.add(snSet);
 						collections.add(onRhoStates);
@@ -145,7 +143,7 @@ public class GreedyFrontier {
 								return false;
 							}
 							else {
-								Set<GreedyConfiguration> nextCollection = collections.get(0);
+								List<GreedyConfiguration> nextCollection = collections.get(0);
 								collections.remove(0);
 								currentIt = nextCollection.iterator();
 							}
