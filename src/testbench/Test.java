@@ -4,7 +4,10 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import algorithms.tools.ResultsContainer;
 import automata.Automaton;
@@ -24,8 +27,8 @@ public abstract class Test {
 	
 	//Results storage
 	private final List<String> csvLabels = new ArrayList<>();
-	private final List<int[]> csvLists = new ArrayList<>();
-	private final List<String[]> csvStringLists = new ArrayList<>();
+	private final List<List<Integer>> csvLists = new ArrayList<>();
+	private final List<List<String>> csvStringLists = new ArrayList<>();
 	
 	private long lastSigTime = 0L; 
 	
@@ -121,12 +124,14 @@ public abstract class Test {
 
 	protected void addCsvColumn(int[] elements, String label) {
 		csvLabels.add(label);
-		csvLists.add(elements);
+		List<Integer> elems = new ArrayList<>(elements.length);
+		for(int e : elements) elems.add(Integer.valueOf(e));
+		csvLists.add(elems);
 	}
 	
 	protected void addCsvColumn(String[] elements, String label) {
 		csvLabels.add(label);
-		csvStringLists.add(elements);
+		csvStringLists.add(Arrays.asList(elements));
 	}
 	
 	private String outputCsv() throws FileNotFoundException {
@@ -136,7 +141,7 @@ public abstract class Test {
 		String filename = chooseFileName();
 		PrintWriter pw = new PrintWriter(filename);
 		
-		final int length = csvLists.get(0).length;
+		final int length = csvLists.get(0).size();
 		
 		for(String label : csvLabels) {
 			pw.print(label + ";");
@@ -144,17 +149,24 @@ public abstract class Test {
 		pw.print("\n");
 		
 		for(int i = 0; i < length; i++) {
-			for(int[] elements : csvLists) {
-				pw.print(elements[i] + ";");
+			for(List<Integer> elements : csvLists) {
+				pw.print(elements.get(i) + ";");
 			}
-			for(String[] elements : csvStringLists) {
-				pw.print(elements[i] + ";");
+			for(List<String> elements : csvStringLists) {
+				pw.print(elements.get(i) + ";");
 			}
 			pw.print("\n");
 		}
 		
 		pw.close();
 		return filename;
+	}
+	
+	protected void addStats(Map<String, List<Integer>> stats) {
+		for(Entry<String, List<Integer>> e : stats.entrySet()) {
+			csvLabels.add(e.getKey());
+			csvLists.add(e.getValue());
+		}
 	}
 	
 	private String chooseFileName() {

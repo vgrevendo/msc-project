@@ -9,8 +9,8 @@ public abstract class Translator {
 	protected Scanner sc;
 	private String[] currentTokens;
 	
-	public Translator(String filename) throws FileNotFoundException {
-		sc = new Scanner(new File(filename));
+	public Translator() {
+		
 	}
 
 	//To be implemented by the extending class
@@ -73,6 +73,14 @@ public abstract class Translator {
 		}
 		
 		return pword;
+	}
+	
+	public void setStringSource(String input) {
+		sc = new Scanner(input);
+	}
+	
+	public void setFileSource(String filename) throws FileNotFoundException {
+		sc = new Scanner(new File(filename));
 	}
 
 }

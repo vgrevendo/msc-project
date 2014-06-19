@@ -20,8 +20,6 @@ class HasNextRuntimeMonitor implements com.runtimeverification.rvmonitor.java.rt
 	static final ReentrantLock HasNext_RVMLock = new ReentrantLock();
 	static final Condition HasNext_RVMLock_cond = HasNext_RVMLock.newCondition();
 
-	private static boolean HasNext_activated = false;
-
 	// Declarations for Indexing Trees
 	private static Object HasNext_i_Map_cachekey_i;
 	private static HasNextMonitor HasNext_i_Map_cachevalue;
@@ -44,7 +42,6 @@ class HasNextRuntimeMonitor implements com.runtimeverification.rvmonitor.java.rt
 	}
 
 	public static final boolean hasnextEvent(Iterator i) {
-		HasNext_activated = true;
 		while (!HasNext_RVMLock.tryLock()) {
 			Thread.yield();
 		}
@@ -77,8 +74,6 @@ class HasNextRuntimeMonitor implements com.runtimeverification.rvmonitor.java.rt
 			matchedEntry = created;
 			matchedLastMap.putNode(wr_i, created) ;
 		}
-		// D(X) main:8--9
-		boolean cloned_monitor_condition_satisfied = true;
 		final HasNextMonitor matchedEntryfinalMonitor = matchedEntry;
 		matchedEntry.Prop_1_event_hasnext();
 		if(matchedEntryfinalMonitor.Prop_1_Category_match) {
@@ -96,7 +91,6 @@ class HasNextRuntimeMonitor implements com.runtimeverification.rvmonitor.java.rt
 	}
 
 	public static final boolean nextEvent(Iterator i) {
-		HasNext_activated = true;
 		while (!HasNext_RVMLock.tryLock()) {
 			Thread.yield();
 		}
@@ -129,8 +123,6 @@ class HasNextRuntimeMonitor implements com.runtimeverification.rvmonitor.java.rt
 			matchedEntry = created;
 			matchedLastMap.putNode(wr_i, created) ;
 		}
-		// D(X) main:8--9
-		boolean cloned_monitor_condition_satisfied = true;
 		final HasNextMonitor matchedEntryfinalMonitor = matchedEntry;
 		matchedEntry.Prop_1_event_next();
 		if(matchedEntryfinalMonitor.Prop_1_Category_match) {

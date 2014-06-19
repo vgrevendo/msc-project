@@ -1,7 +1,9 @@
 package algorithms.tools;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Just a clean way to collect test results along the way
@@ -10,24 +12,20 @@ import java.util.List;
  */
 public class ResultsContainer {
 	//STATIC SIDE
-	private static ResultsContainer container;
+	private final static ResultsContainer container = new ResultsContainer();
 	
 	public static ResultsContainer getContainer() {
-		if(container == null) {
-			container = new ResultsContainer();
-		}
-		
 		return container;
 	}
 	
 	//INSTANCE SIDE
 	private final List<String> outputList;
-	private List<Integer> numbersList;
+	private final Map<String, Map<String, List<Integer>>> statistics;
 	private StringBuilder sb = new StringBuilder();
 	
 	private ResultsContainer() {
 		outputList = new ArrayList<>();
-		numbersList = new ArrayList<>();
+		statistics = new HashMap<>();
 	}
 	
 	public void addResultString(String result) {
@@ -62,13 +60,19 @@ public class ResultsContainer {
 		outputList.clear();
 	}
 
-	public void addNumber(int number) {
-		numbersList.add(number);
+	//Number sessions: store statistics intelligently
+	public void createSession(String name) {
+		statistics.put(name, new HashMap<String, List<Integer>>());
 	}
 	
-	public List<Integer> getNumbersList() {
-		List<Integer> nl = numbersList;
-		numbersList = new ArrayList<>();
-		return nl;
+	public void addSessionNumber(String sessionName, String category, Integer number) {
+		Map<String, List<Integer>> session = statistics.get(sessionName);
+		if(!session.containsKey(category))
+			session.put(category, new ArrayList<Integer>());
+		session.get(category).add(number);
+	}
+	
+	public Map<String, List<Integer>> getSession(String name) {
+		return statistics.get(name);
 	}
 }

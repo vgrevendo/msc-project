@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import algorithms.membership.MBSDecisionAlgorithm;
+import algorithms.tools.ResultsContainer;
 import automata.Automaton;
 
 public class MembershipAlgorithms {
@@ -49,6 +50,11 @@ public class MembershipAlgorithms {
 			}
 			
 			return false;
+		}
+
+		@Override
+		protected void yieldStatistics(String sessionName, ResultsContainer rc) {
+			//References do not yield statistics
 		}
 	};
 }

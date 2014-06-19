@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import testbench.Testbench;
+import algorithms.tools.ResultsContainer;
 import automata.greedy.GreedyRA;
 import automata.greedy.GreedyState;
 
@@ -19,6 +21,9 @@ public class GreedyConfiguration {
 	
 	//Caching
 	private final int hc; 
+	
+	//Statistics
+	private static int nodesExpanded = 0;
 	
 	public GreedyConfiguration(GreedyState state, 
 								int[] registers, 
@@ -62,6 +67,8 @@ public class GreedyConfiguration {
 				adjacentSearchStates.add(new GreedyConfiguration(s, registers.clone(), a, step));
 		
 		dead = true; //Do not expand this configuration again!
+		if(Testbench.COLLECT_STATS)
+			nodesExpanded++;
 		return adjacentSearchStates;
 	}
 	private int computeHashCode() {
@@ -116,5 +123,13 @@ public class GreedyConfiguration {
 	}
 	public boolean isDead() {
 		return dead;
+	}
+	
+	//Stats
+	public static void yieldStatistics(String sessionName, ResultsContainer rc) {
+		if(Testbench.COLLECT_STATS) {
+			rc.addSessionNumber(sessionName, "nodes", nodesExpanded);
+			nodesExpanded=0;
+		}
 	}
 }

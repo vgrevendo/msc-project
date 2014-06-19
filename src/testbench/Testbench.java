@@ -10,6 +10,7 @@ import java.util.List;
 import references.MembershipAlgorithms;
 import testbench.lister.TestLister;
 import testbench.lister.TestWordLister;
+import testbench.programs.FileWordLister;
 import testbench.programs.translator.SafeIterTranslator;
 import testbench.programs.translator.StrictHasNextTranslator;
 import testbench.programs.translator.TRFTranslator;
@@ -32,6 +33,7 @@ public class Testbench {
 	public final static String HNP_TEST_TRACE_PATH = "gen/trace4.tr";
 
 	public final static boolean DEBUG = false;
+	public final static boolean COLLECT_STATS = true;
 
 	/**
 	 * A stub for parameter parsing has been implemented here, to make launches
@@ -75,6 +77,15 @@ public class Testbench {
 				}
 
 				greedyAutoTest(args[1], args[2], args[3], args[4]);
+				break;
+			case "greedyPT":
+				if (args.length != 4) {
+					System.out
+							.println("Unexpected number of arguments on command line.");
+					return;
+				}
+
+				greedyPTTest(args[1], args[2], args[3]);
 				break;
 			case "auto":
 			default:
@@ -564,6 +575,94 @@ public class Testbench {
 
 			else
 				twg = new TestWordLister(testStep, tracePercentage, translator);
+
+			// Make test
+			Test lmt = new ListMembershipTest(automaton, algorithms, twg);
+			lmt.test();
+
+			ResultsContainer.getContainer().flush();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		System.out.println("Test finished with success");
+
+	}
+	
+	public static void greedyPTTest(String traceCommand,
+									String propertyCommand, String testCommand) {
+		try {
+			// Collect resource paths
+			// Property command
+			String automatonPath = "";
+
+			if (propertyCommand.contains("SYNTH:")) {
+				AutomatonGenerator synthesiser = new SpecificationSynthGenerator(
+						propertyCommand.split(":")[1]);
+				automatonPath = synthesiser.generate();
+			} else
+				automatonPath = propertyCommand;
+
+			// Trace command
+			String tracePath = "";
+			if (traceCommand.equals("LATEST")) {
+				tracePath = findLatestFilename("gen/trace", "tr");
+			} else
+				tracePath = traceCommand;
+
+			// Setup resources
+			GreedyRA automaton = new GreedyRA(automatonPath);
+			automaton.displayInfo();
+
+			MBSDecisionAlgorithm[] algorithms = new MBSDecisionAlgorithm[] {
+			// Membership.ldftsCheck,
+			// Membership.bflgsCheck,
+			// Membership.optiBflgsCheck,
+			// Membership.forgetfulBflgsCheck,
+			// Membership.bestFirstCheck,
+			// Membership.aStarCheck,
+			Membership.greedyCheck,
+			// MembershipAlgorithms.hasNextJavaMOPReference,
+			};
+
+			double testStep = 0.1D;
+			double tracePercentage = 1.0D;
+
+			if (testCommand.contains(":")) {
+				String[] tokens = testCommand.split(":");
+				tracePercentage = Double.parseDouble(tokens[0]);
+				testStep = Double.parseDouble(tokens[1]);
+			}
+
+			TestLister<List<Integer>> twg = null;
+			if (DEBUG)
+				twg = new TestLister<List<Integer>>() {
+
+					@Override
+					protected List<Integer> nextResource() {
+						List<Integer> l = new ArrayList<>();
+						l.add(512);
+						l.add(1);
+						l.add(0);
+
+						l.add(512);
+						l.add(3);
+						l.add(15);
+
+						l.add(512);
+						l.add(2);
+						l.add(5);
+						return l;
+					}
+
+					@Override
+					public int size() {
+						return 1;
+					}
+				};
+
+			else
+				twg = new FileWordLister(testStep, tracePercentage, tracePath);
 
 			// Make test
 			Test lmt = new ListMembershipTest(automaton, algorithms, twg);

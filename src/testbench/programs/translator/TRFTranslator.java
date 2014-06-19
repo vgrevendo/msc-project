@@ -22,8 +22,14 @@ public class TRFTranslator extends Translator {
 	private Map<String, RuleEvaluator> rules = new HashMap<>();
 
 	public TRFTranslator(String filename, String rules) throws Exception {
-		super(filename);
+		setFileSource(filename);
 		
+		System.out.println("This is TRF - will now scan rules...");
+		loadRules(new Scanner(new File(rules)));
+		System.out.println("Rules scanned with success, ready to translate acquisition.");
+	}
+	
+	public TRFTranslator(String rules) throws Exception {
 		System.out.println("This is TRF - will now scan rules...");
 		loadRules(new Scanner(new File(rules)));
 		System.out.println("Rules scanned with success, ready to translate acquisition.");

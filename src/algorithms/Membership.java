@@ -72,6 +72,12 @@ public class Membership {
 			
 			return currentState.isFinal;
 		}
+
+		@Override
+		protected void yieldStatistics(String sessionName, ResultsContainer rc) {
+			// TODO Auto-generated method stub
+			
+		}
 	};
 	
 	/**
@@ -83,10 +89,6 @@ public class Membership {
 		@Override
 		public boolean decide(Automaton a, List<Integer> word) {
 			RegisterAutomaton automaton = (RegisterAutomaton) a;
-			ResultsContainer rc = ResultsContainer.getContainer();
-			int maxFrontierSize = 0;
-			int nodesExpanded = 0;
-			
 			//Depth-first search implies a stack storing the frontier
 			Stack<SearchNode> frontier = new Stack<>();
 			SearchState initialSearchState = new SearchState(automaton.getInitialState(), 
@@ -96,27 +98,23 @@ public class Membership {
 			
 			//Main search loop
 			while(!frontier.isEmpty()) {
-				maxFrontierSize = Math.max(maxFrontierSize, frontier.size());
-				
 				SearchNode node = frontier.pop();
 				if(node.state.isFinal()) {
-					rc.addNumber(nodesExpanded);
-					rc.addNumber(maxFrontierSize);
 					return true;
 				}
 				
 				List<SearchState> nextStates = node.state.expand();
-				nodesExpanded++;
 				
 				for(SearchState s : nextStates) {
 					frontier.add(new SearchNode(s, node, 0));
 				}
 			}
 			
-			rc.addNumber(nodesExpanded);
-			rc.addNumber(maxFrontierSize);
-			
 			return false;
+		}
+
+		@Override
+		protected void yieldStatistics(String sessionName, ResultsContainer rc) {
 		}
 	};
 	
@@ -130,9 +128,6 @@ public class Membership {
 		@Override
 		public boolean decide(Automaton a, List<Integer> word) {
 			RegisterAutomaton automaton = (RegisterAutomaton) a;
-			ResultsContainer rc = ResultsContainer.getContainer();
-			int maxFrontierSize = 0;
-			int nodesExpanded = 0;
 			
 			//BFLGS implies a double set storing the frontier
 			List<HashSet<SearchNode>> sets = new ArrayList<>();
@@ -150,22 +145,17 @@ public class Membership {
 			
 			//Main search loop
 			while(!frontier.isEmpty()) {
-				maxFrontierSize = Math.max(maxFrontierSize, frontier.size());
-
 				//See if a node is final, and 
 				// start filling up the next frontier
 				activeSet = (activeSet+1)%2;
 				Set<SearchNode> nextFrontier = sets.get(activeSet);
 				for(SearchNode node: frontier) {
 					if(node.state.isFinal()) {
-						rc.addNumber(nodesExpanded);
-						rc.addNumber(maxFrontierSize);
 						return true;
 					}
 
 					//Add the adjacent nodes to the new frontier
 					List<SearchState> nextStates = node.state.expand();
-					nodesExpanded++;
 					
 					for(SearchState s : nextStates) {
 						nextFrontier.add(new SearchNode(s, node, 0));
@@ -177,10 +167,13 @@ public class Membership {
 				frontier = nextFrontier;
 			}
 			
-			rc.addNumber(nodesExpanded);
-			rc.addNumber(maxFrontierSize);
-			
 			return false;
+		}
+
+		@Override
+		protected void yieldStatistics(String sessionName, ResultsContainer rc) {
+			// TODO Auto-generated method stub
+			
 		}
 	};
 	
@@ -195,9 +188,6 @@ public class Membership {
 		@Override
 		public boolean decide(Automaton a, List<Integer> word) {
 			RegisterAutomaton automaton = (RegisterAutomaton) a;
-			ResultsContainer rc = ResultsContainer.getContainer();
-			int maxFrontierSize = 0;
-			int nodesExpanded = 0;
 			
 			//BFLGS implies a double set storing the frontier
 			Set<BFLGSSearchNode> frontier = new HashSet<BFLGSSearchNode>();
@@ -210,21 +200,16 @@ public class Membership {
 			
 			//Main search loop
 			while(!frontier.isEmpty()) {
-				maxFrontierSize = Math.max(maxFrontierSize, frontier.size());
-
 				//See if a node is final, and 
 				// start filling up the next frontier
 				Set<BFLGSSearchNode> nextFrontier = new HashSet<BFLGSSearchNode>();
 				for(BFLGSSearchNode node: frontier) {
 					if(node.state.isFinal()) {
-						rc.addNumber(nodesExpanded);
-						rc.addNumber(maxFrontierSize);
 						return true;
 					}
 
 					//Add the adjacent nodes to the new frontier
 					List<BFLGSSearchState> nextStates = node.state.expand();
-					nodesExpanded++;
 					
 					for(BFLGSSearchState s : nextStates) {
 						nextFrontier.add(new BFLGSSearchNode(s, node));
@@ -235,10 +220,13 @@ public class Membership {
 				frontier = nextFrontier;
 			}
 			
-			rc.addNumber(nodesExpanded);
-			rc.addNumber(maxFrontierSize);
-			
 			return false;
+		}
+
+		@Override
+		protected void yieldStatistics(String sessionName, ResultsContainer rc) {
+			// TODO Auto-generated method stub
+			
 		}
 	};
 	
@@ -253,10 +241,6 @@ public class Membership {
 		
 		@Override
 		public boolean decide(Automaton automaton, List<Integer> word) {
-			ResultsContainer rc = ResultsContainer.getContainer();
-			int maxFrontierSize = 0;
-			int nodesExpanded = 0;
-			
 			//BFLGS implies a double set storing the frontier
 			Set<OBFLGSSearchState> frontier = new HashSet<OBFLGSSearchState>();
 			
@@ -268,21 +252,16 @@ public class Membership {
 			
 			//Main search loop
 			while(!frontier.isEmpty()) {
-				maxFrontierSize = Math.max(maxFrontierSize, frontier.size());
-
 				//See if a node is final, and 
 				// start filling up the next frontier
 				Set<OBFLGSSearchState> nextFrontier = new HashSet<OBFLGSSearchState>();
 				for(OBFLGSSearchState node: frontier) {
 					if(node.isFinal()) {
-						rc.addNumber(nodesExpanded);
-						rc.addNumber(maxFrontierSize);
 						return true;
 					}
 
 					//Add the adjacent nodes to the new frontier
 					List<OBFLGSSearchState> nextStates = node.expand();
-					nodesExpanded++;
 					
 					for(OBFLGSSearchState s : nextStates) {
 						nextFrontier.add(s);
@@ -293,9 +272,6 @@ public class Membership {
 				frontier = nextFrontier;
 			}
 			
-			rc.addNumber(nodesExpanded);
-			rc.addNumber(maxFrontierSize);
-			
 			return false;
 		}
 
@@ -305,6 +281,12 @@ public class Membership {
 			OptimisedRA ora = new OptimisedRA((RegisterAutomaton)ra);
 			this.a = ora;
 			super.setAutomaton(ora);
+		}
+
+		@Override
+		protected void yieldStatistics(String sessionName, ResultsContainer rc) {
+			// TODO Auto-generated method stub
+			
 		}
 	};
 
@@ -317,11 +299,6 @@ public class Membership {
 		
 		@Override
 		public boolean decide(Automaton automaton, List<Integer> word) {
-			//Ignore the automaton given as an argument, we're going to use the one stored
-			ResultsContainer rc = ResultsContainer.getContainer();
-			int maxFrontierSize = 0;
-			int nodesExpanded = 0;
-			
 			//Best-first employs a heuristic-driven queue
 			PrioritySet frontier = new PrioritySet(a, comparator);
 			SearchState initialSearchState = new SearchState(a.getInitialState(), 
@@ -331,25 +308,17 @@ public class Membership {
 			
 			//Main search loop
 			while(!frontier.isEmpty()) {
-				maxFrontierSize = Math.max(maxFrontierSize, frontier.size());
-				
 				SearchNode node = frontier.pop();
 				if(node.state.isFinal()) {
-					rc.addNumber(nodesExpanded);
-					rc.addNumber(maxFrontierSize);
 					return true;
 				}
 				
 				List<SearchState> nextStates = node.state.expand();
-				nodesExpanded++;
 				
 				for(SearchState s : nextStates) {
 					frontier.add(new SearchNode(s, node, 0));
 				}
 			}
-			
-			rc.addNumber(nodesExpanded);
-			rc.addNumber(maxFrontierSize);
 			
 			return false;
 		}
@@ -368,6 +337,10 @@ public class Membership {
 				}
 			};
 		}
+
+		@Override
+		protected void yieldStatistics(String sessionName, ResultsContainer rc) {
+		}
 	};
 
 	/**
@@ -381,11 +354,6 @@ public class Membership {
 		
 		@Override
 		public boolean decide(Automaton automaton, List<Integer> word) {
-			//Ignore the automaton given as an argument, we're going to use the one stored
-			ResultsContainer rc = ResultsContainer.getContainer();
-			int maxFrontierSize = 0;
-			int nodesExpanded = 0;
-			
 			//A* employs a heuristic-driven queue
 			PrioritySet frontier = new PrioritySet(a, comparator);
 			SearchState initialSearchState = new SearchState(a.getInitialState(), 
@@ -395,25 +363,17 @@ public class Membership {
 			
 			//Main search loop
 			while(!frontier.isEmpty()) {
-				maxFrontierSize = Math.max(maxFrontierSize, frontier.size());
-				
 				SearchNode node = frontier.pop();
 				if(node.state.isFinal()) {
-					rc.addNumber(nodesExpanded);
-					rc.addNumber(maxFrontierSize);
 					return true;
 				}
 				
 				List<SearchState> nextStates = node.state.expand();
-				nodesExpanded++;
 				
 				for(SearchState s : nextStates) {
 					frontier.add(new SearchNode(s, node, 0));
 				}
 			}
-			
-			rc.addNumber(nodesExpanded);
-			rc.addNumber(maxFrontierSize);
 			
 			return false;
 		}
@@ -436,6 +396,11 @@ public class Membership {
 				}
 			};
 		}
+
+		
+		@Override
+		protected void yieldStatistics(String sessionName, ResultsContainer rc) {
+		}
 	};
 
 	/**
@@ -447,25 +412,19 @@ public class Membership {
 	 */
 	public static final MBSDecisionAlgorithm greedyCheck = new MBSDecisionAlgorithm("Greedy-mbs") {
 		private GreedyRA a;
+		private GreedyFrontier frontier;
 		
 		@Override
 		public boolean decide(Automaton automaton, List<Integer> word) {
-			//Monitoring
-			ResultsContainer rc = ResultsContainer.getContainer();
-			int maxFrontierSize = 1;
-			int nodesExpanded = 0;
-			
 			//This time the frontier is a custom one (and has a complex structure)
-			GreedyFrontier frontier = new GreedyFrontier();
+			frontier = new GreedyFrontier();
 			
 			//Initial state
 			GreedyConfiguration initialConfig = 
 					new GreedyConfiguration(a.getInitialState(), a.getInitialRegisters(), a, -1);
 			
-			if(initialConfig.isFinal()) {
-				rc.addNumber(1); //Maximum frontier size
-				rc.addNumber(0); //Nodes expanded
-			}
+			if(initialConfig.isFinal())
+				return true;
 			
 			frontier.add(initialConfig);
 			
@@ -482,29 +441,21 @@ public class Membership {
 
 					//Add the adjacent nodes to the new frontier
 					List<GreedyConfiguration> nextGCs = gc.expand(symbol, symbolIdx, previousSymbol);
-					nodesExpanded++;
 					
 					for(GreedyConfiguration nextGC : nextGCs) {
-						if(nextGC.isFinal()) {
-							rc.addNumber(nodesExpanded);
-							rc.addNumber(maxFrontierSize);
+						if(nextGC.isFinal())
 							return true;
-						}
+						
 						//Add to frontier (automatic filtering)
 						nextFrontier.add(nextGC);
 					}
 				}
 
-				//Some stats
-				maxFrontierSize = Math.max(maxFrontierSize, frontier.strictSize());
 				//Then start over with the next frontier
 				frontier.absorb(nextFrontier);
 				symbolIdx++;
 				previousSymbol = symbol;
 			}
-			
-			rc.addNumber(nodesExpanded);
-			rc.addNumber(maxFrontierSize);
 			
 			return false;
 		}
@@ -512,6 +463,13 @@ public class Membership {
 		@Override
 		public void setAutomaton(Automaton ra) {
 			a = (GreedyRA) ra;
+		}
+
+		
+		@Override
+		protected void yieldStatistics(String sessionName, ResultsContainer rc) {
+			GreedyConfiguration.yieldStatistics(sessionName, rc);
+			GreedyFrontier.yieldStatistics(sessionName, rc);
 		}
 	};
 }

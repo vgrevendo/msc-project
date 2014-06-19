@@ -21,7 +21,7 @@ import java.util.List;
 public class StrictHasNextTranslator extends Translator {
 
 	public StrictHasNextTranslator(String filename) throws FileNotFoundException {
-		super(filename);
+		setFileSource(filename);
 	}
 
 	@Override

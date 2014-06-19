@@ -20,8 +20,6 @@ public class ListMembershipTest extends Test {
 	
 	//Results
 	private final boolean[] results;
-	private final int[][] nodesExpanded;
-	private final int[][] maxFrontierSize;
 	private final int[][] times;
 	private final long[] totalTimes;
 	
@@ -36,8 +34,6 @@ public class ListMembershipTest extends Test {
 		
 		totalTimes = new long[algorithms.length];
 		results = new boolean[twg.size()];
-		nodesExpanded = new int[algorithms.length][twg.size()];
-		maxFrontierSize = new int[algorithms.length][twg.size()];
 		times = new int[algorithms.length][twg.size()];
 	}
 
@@ -71,11 +67,7 @@ public class ListMembershipTest extends Test {
 				else
 					results[twg.getIndex()] = result;
 				
-				List<Integer> numbers = rc.getNumbersList();
-				if(numbers.size() > 0) {
-					nodesExpanded[algIndex][twg.getIndex()] = numbers.get(0);
-					maxFrontierSize[algIndex][twg.getIndex()] = numbers.get(1);
-				}
+				algorithm.yieldStatistics(rc);
 			}
 			
 			inputSizes[twg.getIndex()] = testWord.size();
@@ -89,8 +81,7 @@ public class ListMembershipTest extends Test {
 		for(int algIndex = 0; algIndex < algorithms.length; algIndex++) {
 			MBSDecisionAlgorithm algorithm = algorithms[algIndex];
 			
-			addCsvColumn(nodesExpanded[algIndex], algorithm + " nodes");
-			addCsvColumn(maxFrontierSize[algIndex], algorithm + " frontier");
+			addStats(rc.getSession(algorithm.name));
 			addCsvColumn(times[algIndex], algorithm + " time");
 		}
 	}

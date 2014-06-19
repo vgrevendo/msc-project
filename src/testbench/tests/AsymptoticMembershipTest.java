@@ -90,7 +90,7 @@ public class AsymptoticMembershipTest extends Test {
 				else
 					results[twg.getIndex()] = result;
 				
-				List<Integer> numbers = rc.getNumbersList();
+				List<Integer> numbers = null;
 				if(numbers.size() > 0) {
 					nodesExpanded[algIndex][twg.getIndex()] = numbers.get(0);
 					maxFrontierSize[algIndex][twg.getIndex()] = numbers.get(1);

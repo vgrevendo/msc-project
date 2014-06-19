@@ -473,3 +473,11 @@ In order of proceedings:
 (The test infrastructure will have to be cleaned up at some point: the new algorithm does not require the automaton to be a register automaton).
 
 The frontier will now be made up of a set, which stores search states that are NOT on the same word distance.
+
+06/18/14
+First idea speeds up membership checking 500 times. Success.
+(Might be useful to make deeper analysis of stability in automata: some of the first states encountered in the automaton might not have all states assigned and are therefore stable. To be explored with the “automaton recognising words with a repetition in them”).
+Will try another speedup: idea no 3.
+
+06/19/14
+Idea no. 4 is no good: the alphabet's size is small compared to the potential word size.

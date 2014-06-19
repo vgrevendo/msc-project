@@ -21,7 +21,7 @@ import java.util.Set;
 public class SafeIterTranslator extends Translator {
 
 	public SafeIterTranslator(String filename) throws FileNotFoundException {
-		super(filename);
+		setFileSource(filename);
 	}
 
 	@Override

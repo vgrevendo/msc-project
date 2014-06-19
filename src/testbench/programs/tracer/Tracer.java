@@ -4,9 +4,15 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
+
+import testbench.programs.translator.TRFTranslator;
+import testbench.programs.translator.Translator;
 
 import com.sun.jdi.Bootstrap;
 import com.sun.jdi.Location;
@@ -39,17 +45,31 @@ import com.sun.jdi.request.MethodExitRequest;
  * @author vincent
  *
  */
+@SuppressWarnings("unused") 
 public class Tracer {
+	public static final String CONNECTOR_NAME = "dt_socket";
 	public static final String PATH_ROOT = "gen/trace";
 	public static final int DISPLAY_PROGRESS_MILESTONE = 1000;
 	public static final int MAX_NUM_ENTRIES = 1_000_000;
 	
+	//Real-time translation
+	public static final boolean REAL_TIME_TR = true;
+	public static final int DEF_SB_CAPACITY = 70_000;
+	public static final int MAX_NUM_NUMBERS_TR = 3_000_000;
+	public static final int TR_BUFFER_SIZE = 1_000;
+	
+	private int numTrNumbers = 0;
+	private Translator trf;
+	
+	//Environment resources
 	private VirtualMachine vm;
 	private PrintWriter output;
 	private int entries = 0;
 	private String mainClassName;
 	private String mainMethodName;
 	private String exitMethodName;
+	
+	private StringBuilder sb = new StringBuilder(DEF_SB_CAPACITY);
 	
 	//Instance
  	public void connect(int portNumber) throws Exception {
@@ -115,8 +135,6 @@ public class Tracer {
 	}
 	
 	public void listenForMethodExits() throws InterruptedException {
-		output.println("-- Listening for method exits");
-		
 		EventRequestManager evtRqManager = vm.eventRequestManager();
 		EventQueue evtQueue = vm.eventQueue();
 		
@@ -144,43 +162,64 @@ public class Tracer {
 					continue;
 				
 				MethodExitEvent exitEvent = (MethodExitEvent) event;
+				String traceLine = "";
 
 				try {
 					if(exitEvent.method().isStatic())
-						output.print("[STATIC]");
+						traceLine = "[STATIC]";
 					else {
 						StackFrame frame;
 						frame = exitEvent.thread().frame(0);
-						output.print("[" + frame.thisObject().uniqueID() + "]");
+						traceLine = "[" + frame.thisObject().uniqueID() + "]";
 					}
 				} catch (Exception e) {
-					output.print("[UNKNOWN]");
+					traceLine = "[UNKNOWN]";
 				}
 				
-				output.println(" " + exitEvent.method().declaringType().name() + 
+				addToTrace(traceLine + " " + exitEvent.method().declaringType().name() + 
 							   " " + exitEvent.method().name() + 
 						       " " + exitEvent.returnValue());
 				
-				entries ++;
-				
 				if(exitEvent.method().declaringType().name().equals(mainClassName) && exitEvent.method().name().equals(exitMethodName)) {
 					System.out.println("Reached STOP method of class " + mainClassName + ": exiting.");
-					vm.exit(0);
+					return;
 				}
 				
 				if(entries % DISPLAY_PROGRESS_MILESTONE == 0) {
 					System.out.println(entries + " entries recorded");
 				}
 				
-				if(entries >= MAX_NUM_ENTRIES) {
+				if(!REAL_TIME_TR && entries >= MAX_NUM_ENTRIES) {
 					System.out.println("Hit maximum number of entries: " + MAX_NUM_ENTRIES);
-					vm.exit(0);
+					return;
+				}
+				
+				if(REAL_TIME_TR && numTrNumbers >= MAX_NUM_NUMBERS_TR) {
+					System.out.println("Hit maximum number of entries: " + MAX_NUM_NUMBERS_TR);
+					return;
 				}
 			}
 			
 			evtSet.resume();
 		}
 		
+		
+	}
+	
+	private void addToTrace(String s) {
+		entries++;
+		
+		if(REAL_TIME_TR) {
+			sb.append(s);
+			sb.append("\n");
+			if(entries % TR_BUFFER_SIZE == 0) {
+				trf.setStringSource(sb.toString());
+				outputTranslationBatch(trf.translate());
+				sb = new StringBuilder();
+			}
+		} else {
+			output.println(s);
+		}
 		
 	}
 	
@@ -234,21 +273,33 @@ public class Tracer {
 	
 	private String chooseFileName() {
 		int id = 0;
+		String prefix = PATH_ROOT;
+		if(REAL_TIME_TR)
+			prefix += "_TRF_";
 		
-		while((new File(PATH_ROOT + id + ".tr")).exists()) {
+		while((new File(prefix + id + ".tr")).exists()) {
 			id ++;
 		}
 		
-		return PATH_ROOT + id + ".tr";
+		return prefix + id + ".tr";
 	}
 	
 	private void initOutputFile() throws FileNotFoundException {
 		String filename = chooseFileName();
 		output = new PrintWriter(filename);
+		
+		//Write header
+		DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+		Date date = new Date();
+		output.println("-- Listening for method exits");
+		output.println("-- This trace was generated on " + dateFormat.format(date));
 	}
 	
 	public void run(String[] args) {
 		try {
+			if(REAL_TIME_TR)
+				trf = new TRFTranslator(args[4]);
+			
 			//Set some params
 			mainClassName = args[1];
 			mainMethodName = args[2];
@@ -263,6 +314,9 @@ public class Tracer {
 			//Listen for events
 			listenForMethodExits();
 			
+			//Quit
+			vm.exit(0);
+			
 		} catch (Exception e) {
 			System.out.println("Trace failed: " + e.getMessage());
 			e.printStackTrace();
@@ -273,8 +327,19 @@ public class Tracer {
 	}
 	
 	//Launchpad
-	public static final String CONNECTOR_NAME = "dt_socket";
+	
 	public static void main(String[] args) {
 		(new Tracer()).run(args);
+	}
+
+	//Real-time translation
+	private void outputTranslationBatch(List<Integer> numbers) {
+		for(Integer i : numbers) {
+			output.print(i + " ");
+		}
+		
+		numTrNumbers += numbers.size();
+		
+		System.out.println("Output " + numbers.size() + " numbers (total: " + numTrNumbers + ")");
 	}
 }

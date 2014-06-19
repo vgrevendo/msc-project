@@ -17,7 +17,7 @@ import java.util.List;
  */
 public class NaiveHasNextTranslator extends Translator  {
 	public NaiveHasNextTranslator(String filename) throws FileNotFoundException {
-		super(filename);
+		setFileSource(filename);
 	}
 	
 	@Override

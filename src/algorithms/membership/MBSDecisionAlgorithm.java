@@ -5,7 +5,6 @@ import java.util.RandomAccess;
 
 import algorithms.tools.ResultsContainer;
 import automata.Automaton;
-import automata.RegisterAutomaton;
 
 /**
  * An abstract class to make test extensions easier.
@@ -20,12 +19,14 @@ public abstract class MBSDecisionAlgorithm {
 	public MBSDecisionAlgorithm(Automaton ra, String name) {
 		setAutomaton(ra);
 		rc = ResultsContainer.getContainer();
+		rc.createSession(name);
 		this.name = name;
 	}
 	
 	public MBSDecisionAlgorithm(String name) {
 		this.ra = null;
 		rc = ResultsContainer.getContainer();
+		rc.createSession(name);
 		this.name = name;
 	}
 	
@@ -45,4 +46,10 @@ public abstract class MBSDecisionAlgorithm {
 	public String toString() {
 		return name;
 	}
+
+	//Statistics
+	public void yieldStatistics(ResultsContainer rc) {
+		yieldStatistics(name, rc);
+	}
+	protected abstract void yieldStatistics(String sessionName, ResultsContainer rc);
 }

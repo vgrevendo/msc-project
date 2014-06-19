@@ -9,6 +9,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import algorithms.tools.ResultsContainer;
+import testbench.Testbench;
+
 /**
  * The frontier that implements the behaviour for greedy search.
  * @author vincent
@@ -20,9 +23,17 @@ public class GreedyFrontier {
 	//stables
 	public final Set<GreedyConfiguration> onRhoStates;
 	public final Map<Integer, Set<GreedyConfiguration>> symbolNeeders;
+
+	//Internal monitoring
 	
-	//Monitoring information
-	private int size = 0;
+	//Statistics collection (see testbench)
+	private static int size = 0;
+	private static int rhoCompCounter = 0;
+	private static int symbolNeedCounter = 0;
+	private static int unstableCounter = 0;
+	private static int maxActiveSize = 0;
+	private static int ignoredConfigs = 0;
+	private static int deadConfigs = 0;
 	
 	public GreedyFrontier() {
 		unstables = new HashSet<>();
@@ -36,6 +47,8 @@ public class GreedyFrontier {
 		if(!gc.state.isStable()) {
 			unstables.add(gc);
 			size++;
+			if(Testbench.COLLECT_STATS)
+				unstableCounter++;
 			return;
 		}
 		
@@ -43,6 +56,8 @@ public class GreedyFrontier {
 		if(gc.state.isRhoCompatible()) {
 			onRhoStates.add(gc);
 			size++;
+			if(Testbench.COLLECT_STATS)
+				rhoCompCounter++;
 			return;
 		}
 		
@@ -52,7 +67,13 @@ public class GreedyFrontier {
 				symbolNeeders.put(s, new HashSet<GreedyConfiguration>());
 			symbolNeeders.get(s).add(gc);
 			size++;
+			if(Testbench.COLLECT_STATS)
+				symbolNeedCounter++;
+			return;
 		}
+		
+		if(Testbench.COLLECT_STATS)
+			ignoredConfigs++;
 	}
 	public Iterable<GreedyConfiguration> filter(Integer symbol) {
 		return new ConfigurationFilter(symbol);
@@ -88,12 +109,15 @@ public class GreedyFrontier {
 				private List<Set<GreedyConfiguration>> collections;
 				private Iterator<GreedyConfiguration> currentIt;
 				private GreedyConfiguration nextItem;
+				
+				//Stats
+				private int activeSize = 0;
 
 				@Override
 				public boolean hasNext() {
 					if(collections == null) {
 						collections = new LinkedList<>();
-						Set<GreedyConfiguration> snSet = symbolNeeders.get(nextSymbol);
+						Set<GreedyConfiguration> snSet = symbolNeeders.remove(nextSymbol);
 						if(snSet != null)
 							collections.add(snSet);
 						collections.add(onRhoStates);
@@ -110,10 +134,16 @@ public class GreedyFrontier {
 							
 							if(!nextItem.isDead())
 								return true;
+							else if(Testbench.COLLECT_STATS)
+								deadConfigs++;
 						} else {
 							//Current iterator is empty
-							if(collections.size()==0)
+							if(collections.size()==0) {
+								if(Testbench.COLLECT_STATS) {
+									maxActiveSize = Math.max(activeSize, maxActiveSize);
+								}
 								return false;
+							}
 							else {
 								Set<GreedyConfiguration> nextCollection = collections.get(0);
 								collections.remove(0);
@@ -125,6 +155,9 @@ public class GreedyFrontier {
 
 				@Override
 				public GreedyConfiguration next() {
+					if(Testbench.COLLECT_STATS)
+						activeSize++;
+					
 					return nextItem;
 				}
 
@@ -134,13 +167,26 @@ public class GreedyFrontier {
 		}
 		
 	}
-	public int size() {
-		return size;
-	}
-	public int strictSize() {
-		return size;
-	}
 	public boolean isEmpty() {
-		return size == 0;
+		return unstables.isEmpty() && onRhoStates.isEmpty() && symbolNeeders.isEmpty();
+	}
+
+	//Statistics
+	public static void yieldStatistics(String sessionName, ResultsContainer rc) {
+		rc.addSessionNumber(sessionName, "max fsize", size);
+		rc.addSessionNumber(sessionName, "max asize", maxActiveSize);
+		rc.addSessionNumber(sessionName, "unstables", unstableCounter);
+		rc.addSessionNumber(sessionName, "rho compatibles", rhoCompCounter);
+		rc.addSessionNumber(sessionName, "symbol needers", symbolNeedCounter);
+		rc.addSessionNumber(sessionName, "ignored nodes", ignoredConfigs);
+		rc.addSessionNumber(sessionName, "dead nodes", deadConfigs);
+		
+		rhoCompCounter = 0;
+		symbolNeedCounter = 0;
+		unstableCounter = 0;
+		maxActiveSize = 0;
+		ignoredConfigs = 0;
+		deadConfigs = 0;
+		size = 0;
 	}
 }

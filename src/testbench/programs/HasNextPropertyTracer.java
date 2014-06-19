@@ -30,7 +30,7 @@ public class HasNextPropertyTracer {
 		int sum = 0;
 		
 		//Populate a random list
-		int length = (int) (Math.random() * maxListLength)+1; 
+		int length = slackChoose(maxListLength, 0.1);
 		ArrayList<Integer> list = new ArrayList<>(length);
 		
 		for(int i = 0; i < length; i++) {
@@ -38,7 +38,7 @@ public class HasNextPropertyTracer {
 		}
 		
 		//Create all iterators
-		int numIterators = (int) (Math.random() * maxNumIterators)+1;
+		int numIterators = slackChoose(maxNumIterators, 0.1);
 		List<Iterator<Integer>> iterators = new ArrayList<>(numIterators);
 		
 		for(int i = 0; i < numIterators; i++) 
@@ -89,6 +89,10 @@ public class HasNextPropertyTracer {
 		System.out.println("Expected sum: " + (numIterators*length*(length-1)/2));
 		System.out.println("Real sum:     " + sum);
 		
+	}
+	
+	private static int slackChoose(int target, double slack) {
+		return (int) ((1.0+2.0*(Math.random()-0.5)*slack)*(double)target);
 	}
 
 }
