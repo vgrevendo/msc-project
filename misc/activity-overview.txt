@@ -454,7 +454,12 @@ Meeting w/ Radu:
 
 06/13/14
 In order of proceedings:
-1. Idea worked much less well than expected, but it is saveable. It will proceed in several steps:
+1. Idea worked much less well than expected, but it is saveable. 
+The observation is that a symbol leaving a ocnfiguration totally unchanged never happens, because usually at least the registers are changed. Since we're only interested in detecting physical state change, we have to find a way to ignore register-change-only symbols.
+For this two categories of configurations appear: stable ones, ones that are in a state where it is easy to stay and compulsory to survive; and unstable ones, ones that may infer death and that will easily send you to another state.
+Unstable ones always have to be expanded since only them can infer death. Stable states should only be expanded if they receive a symbol they require (symbolNeeders) or if a strictly outgoing transition has rho as its label, and receives a fresh symbol (rhoCompatibles).
+
+It will proceed in several steps:
 - Preprocess the automaton to find which states are stable, and which are unstable.
 - Preprocess the automaton to sort transitions between strictly outgoing and self-transitions.
 - Preprocess the automaton to know, per physical state, which register symbols have to be declared for quick updates.
@@ -480,4 +485,13 @@ First idea speeds up membership checking 500 times. Success.
 Will try another speedup: idea no 3.
 
 06/19/14
-Idea no. 4 is no good: the alphabet's size is small compared to the potential word size.
+Idea no. 4 is no good: the alphabet's size is small (or at least limited) compared to the potential word size. Extra bloom filtering will add 
+
+Replaced sets by lists in the greedy paradigm, this speeds up the process again (1.1s for 3M symbols). Why is this? No more hash codes computed.
+
+Idea no. 3 was a good idea and speeds up the process again, 3M symbols -> 1.07s.
+
+06/23/14
+Collecting another large trace with the tracer program, and with the new formalism 0<=s<N. This is to perfect idea no. 3 even more. New ideas:
+* Preprocess the automaton to eliminate unnecessary writes.
+* Sets might have overhead for “need symbols”.

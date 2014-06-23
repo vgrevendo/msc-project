@@ -20,7 +20,7 @@ public class GreedyConfiguration {
 	private final int lastUpdateStep;
 	
 	//Caching
-	private final int hc; 
+	private final int hc = 0; 
 	
 	//Statistics
 	private static int nodesExpanded = 0;
@@ -32,7 +32,6 @@ public class GreedyConfiguration {
 		this.state = state;
 		this.registers = registers;
 		this.a = a;
-		this.hc = computeHashCode();
 		this.lastUpdateStep = lastUpdateStep;
 	}
 	
@@ -71,9 +70,6 @@ public class GreedyConfiguration {
 			nodesExpanded++;
 		return adjacentSearchStates;
 	}
-	private int computeHashCode() {
-		return 31 * Arrays.hashCode(registers) + state.hashCode();
-	}
 
 	//Generics
 	@Override
@@ -106,16 +102,11 @@ public class GreedyConfiguration {
 	public boolean isFinal() {
 		return state.isFinal;
 	}
-	/**
-	 * TODO:
-	 * Can be greatly optimised with the 0 <= s < N paradigm
-	 * @return
-	 */
 	public List<Integer> getOutgoingSymbols() {
 		List<Integer> symbols = new ArrayList<Integer>();
 		for(Integer labelRegister : state.getOutgoingRegisters()) {
 			if(labelRegister < a.getWriteableOffset())
-				symbols.add(labelRegister+1);
+				symbols.add(labelRegister);
 			else
 				symbols.add(registers[labelRegister - a.getWriteableOffset()]);
 		}

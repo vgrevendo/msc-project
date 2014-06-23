@@ -4,10 +4,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Scanner;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -32,7 +30,6 @@ public class GreedyRA extends Automaton {
 	private GreedyState[] states;
 	private GreedyState initialState;
 	private int[] registers;
-	private int[] fixedRegisters;
 	private int writeOffset;
 
 	public GreedyRA(String loadPath) throws FileNotFoundException,
@@ -206,50 +203,26 @@ public class GreedyRA extends Automaton {
 			}
 		}
 		
-		//Rewrite registers
-		// Rewritemap is a map that maps old indexes to new ones
-		Map<Integer, Integer> rewriteMap = new HashMap<Integer, Integer>();
-		int[] oldRegisters = registers;
-		registers = new int[writableRegisters.size()];
-		fixedRegisters = new int[readOnlyRegisters.size()+1];
+		//Find the maximum value in the read-only registers
 		writeOffset = readOnlyRegisters.size();
 		
-		int counter = 0;
-		for(Integer i : readOnlyRegisters) {
-			rewriteMap.put(i, counter);
-			fixedRegisters[oldRegisters[i]] = counter;
-			counter++;
-		}
-		for(Integer i : writableRegisters) {
-			rewriteMap.put(i, counter);
-			registers[counter-fixedRegisters.length+1] = oldRegisters[i];
-			counter++;
+		//Rewrite registers
+		//Writeable registers are the same register values kept in the same order,
+		//  offset to fit in a smaller array (which is writeable)
+		int[] oldRegisters = registers;
+		registers = new int[writableRegisters.size()];
+		
+		for(int i = writeOffset ; i < oldRegisters.length; i++) {
+			registers[i-writeOffset] = oldRegisters[i];
 		}
 		
-		//Rewrite rho values
+		//Rewrite rho values: should be done more cleanly
 		for(GreedyState state : states) {
-			//To be done differently and cleanly!
 			if(state.getAssignmentRegister() >= 0)
-				state.setRho(rewriteMap.get(state.getAssignmentRegister())-writeOffset);
+				state.setRho(state.getAssignmentRegister()-writeOffset);
 		}
 		
-		//Rewrite transitions: TODO more cleanly
-		for(GreedyState state : states) {
-			Map<Integer, List<GreedyState>> newTransitions = new HashMap<>();
-			for(Entry<Integer, List<GreedyState>> e : state.getTransitions().entrySet()) {
-				newTransitions.put(rewriteMap.get(e.getKey()), new ArrayList<GreedyState>());
-				for(GreedyState s : e.getValue())
-					newTransitions.get(rewriteMap.get(e.getKey())).add(s);
-			}
-			
-			state.clearMu(); //Stupid!
-			
-			//Rewrite all transition labels for all destination states
-			for(Entry<Integer, List<GreedyState>> e : newTransitions.entrySet())
-				for(GreedyState s : e.getValue())
-					state.addTransition(e.getKey(), s);
-		}
-		
+		//No need to rewrite transitions
 		//And we're ready to go.
 	}
 	/**
@@ -315,12 +288,9 @@ public class GreedyRA extends Automaton {
 	public int[] getInitialRegisters() {
 		return registers.clone();
 	}
-	public int[] getFixedRegisters() {
-		return fixedRegisters;
-	}
 	public int findContainingRegister(int[] registers, int symbol) {
-		if(symbol > 0 && symbol < fixedRegisters.length) 
-			return fixedRegisters[symbol];
+		if(symbol < writeOffset) 
+			return symbol;
 		int i =0;
 		for(int s : registers) {
 			if(s == symbol)
@@ -331,8 +301,5 @@ public class GreedyRA extends Automaton {
 	}
 	public int getWriteableOffset() {
 		return writeOffset;
-	}
-	public int getReadOnlyRegister(int index) {
-		return fixedRegisters[index];
 	}
 }

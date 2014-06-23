@@ -1,6 +1,6 @@
 ------------------------------------------
 -- Translation rules for the HasNext Property
 ------------------------------------------
-subclass:java.util.Iterator <init>:1 0
-subclass:java.util.Iterator hasNext:2 equals:true:4 equals:false:5
-subclass:java.util.Iterator next:3 0
+subclass:java.util.Iterator <init>:0 5
+subclass:java.util.Iterator hasNext:1 equals:true:3 equals:false:4
+subclass:java.util.Iterator next:2 5

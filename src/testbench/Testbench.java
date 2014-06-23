@@ -89,13 +89,13 @@ public class Testbench {
 				break;
 			case "auto":
 			default:
-				if (args.length != 5) {
+				if (args.length != 4) {
 					System.out
 							.println("Unexpected number of arguments on command line.");
 					return;
 				}
 
-				fullyAutomaticPropertyTest(args[1], args[2], args[3], args[4]);
+				fullyAutomaticPropertyTest(args[1], args[2], args[3]);
 			}
 		} catch (Exception e) {
 			System.out.println("An error occurred:");
@@ -401,7 +401,7 @@ public class Testbench {
 	 *            - can be "SYNTH" or the path to a bas FMA automaton file
 	 */
 	public static void fullyAutomaticPropertyTest(String traceCommand,
-			String translationPath, String propertyCommand, String testCommand) {
+												  String propertyCommand, String testCommand) {
 		try {
 			// Collect resource paths
 			// Property command
@@ -446,8 +446,6 @@ public class Testbench {
 				testStep = Double.parseDouble(tokens[1]);
 			}
 
-			Translator translator = new TRFTranslator(tracePath,
-					translationPath);
 			TestLister<List<Integer>> twg = null;
 			if (DEBUG)
 				twg = new TestLister<List<Integer>>() {
@@ -476,7 +474,7 @@ public class Testbench {
 				};
 
 			else
-				twg = new TestWordLister(testStep, tracePercentage, translator);
+				twg = new FileWordLister(testStep, tracePercentage, tracePath);
 
 			// Make test
 			Test lmt = new ListMembershipTest(automaton, algorithms, twg);

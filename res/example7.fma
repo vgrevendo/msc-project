@@ -11,18 +11,18 @@
 -- This version is updated with the method return
 -- values, giving the following encoding:
 -- Method encoding:
--- 1: Iterator ID
--- 2: Iterator.<init> (1)
--- 3: Iterator.hasNext (2)
--- 4: Iterator.next (3)
+-- 1: Iterator.<init> (0)
+-- 2: Iterator.hasNext (1)
+-- 3: Iterator.next (2)
 -- Value encoding:
--- 5: true (4)
--- 6: false (5)
+-- 4: true (3)
+-- 5: false (4)
+-- 6: Iterator ID
 -- 7: Trash (default)
 -- This FMA file also supports the new multi-label
 -- notation.
 -------------------------------------------------
-start 1
+start 6
 unknown 7
 int0 7
 int10
@@ -35,21 +35,21 @@ int3
 none
 -
 start
-# 1 2 3 4 5 #
+0 1 2 3 4 # #
 -
 start * start
-start 2 unknown
-unknown 2,3,4,5,6,7 unknown
-unknown 1 int2
-unknown 1 int4
-unknown 1 int0
-int2 3 int3
-int3 6 none
-int4 4 error
+start 1 unknown
+unknown 1,2,3,4,5,7 unknown
+unknown 6 int2
+unknown 6 int4
+unknown 6 int0
+int2 2 int3
+int3 5 none
+int4 3 error
 error * error
-int0 3 int10
+int0 2 int10
 int0 7 unknown
-int10 5 safe
-safe 2,3,4,5,6,7 safe
-safe 1 int1
-int1 4 unknown
+int10 4 safe
+safe 1,2,3,4,5,7 safe
+safe 6 int1
+int1 3 unknown
