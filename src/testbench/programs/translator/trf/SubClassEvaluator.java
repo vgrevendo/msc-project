@@ -1,8 +1,10 @@
 package testbench.programs.translator.trf;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Set;
 import java.util.Map.Entry;
 
 public class SubClassEvaluator extends RuleEvaluator {
@@ -42,6 +44,15 @@ public class SubClassEvaluator extends RuleEvaluator {
 		ReturnEvaluator rev = quickSubclassMap.get(cl).get(method);
 		
 		return filterEncode(id, rev == null ? null : rev.evaluate(rv));
+	}
+	
+	public Set<String> getSubclassNames() {
+		Set<String> names = new HashSet<>();
+		for(Entry<Class<?>, Map<String, ReturnEvaluator>> e : subclassMap.entrySet()) {
+			names.add(e.getKey().getName());
+		}
+		
+		return names;
 	}
 
 }

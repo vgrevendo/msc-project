@@ -32,6 +32,7 @@ public class GreedyFrontier {
 	private static int maxActiveSize = 0;
 	private static int ignoredConfigs = 0;
 	private static int deadConfigs = 0;
+	private static int maxSNSize = 0;
 	
 	public GreedyFrontier() {
 		unstables = new LinkedList<>();
@@ -116,8 +117,11 @@ public class GreedyFrontier {
 					if(collections == null) {
 						collections = new LinkedList<>();
 						List<GreedyConfiguration> snSet = symbolNeeders.remove(nextSymbol);
-						if(snSet != null)
+						if(snSet != null) {
 							collections.add(snSet);
+							if(Testbench.COLLECT_STATS)
+								maxSNSize = Math.max(snSet.size(), maxSNSize);
+						}
 						collections.add(onRhoStates);
 						
 						currentIt = unstables.iterator();
@@ -172,6 +176,7 @@ public class GreedyFrontier {
 	//Statistics
 	public static void yieldStatistics(String sessionName, ResultsContainer rc) {
 		rc.addSessionNumber(sessionName, "max fsize", size);
+		rc.addSessionNumber(sessionName, "max snsize", maxSNSize);
 		rc.addSessionNumber(sessionName, "max asize", maxActiveSize);
 		rc.addSessionNumber(sessionName, "unstables", unstableCounter);
 		rc.addSessionNumber(sessionName, "rho compatibles", rhoCompCounter);
@@ -186,5 +191,6 @@ public class GreedyFrontier {
 		ignoredConfigs = 0;
 		deadConfigs = 0;
 		size = 0;
+		maxSNSize = 0;
 	}
 }

@@ -20,6 +20,7 @@ import testbench.programs.translator.trf.SubClassEvaluator;
  */
 public class TRFTranslator extends Translator {
 	private Map<String, RuleEvaluator> rules = new HashMap<>();
+	private List<RuleEvaluator> evaluators = new ArrayList<>();
 
 	public TRFTranslator(String filename, String rules) throws Exception {
 		setFileSource(filename);
@@ -38,11 +39,6 @@ public class TRFTranslator extends Translator {
 	@Override
 	public List<Integer> translate() {
 		ArrayList<Integer> translation = new ArrayList<>();
-		ArrayList<RuleEvaluator> evaluators = new ArrayList<>();
-		
-		//Build evaluators list for performance
-		for(Entry<String, RuleEvaluator> ree : rules.entrySet())
-			evaluators.add(ree.getValue());
 		
 		removeHeaderComments();
 		
@@ -94,6 +90,10 @@ public class TRFTranslator extends Translator {
 			
 			rules.get(prefix).addRule(line);
 		}
+		
+		//Build evaluators list for performance
+		for(Entry<String, RuleEvaluator> ree : rules.entrySet())
+			evaluators.add(ree.getValue());
 	}
 
 }

@@ -495,3 +495,19 @@ Idea no. 3 was a good idea and speeds up the process again, 3M symbols -> 1.07s.
 Collecting another large trace with the tracer program, and with the new formalism 0<=s<N. This is to perfect idea no. 3 even more. New ideas:
 * Preprocess the automaton to eliminate unnecessary writes.
 * Sets might have overhead for “need symbols”.
+
+Today's meeting – no particular order:
+1. Get traces from dacapo
+2. Improve speed of tracer
+3. No more low-level optimisations until traces take more than 10s
+4. Start thinking about writing up membership
+5. More profiling to see what takes time
+6. Think about what constitutes frontier/death/.. sizes: explain the numbers.
+7. Deadline for membership: July 1st.
+8. Get a grip on 5 properties, and 5 nice traces from Dacapo for each of those.
+9. Take a look at the tainted property: this should not be possible to examine with JavaMOP: there is an unbounded number of objects that javamop cannot handle, and it should be possible to handle these through nondeterminism.
+10. Try to outline garbage collection and finalization.
+
+Some possible optimisations:
+1. Be more aggressive on the “outgoing” side of transitions vis-à-vis states: “expand” should only add new physical states.
+This enforces the following rule: only configurations with different states should be added.
