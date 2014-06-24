@@ -33,7 +33,7 @@ public class Testbench {
 	public final static String HNP_TEST_TRACE_PATH = "gen/trace4.tr";
 
 	public final static boolean DEBUG = false;
-	public final static boolean COLLECT_STATS = true;
+	public final static boolean COLLECT_STATS = false;
 
 	/**
 	 * A stub for parameter parsing has been implemented here, to make launches

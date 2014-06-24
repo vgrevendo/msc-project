@@ -33,6 +33,7 @@ public class GreedyFrontier {
 	private static int ignoredConfigs = 0;
 	private static int deadConfigs = 0;
 	private static int maxSNSize = 0;
+	private static int emptyActiveFrontiers = 0;
 	
 	public GreedyFrontier() {
 		unstables = new LinkedList<>();
@@ -143,6 +144,7 @@ public class GreedyFrontier {
 							if(collections.size()==0) {
 								if(Testbench.COLLECT_STATS) {
 									maxActiveSize = Math.max(activeSize, maxActiveSize);
+									emptyActiveFrontiers += activeSize == 0 ? 1 : 0;
 								}
 								return false;
 							}
@@ -178,6 +180,7 @@ public class GreedyFrontier {
 		rc.addSessionNumber(sessionName, "max fsize", size);
 		rc.addSessionNumber(sessionName, "max snsize", maxSNSize);
 		rc.addSessionNumber(sessionName, "max asize", maxActiveSize);
+		rc.addSessionNumber(sessionName, "empty frontiers", emptyActiveFrontiers);
 		rc.addSessionNumber(sessionName, "unstables", unstableCounter);
 		rc.addSessionNumber(sessionName, "rho compatibles", rhoCompCounter);
 		rc.addSessionNumber(sessionName, "symbol needers", symbolNeedCounter);
@@ -192,5 +195,6 @@ public class GreedyFrontier {
 		deadConfigs = 0;
 		size = 0;
 		maxSNSize = 0;
+		emptyActiveFrontiers = 0;
 	}
 }
