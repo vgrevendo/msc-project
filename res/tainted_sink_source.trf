@@ -1,0 +1,9 @@
+----------------------------------------
+-- Translation Rules File for SinkSource
+----------------------------------------
+subclass:testbench.programs.tss.CleanResource <init>:0 6
+subclass:testbench.programs.tss.DirtyResource <init>:1 6
+subclass:testbench.programs.tss.Resource combine:2 object:ID
+subclass:testbench.programs.tss.Resource sanitize:3 6
+subclass:testbench.programs.tss.Resource sink:4 6
+subclass:testbench.programs.tss.Resource finalize:5 6

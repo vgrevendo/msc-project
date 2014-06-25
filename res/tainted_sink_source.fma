@@ -1,0 +1,49 @@
+------------------------------------------------
+-- The Tainted Sink Source Property
+------------------------------------------------
+-- When in presence of a sink and a source of
+-- two different taints: one is dirty, and it
+-- may not reach the sink, and the other is
+-- clean and it may reach the sink.
+-- The dirty taint can also contaminate the 
+-- clean one by combination, but can also be
+-- cleaned to become clean.
+------------------------------------------------
+-- Encoding:
+-- 1: 0: CleanTaint <init>
+-- 2: 1: DirtyTaint <init>
+-- 3: 2: Taint.combine
+-- 4: 3: Taint.sanitize
+-- 5: 4: Taint.sink
+-- 6: 5: Taint.finalize
+-- 7: #: Taint.ID
+-- 8: #: [Trash]
+------------------------------------------------
+start 7
+cs 8
+int0 8
+int2 7
+ds 8
+int1 8
+int3 7
+error 8 F
+-
+start
+0 1 2 3 4 5 # #
+-
+start * start
+start 0 cs
+start 1 ds
+cs 1,2,3,4,5,6,8 cs
+cs 7 int0
+int0 3,4,5,8 cs
+int0 3 int2
+int2 7 cs
+ds 1,2,3,4,5,6,8 ds
+ds 7 int1
+int1 3,8 ds
+int1 4 cs
+int1 5 error
+int1 3 int3
+int3 7 ds
+error * error

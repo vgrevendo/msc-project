@@ -561,4 +561,5 @@ Tasklist today
 ---------------
 That last implementation of the optimisation was terrible, it gave a 5% decrease in performance. This is probably because deleting things from the frontier is much much less aggressive – outbalancing the optimisation itself.
 
-
+06/25/14 (Wednesday)
+The tainted property is very interesting! Possible to show javaMOP can't analyse it the way we do? Maybe reduce a problem to it, a problem that LTL can't express?

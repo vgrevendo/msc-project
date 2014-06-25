@@ -1,0 +1,65 @@
+----------------------------------------------
+-- Do not update a Map when iterating over its
+-- keys, values or entries.
+-- Added on 25/6/14
+----------------------------------------------
+-- Encoding:
+-- 1 : 0: Map.<init>
+-- 2 : 1: Map.update
+-- 3 : 2: Map.create
+-- 4 : 3: Collection.create
+-- 5 : 4: Iterator.next
+-- 6 : 5: Map.finalize
+-- 7 : 6: Collection.finalize
+-- 8 : 7: Iterator.finalize
+-- 9 : #: Map.ID
+-- 10: #: Collection.ID
+-- 11: #: Iterator.ID
+-- 12: #: [Trash]
+-----------------------------------------------
+start 9
+map 12
+int0 12
+int1 10
+col 12
+int3 12
+int2 12
+int4 11
+itOK 12
+int5 12
+int6 12
+danger 12
+int7 12
+int8 12
+error 12
+-
+start
+0 1 2 3 4 5 6 7 # # # #
+-
+start * start
+start 9 map
+map 1,2,3,4,5,6,7,8,10,11,12 map
+map 9 int0
+int0 2,12 map
+int0 3 int1
+int1 10 col
+col 1,2,3,4,5,6,7,8,11,12 col
+col 9 int2
+col 10 int3
+int2 2,3,12 col
+int3 12 col
+int3 4 int4
+int4 11 itOK
+itOK 1,2,3,4,5,6,7,8,10,12 itOK
+itOK 11 int5
+itOK 9 int6
+int5 5,12 itOK
+int6 3,12 itOK
+int6 2 danger
+danger 1,2,3,4,5,6,7,8,10,12 danger
+danger 9 int7
+danger 11 int8
+int7 2,3,12 danger
+int8 12 danger
+int8 5 error
+error * error
