@@ -525,7 +525,7 @@ Monday:
 
 Tuesday (today):
 - Think about what constitutes collected sizes: explain the numbers (done)
-- Implement that one last optimisation (see above)
+- Implement that one last optimisation (see above) (done)
 - More profiling to see what takes time (time and memory monitoring!)
 - Test garbage collection/finalisation (override finalize)
 
@@ -556,3 +556,9 @@ Sunday:
 
 Monday: 
 - Meeting with Radu
+
+Tasklist today
+---------------
+That last implementation of the optimisation was terrible, it gave a 5% decrease in performance. This is probably because deleting things from the frontier is much much less aggressive – outbalancing the optimisation itself.
+
+

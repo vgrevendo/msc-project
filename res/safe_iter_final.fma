@@ -1,0 +1,53 @@
+--------------------------------------------------------------
+-- The SafeIteration property as a MOA final version of
+-- 25/06/14. Finalization calls included
+--------------------------------------------------------------
+-- "A Collection cannot be updated while an iterator over it
+-- still calls next."
+--------------------------------------------------------------
+-- Register functions:
+-- 1: Initiate Collection (0)
+-- 2: Update Collection (1)
+-- 3: Finalize Collection (2)
+-- 4: Create Iterator for this Collection (3)
+-- 5: Next on Iterator (4)
+-- 6: Finalise Iterator (5)
+-- 7: Collection ID
+-- 8: Iterator ID
+-- 9: Trash (convention)
+--------------------------------------------------------------
+nothing 7
+only_col 9
+int0 9
+int1 8
+OK 9
+int2 9
+int3 9
+danger 9
+int5 9
+int4 9
+error 9 F
+-
+nothing
+0 1 2 3 4 5 # # #
+-
+nothing * nothing
+nothing 1 only_col
+only_col 1,2,3,4,5,6,8,9 only_col
+only_col 7 int0
+int0 2,9 only_col
+int0 4 int1
+int1 8 OK
+OK 1,2,3,4,5,6,9 OK
+OK 8 int2
+OK 7 int3
+int2 5,9 OK
+int3 4,9 OK
+int3 2 danger
+danger 1,2,3,4,5,6,9 danger
+danger 8 int4
+danger 7 int5
+int5 2,4,9 danger
+int4 9 danger
+int4 5 error
+error * error
