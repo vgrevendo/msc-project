@@ -34,12 +34,15 @@ import com.sun.jdi.connect.Connector;
 import com.sun.jdi.connect.Connector.Argument;
 import com.sun.jdi.connect.Connector.IntegerArgument;
 import com.sun.jdi.connect.IllegalConnectorArgumentsException;
+import com.sun.jdi.event.ClassPrepareEvent;
 import com.sun.jdi.event.Event;
 import com.sun.jdi.event.EventIterator;
 import com.sun.jdi.event.EventQueue;
 import com.sun.jdi.event.EventSet;
 import com.sun.jdi.event.MethodEntryEvent;
 import com.sun.jdi.event.MethodExitEvent;
+import com.sun.jdi.request.ClassPrepareRequest;
+import com.sun.jdi.request.EventRequest;
 import com.sun.jdi.request.EventRequestManager;
 import com.sun.jdi.request.MethodEntryRequest;
 import com.sun.jdi.request.MethodExitRequest;
@@ -59,16 +62,20 @@ public class TRFTracer {
 	public static final String PATH_ROOT = "gen/trace_TRF_";
 	
 	//Real-time translation
-	public static final int DISPLAY_PROGRESS_MILESTONE = 1_000;
+	public static final int DISPLAY_PROGRESS_MILESTONE = 1;
 	public static final int MAX_NUM_NUMBERS_TR = 20_000_000;
 	
 	private Map<String, RuleEvaluator> rules = new HashMap<>();
 	private List<RuleEvaluator> evaluators = new ArrayList<>();
+	private Set<String> subclassNames;
+	private Set<String> unloadedSubclassNames = new HashSet<>();
 	private Set<ReferenceType> subclasses = new HashSet<>();
+	private Map<EventRequest, String> superClassMap = new HashMap<>();
 	 
 	//Progress
 	private int entries = 0;
 	private int numTrNumbers = 0;
+	private int relevantExits = 0;
 	private int lastSignal = 0;
 	
 	//Environment resources
@@ -78,7 +85,7 @@ public class TRFTracer {
 	private String mainMethodName;
 	private String exitMethodName;
 	
-	//Instance
+	//JDI specific stuff
  	public void connect(int portNumber) throws Exception {
 		//Make connection with distant virtual machine:
 		// plug in the connector which uses a socket
@@ -120,6 +127,7 @@ public class TRFTracer {
 			System.out.println("   (w) This virtual machine can't report method return values!");
 	}
 	
+ 	//Tracer methods
 	public void listenForMethodExits() throws InterruptedException {
 		EventRequestManager evtRqManager = vm.eventRequestManager();
 		EventQueue evtQueue = vm.eventQueue();
@@ -129,13 +137,30 @@ public class TRFTracer {
 		
 		//Create method exit event request on exit
 		// Add some subclass filters
-		MethodExitRequest exitRequest = evtRqManager.createMethodExitRequest();
-		exitRequest.setSuspendPolicy(MethodEntryRequest.SUSPEND_ALL);
-		for(ReferenceType t : subclasses) {
-			exitRequest.addClassFilter(t);
-		}
-		exitRequest.enable();
+		loadReferences();
 		
+		System.out.println("- Creating filtered request for final exit method");
+		MethodExitRequest request = evtRqManager.createMethodExitRequest();
+		request.addClassFilter(mainClassName);
+		request.setSuspendPolicy(MethodExitRequest.SUSPEND_ALL);
+		request.enable();
+		
+		System.out.println("- Creating filtered requests for " + subclasses.size() + " types");
+		
+		for(ReferenceType t : subclasses) {
+			requestMethodExit(t, evtRqManager);
+		}
+		
+		System.out.println("- " + unloadedSubclassNames.size() + " types still have to wait, creating onload requests");
+		
+		for(String cl : unloadedSubclassNames) {
+			ClassPrepareRequest prepRequest = evtRqManager.createClassPrepareRequest();
+			prepRequest.setSuspendPolicy(ClassPrepareRequest.SUSPEND_ALL);
+			prepRequest.addClassFilter(cl);
+			prepRequest.enable();
+		}
+		
+		System.out.println("- Trace is starting NOW");
 		toResume.resume();
 		
 		long startTime = System.currentTimeMillis();
@@ -150,8 +175,15 @@ public class TRFTracer {
 				Event event = evtIt.next();
 				
 				//Only method exits are interesting to us, here.
-				if(!(event instanceof MethodExitEvent))
+				if(!(event instanceof MethodExitEvent)){
+					//But check for class preparations as well!
+					
+					if(event instanceof ClassPrepareEvent) {
+						loadReferenceAndRequest((ClassPrepareEvent)event, evtRqManager);
+					}
+					
 					continue;
+				}
 				
 				entries++;
 				
@@ -170,7 +202,7 @@ public class TRFTracer {
 					continue;
 				}
 				
-				translate(id, exitEvent.method().declaringType().name(), 
+				translate(id, superClassMap.get(exitEvent.request()), 
 						exitEvent.method().name(),
 						exitEvent.returnValue().toString());
 				
@@ -181,6 +213,7 @@ public class TRFTracer {
 				
 				if(numTrNumbers % DISPLAY_PROGRESS_MILESTONE == 0 && lastSignal != numTrNumbers) {
 					System.out.println(numTrNumbers + " numbers recorded (" + entries + " method exits, " 
+									   + relevantExits + " events, "
 									   + 100.0*(double)numTrNumbers/(double)MAX_NUM_NUMBERS_TR + "%) ETA: "
 									   + getRemainingTime(startTime, numTrNumbers));
 					lastSignal = numTrNumbers;
@@ -196,13 +229,16 @@ public class TRFTracer {
 		}
 	}
 	private String getRemainingTime(long start, int progression) {
-		double duration = System.currentTimeMillis() - start;
-		double leftover = MAX_NUM_NUMBERS_TR - progression;
+		try {
+			double duration = System.currentTimeMillis() - start;
+			double leftover = MAX_NUM_NUMBERS_TR - progression;
+			
+			double mins = duration * leftover / (60_000.0 * (double) progression);
+			return Integer.toString((int)mins) + "min";
+		} catch (Exception e) {}
 		
-		double mins = duration * leftover / (60_000.0 * (double) progression);
-		return Integer.toString((int)mins) + "min";
+		return "unknown";
 	}
-	
 	public EventSet jumpToMainClass() throws InterruptedException {
 		System.out.println("- Listening for main class entry (" + mainClassName + ")");
 		
@@ -251,6 +287,7 @@ public class TRFTracer {
 		}
 	}
 	
+	//File management
 	private String chooseFileName() {
 		int id = 0;
 		String prefix = PATH_ROOT;
@@ -261,9 +298,16 @@ public class TRFTracer {
 		
 		return prefix + id + ".tr";
 	}
-	
-	private void initOutputFile() throws FileNotFoundException {
-		String filename = chooseFileName();
+	private void initOutputFile(String path) throws FileNotFoundException {
+		String filename = null;
+		if(path == null)
+			filename = chooseFileName();
+		else {
+			File f = new File(path);
+			if(f.exists())
+				f.delete();
+			filename = path;
+		}
 		output = new PrintWriter(filename);
 		
 		//Write header
@@ -272,36 +316,9 @@ public class TRFTracer {
 		output.println("-- Listening for method exits in main class " + mainClassName);
 		output.println("-- This trace was generated on " + dateFormat.format(date));
 	}
-	
-	public void run(String[] args) {
-		try {
-			System.out.println("[TRACER - TRF version]");
-			
-			//Set some params
-			mainClassName = args[1];
-			mainMethodName = args[2];
-			exitMethodName = args[3];
-			
-			//Connect to the VM
-			connect(Integer.parseInt(args[0]));
-			
-			//Load TRF rules
-			loadRules(new Scanner(new File(args[4])));			
-			
-			//Set output file
-			initOutputFile();
-			
-			//Listen for events
-			listenForMethodExits();
-			
-			//Quit
-			vm.exit(0);
-		} catch (Exception e) {
-			System.err.println("Trace exception occurred!");
-			e.printStackTrace();
-		}
-		
-		//Close file
+	private void finaliseOutputFile() {
+		output.println();
+		output.println("-- Numbers: " + numTrNumbers + ", Events: " + relevantExits);
 		output.close();
 	}
 	
@@ -329,7 +346,11 @@ public class TRFTracer {
 				}
 			}
 			
-			rules.get(prefix).addRule(line);
+			try {
+				rules.get(prefix).addRule(line);
+			} catch (Exception e) {
+				System.out.println("Could not parse rule: '" + line + "'! Skipped");
+			}
 		}
 		
 		//Build evaluators list for performance
@@ -337,25 +358,55 @@ public class TRFTracer {
 			evaluators.add(ree.getValue());
 		
 		//To speed up the debugger, remember which subclasses are important
-		Set<String> subclassNames = subClassEvaluator.getSubclassNames();
+		subclassNames = subClassEvaluator.getSubclassNames();
 		
 		if(subclassNames.isEmpty())
 			throw new Exception("No subclasses are being filtered, rest is not implemented!");
 		
-		System.out.println("- Rules were loaded with success. Detected references:");
+		System.out.println("- Rules were loaded with success.");
+	}
+	private void loadReferences() {
+		System.out.println("- Now loading references (" + subclassNames.size() + " subclass names):");
 		for(String name : subclassNames) {
 			System.out.println("  * '" + name + "':");
 			
 			List<ReferenceType> types = vm.classesByName(name);
-			if(types != null && !types.isEmpty())
+			if(types != null && !types.isEmpty()) {
 				for(ReferenceType t : types) {
 					System.out.println("      " + t.name());
 				}
-			else
-				System.out.println("       (w) COULD NOT FIND REFERENCE TYPE!");
-			
-			subclasses.addAll(types);
+				subclasses.addAll(types);
+			}
+			else {
+				System.out.println("       (w) Could not find reference type, will wait til loaded.");
+				unloadedSubclassNames.add(name);
+			}
 		}
+	}
+	private MethodExitRequest loadReferenceAndRequest(ClassPrepareEvent prepEvent,
+													  EventRequestManager mgr) {
+		ReferenceType t = prepEvent.referenceType();
+		
+		System.out.println("- Type '" + t.name() + "' has been prepared");
+		subclasses.add(t);
+		System.out.println("- Cancelling preparation request");
+		prepEvent.request().disable();
+		
+		return requestMethodExit(t, mgr);
+	}
+	private MethodExitRequest requestMethodExit(ReferenceType t, EventRequestManager mgr) {
+		System.out.println("- Generating method exit request for " + t.name());
+		MethodExitRequest request = mgr.createMethodExitRequest();
+		request.addClassFilter(t);
+		request.setSuspendPolicy(MethodExitRequest.SUSPEND_ALL);
+		request.enable();
+		
+		superClassMap.put(request, t.name());
+		
+		unloadedSubclassNames.remove(t.name());
+		System.out.println("- Request has been successfully added. " + unloadedSubclassNames.size() + " more to load.");
+		
+		return request;
 	}
 	private void translate(int id, String cl, String method, String rv) {
 		//Apply the same procedure as in the TRF protocol
@@ -363,25 +414,60 @@ public class TRFTracer {
 			try {
 				List<Integer> list = re.evaluate(id, cl, method, rv);
 				
-				if(list != null) {
-					outputTranslationBatch(list);
-					break;
-				}
+				outputTranslationBatch(list);
 			} catch (Exception e) {
 				System.err.println("Evaluation for '" + cl + "' failed (skipping): " + e.getMessage());
 			}
 		}
 	}
 	private void outputTranslationBatch(List<Integer> numbers) {
+		if(numbers == null)
+			return;
+		
 		for(Integer i : numbers) {
 			output.print(i + " ");
 		}
 		
+		relevantExits++;
 		numTrNumbers += numbers.size();
 	}
 	
 	//Launchpad	
 	public static void main(String[] args) {
 		(new TRFTracer()).run(args);
+	}
+	public void run(String[] args) {
+		try {
+			System.out.println("[TRACER - TRF version]");
+			
+			//Set some params
+			mainClassName = args[1];
+			mainMethodName = args[2];
+			exitMethodName = args[3];
+			
+			//Connect to the VM
+			connect(Integer.parseInt(args[0]));
+			
+			//Load TRF rules
+			loadRules(new Scanner(new File(args[4])));			
+			
+			//Set output file
+			if(args.length >= 6)
+				initOutputFile(args[5]);
+			else
+				initOutputFile(null);
+			
+			//Listen for events
+			listenForMethodExits();
+		} catch (Exception e) {
+			System.err.println("Trace exception occurred!");
+			e.printStackTrace();
+		}
+		
+		//Close file
+		finaliseOutputFile();
+		//Quit
+		try { vm.exit(0); }
+		catch(Exception e) {}
 	}
 }

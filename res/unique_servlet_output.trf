@@ -1,0 +1,23 @@
+--------------------------------------------------
+-- Unique servlet output property
+-- A servlet should may write to an outputstream
+-- or a writer, but not both.
+-- This property is Tomcat (through Dacapo)
+-- specific.
+--------------------------------------------------
+subclass:javax.servlet.ServletResponse <init>:0 _
+subclass:javax.servlet.ServletResponse getOutputStream:1 object:ID
+subclass:javax.servlet.ServletResponse getWriter:2 object:ID
+subclass:javax.servlet.ServletResponse finalize:7 _
+subclass:javax.servlet.ServletOutputStream print:3 _
+subclass:javax.servlet.ServletOutputStream println:3 _
+subclass:javax.servlet.ServletOutputStream write:3 _
+subclass:javax.servlet.ServletOutputStream flush:3 _
+subclass:javax.servlet.ServletOutputStream finalize:5 _
+subclass:java.io.PrintWriter append:4 _
+subclass:java.io.PrintWriter flush:4 _
+subclass:java.io.PrintWriter print:4 _
+subclass:java.io.PrintWriter printf:4 _
+subclass:java.io.PrintWriter println: _
+subclass:java.io.PrintWriter write:4 _
+subclass:java.io.PrintWriter finalize:6 _

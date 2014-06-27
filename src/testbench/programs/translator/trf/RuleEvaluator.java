@@ -2,7 +2,6 @@ package testbench.programs.translator.trf;
 
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 
 public abstract class RuleEvaluator {
@@ -40,7 +39,10 @@ public abstract class RuleEvaluator {
 			
 			switch(subTokens.length) {
 			case 1:
-				re.setDefaultNumber(Integer.parseInt(subTokens[0]));
+				if(subTokens[0].equals("_"))
+					re.setIgnored();
+				else
+					re.setDefaultNumber(Integer.parseInt(subTokens[0]));
 				break;
 			case 2:
 				if(subTokens[1].equals("ID"))
@@ -72,6 +74,7 @@ public abstract class RuleEvaluator {
 	}
 
 	protected class ReturnEvaluator {
+		private boolean ignore = false;
 		private int defaultNumber = -1;
 		private Map<String, Integer> equalities = new HashMap<String, Integer>();
 		private OnObjectAction objectAction = OnObjectAction.NOTHING;
@@ -83,6 +86,9 @@ public abstract class RuleEvaluator {
 		}
 		
 		public LinkedList<Integer> evaluate(String input) {
+			if(ignore)
+				return encode();
+			
 			if(defaultNumber >= 0)
 				return encode(defaultNumber);
 			
@@ -108,8 +114,18 @@ public abstract class RuleEvaluator {
 			return list;
 		}
 		
+		private LinkedList<Integer> encode() {
+			LinkedList<Integer> list = new LinkedList<>();
+			list.add(methodCode);
+			return list;
+		}
+		
 		public void setDefaultNumber(int number) {
 			defaultNumber = number;
+		}
+		
+		public void setIgnored() {
+			ignore = true;
 		}
 		
 		public void addIDObjectAction() {
@@ -126,6 +142,12 @@ public abstract class RuleEvaluator {
 		}
 	}
 	
+	/**
+	 * Make final output easier thanks to this little concatenation macro
+	 * @param id
+	 * @param toAttach
+	 * @return
+	 */
 	protected LinkedList<Integer> filterEncode(int id, LinkedList<Integer> toAttach) {
 		if(toAttach == null)
 			return null;

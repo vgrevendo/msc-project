@@ -536,7 +536,8 @@ this should not be possible to examine with JavaMOP: there is an unbounded numbe
 
 Thursday:
 - Get 5 traces from dacapo: might have to improve tracer speed
-- In the meantime build 5 javaMOP references WITH THE EXACT SAME PROPTERTY
+- In the meantime build 5 javaMOP references WITH THE EXACT SAME PROPERTY
+- Think some more about the tainted property thing
 
 Friday:
 - Make sure every banchmark works
@@ -563,3 +564,13 @@ That last implementation of the optimisation was terrible, it gave a 5% decrease
 
 06/25/14 (Wednesday)
 The tainted property is very interesting! Possible to show javaMOP can't analyse it the way we do? Maybe reduce a problem to it, a problem that LTL can't express?
+
+Tainted property implemented. It seems that JavaMOP would be able to implement this property, so maybe it is worth investigating.
+
+06/26/14 (Thursday)
+Radu just sent examples of properties – analysing and implementing, since these are very closely linked to behaviours in DaCapo.
+
+Starting with the servlet property: not outputstream and writer at the same time!
+https://github.com/rgrig/topl/blob/master/examples/dacapo/tomcat.topl#L35
+
+

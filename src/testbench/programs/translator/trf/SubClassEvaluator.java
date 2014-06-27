@@ -16,12 +16,20 @@ public class SubClassEvaluator extends RuleEvaluator {
 		//Parse rule
 		parseRule(ruleLine);
 		
-		Class<?> superClass = Class.forName(getConditionString());
-		if(!subclassMap.containsKey(superClass)) {
-			subclassMap.put(superClass, new HashMap<String, ReturnEvaluator>());
+		try {
+			Class<?> superClass = Class.forName(getConditionString());
+			if(!subclassMap.containsKey(superClass)) {
+				subclassMap.put(superClass, new HashMap<String, ReturnEvaluator>());
+			}
+			
+			subclassMap.get(superClass).put(getMethodName(), getRe());
+		} catch (ClassNotFoundException e) {
+			System.out.println("    Loading rule '" + ruleLine + "':");
+			System.out.println("    -> Could not load external class but added equality shortcut!");
 		}
 		
-		subclassMap.get(superClass).put(getMethodName(), getRe());
+		quickSubclassMap.put(getConditionString(), new HashMap<String, ReturnEvaluator>());
+		quickSubclassMap.get(getConditionString()).put(getMethodName(), getRe());
 	}
 
 	@Override
@@ -37,8 +45,10 @@ public class SubClassEvaluator extends RuleEvaluator {
 				}
 			}
 			
-			if(!found)
+			if(!found) {
+				quickSubclassMap.put(cl, new HashMap<String, ReturnEvaluator>());
 				return null;
+			}
 		}
 		
 		ReturnEvaluator rev = quickSubclassMap.get(cl).get(method);
@@ -48,8 +58,8 @@ public class SubClassEvaluator extends RuleEvaluator {
 	
 	public Set<String> getSubclassNames() {
 		Set<String> names = new HashSet<>();
-		for(Entry<Class<?>, Map<String, ReturnEvaluator>> e : subclassMap.entrySet()) {
-			names.add(e.getKey().getName());
+		for(Entry<String, Map<String, ReturnEvaluator>> e : quickSubclassMap.entrySet()) {
+			names.add(e.getKey());
 		}
 		
 		return names;
