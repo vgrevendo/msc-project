@@ -28,7 +28,8 @@ public class SubClassEvaluator extends RuleEvaluator {
 			System.out.println("    -> Could not load external class but added equality shortcut!");
 		}
 		
-		quickSubclassMap.put(getConditionString(), new HashMap<String, ReturnEvaluator>());
+		if(!quickSubclassMap.containsKey(getConditionString()))
+			quickSubclassMap.put(getConditionString(), new HashMap<String, ReturnEvaluator>());
 		quickSubclassMap.get(getConditionString()).put(getMethodName(), getRe());
 	}
 
@@ -47,6 +48,7 @@ public class SubClassEvaluator extends RuleEvaluator {
 			
 			if(!found) {
 				quickSubclassMap.put(cl, new HashMap<String, ReturnEvaluator>());
+				System.out.println("(w) " + cl + " was not a filtered class!");
 				return null;
 			}
 		}

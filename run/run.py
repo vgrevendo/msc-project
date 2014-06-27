@@ -2,10 +2,12 @@
 FIRST OPTION: "collect"
 - The translations folder contains translation rules.
 Format: "property_name.trf"
-- The resources file "benchmarks.res" contains the names of all interesting benchmarks.
+- The resources file "benchmarks.res" contains the names of all interesting benchmarks,
+and attached properties to be checked.
 Format: just a list of lines with one name per line.
-If it is a Dacapo benchmark, write "dacapo:benchmark_name"
-Else write: "other:java_command"
+If it is a Dacapo benchmark, write "dacapo:benchmark_name:property_name" (java command is automatic)
+Else write: "other:benchmark_name:property_name:java_command_suffix"
+where java_command suffix is the main class to be executed with its parameters.
 - Run all benchmarks by applying the TRF debugger and store the traces in "trace".
 Output format: "property_name-benchmark_name.tr"
 These traces are of course pre translated
@@ -37,13 +39,14 @@ ROOT = os.path.dirname(__file__)
 TRF_FOLDER_PATH = os.path.join(ROOT, "trf/")
 BENCHMARKS_RES_PATH = os.path.join(ROOT, "benchmarks.res")
 DACAPO_PATH = "dacapo-9.12-bach.jar"
-DEBUGGER_PORT = "42891"
+DEBUGGER_PORT = "42892"
 DEBUG_LIB_CMD = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address="+str(DEBUGGER_PORT)
 JDI_JAR_PATH = "bin:/usr/lib/jvm/java-7-openjdk-amd64/lib/tools.jar:"+DACAPO_PATH
 TRF_TRACER = "testbench/programs/tracer/TRFTracer"
 DACAPO_MAIN_CLASS = "MyCallback"
 DACAPO_ENTRY_METHOD = "start"
 DACAPO_EXIT_METHOD = "stop"
+TRACES_FOLDER = os.path.join(ROOT, "traces")
 
 
 def main(argv):
@@ -83,44 +86,60 @@ def collect_traces():
     print "   - looking for benchmarks in 'benchmarks.res'"
     
     bmarks = parse_benchmarks()
-    bmarks = [bmark.strip(' \t\n\r') for bmark in bmarks]
+    bmarks = [bmark.strip(' \t\n\r') for bmark in bmarks if not bmark.startswith("--")]
     
     for bmark in bmarks:
         print "    * Found " + bmark
         
-    print "(i) Will now run " + str(len(bmarks)*len(files)) + " trace collections"
+    print "(i) Will now run " + str(len(bmarks)) + " trace collections"
     
-    for trf in files:
-        for bmark in bmarks:
-            run_trace(trf, bmark)
+    for bmark in bmarks:
+        run_trace(bmark, files)
     
 def parse_benchmarks():
     with open(BENCHMARKS_RES_PATH) as f:
         return f.readlines()
             
-def run_trace(trf, bmark):
-    trf_name = os.path.basename(trf)
-    bm_name = bmark[7:]
-    print "   - Running " + trf_name + " on " + bmark
+def run_trace(bmark, trf_files):
+    tokens = bmark.split(":")
+    tokens = [token.strip(' \t\n\r') for token in tokens]
     
-    output_filename = trf_name[:-4] + "-" + bm_name + ".trf"
-    output_path = os.path.join(ROOT,"traces",output_filename)
+    # Read parameters
+    #  TRF
+    trf_name = tokens[2]
+    trf_filename = trf_name + ".trf"
+    trf = os.path.join(TRF_FOLDER_PATH, trf_filename)
     
-    if "dacapo" in bmark:
+    #  BENCHMARK
+    dacapo = "dacapo" in bmark
+    bm_name = tokens[1]
+    
+    print "   - Running " + trf_name + " on " + bm_name
+    
+    output_filename = trf_name + "-" + bm_name + ".tr"
+    output_path = os.path.join(TRACES_FOLDER,output_filename)
+    
+    if dacapo:
         target_cmd = ["java", DEBUG_LIB_CMD, "-jar", DACAPO_PATH, "-c", "MyCallback",
                       "-s", "large", bm_name]
-        print "(x) TARGET: " + " ".join(target_cmd)
         debug_cmd = ["java", "-cp", JDI_JAR_PATH, TRF_TRACER, DEBUGGER_PORT, DACAPO_MAIN_CLASS,
                      DACAPO_ENTRY_METHOD, DACAPO_EXIT_METHOD, trf, output_path]
-        print "(x) DEBUGGER: " + " ".join(debug_cmd)
+    else: #other
+        target_cmd = ["java", DEBUG_LIB_CMD, "-cp", "bin"]
+        target_cmd += tokens[3].split(" ")
+        debug_cmd = ["java", "-cp", JDI_JAR_PATH, TRF_TRACER, DEBUGGER_PORT]
+        debug_cmd += tokens[4].split(" ")
+        debug_cmd += [trf, output_path]
         
-        target = subprocess.Popen(target_cmd)
-        time.sleep(2)
-        subprocess.call(debug_cmd)
-        target.terminate()
-        time.sleep(2)
-    else:
-        print "Not implemented!"
+    # Run commands intelligently
+    print "(x) TARGET: " + " ".join(target_cmd)
+    print "(x) DEBUGGER: " + " ".join(debug_cmd)
+    
+    target = subprocess.Popen(target_cmd)
+    time.sleep(2)
+    subprocess.call(debug_cmd)
+    target.terminate()
+    time.sleep(2)
 
 def test_references():
     pass

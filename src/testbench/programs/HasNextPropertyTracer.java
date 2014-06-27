@@ -1,6 +1,5 @@
 package testbench.programs;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -56,7 +55,6 @@ public class HasNextPropertyTracer {
 					continue;
 				}
 			}
-			
 			//Last has at least one element left.
 			//Choose a few iterators from the list, check what
 			// they have left, prune if necessary and
@@ -76,12 +74,6 @@ public class HasNextPropertyTracer {
 			//Invoke next on those that were chosen (unique nexts)
 			for(Iterator<Integer> it: toPop) {
 				sum += it.next();
-			}
-			
-			try {
-				System.in.read();
-			} catch (IOException e) {
-				e.printStackTrace();
 			}
 		}
 		

@@ -62,7 +62,7 @@ public class TRFTracer {
 	public static final String PATH_ROOT = "gen/trace_TRF_";
 	
 	//Real-time translation
-	public static final int DISPLAY_PROGRESS_MILESTONE = 1;
+	public static final int DISPLAY_PROGRESS_MILESTONE = 1_000;
 	public static final int MAX_NUM_NUMBERS_TR = 20_000_000;
 	
 	private Map<String, RuleEvaluator> rules = new HashMap<>();
@@ -70,13 +70,14 @@ public class TRFTracer {
 	private Set<String> subclassNames;
 	private Set<String> unloadedSubclassNames = new HashSet<>();
 	private Set<ReferenceType> subclasses = new HashSet<>();
-	private Map<EventRequest, String> superClassMap = new HashMap<>();
 	 
 	//Progress
 	private int entries = 0;
 	private int numTrNumbers = 0;
 	private int relevantExits = 0;
 	private int lastSignal = 0;
+	
+	private Date startDate;
 	
 	//Environment resources
 	private VirtualMachine vm;
@@ -86,7 +87,7 @@ public class TRFTracer {
 	private String exitMethodName;
 	
 	//JDI specific stuff
- 	public void connect(int portNumber) throws Exception {
+ 	private void connect(int portNumber) throws Exception {
 		//Make connection with distant virtual machine:
 		// plug in the connector which uses a socket
 		VirtualMachineManager vmManager = Bootstrap.virtualMachineManager();
@@ -128,7 +129,7 @@ public class TRFTracer {
 	}
 	
  	//Tracer methods
-	public void listenForMethodExits() throws InterruptedException {
+	private void listenForMethodExits() throws InterruptedException {
 		EventRequestManager evtRqManager = vm.eventRequestManager();
 		EventQueue evtQueue = vm.eventQueue();
 		
@@ -169,10 +170,8 @@ public class TRFTracer {
 		while(true) {
 			//Iterate over incoming requests (when the vm is suspended)
 			EventSet evtSet = evtQueue.remove();
-			EventIterator evtIt = evtSet.eventIterator();
-			
-			while(evtIt.hasNext()) {
-				Event event = evtIt.next();
+			for(Event event : evtSet) {
+				entries++;
 				
 				//Only method exits are interesting to us, here.
 				if(!(event instanceof MethodExitEvent)){
@@ -185,7 +184,6 @@ public class TRFTracer {
 					continue;
 				}
 				
-				entries++;
 				
 				MethodExitEvent exitEvent = (MethodExitEvent) event;
 				int id = 0;
@@ -202,9 +200,7 @@ public class TRFTracer {
 					continue;
 				}
 				
-				translate(id, superClassMap.get(exitEvent.request()), 
-						exitEvent.method().name(),
-						exitEvent.returnValue().toString());
+				translate(id, exitEvent);
 				
 				if(exitEvent.method().declaringType().name().equals(mainClassName) && exitEvent.method().name().equals(exitMethodName)) {
 					System.out.println("Reached STOP method of class " + mainClassName + ": exiting.");
@@ -239,7 +235,7 @@ public class TRFTracer {
 		
 		return "unknown";
 	}
-	public EventSet jumpToMainClass() throws InterruptedException {
+	private EventSet jumpToMainClass() throws InterruptedException {
 		System.out.println("- Listening for main class entry (" + mainClassName + ")");
 		
 		EventRequestManager evtRqManager = vm.eventRequestManager();
@@ -317,8 +313,15 @@ public class TRFTracer {
 		output.println("-- This trace was generated on " + dateFormat.format(date));
 	}
 	private void finaliseOutputFile() {
+		
+		long diff = new Date().getTime() - startDate.getTime();
+        long diffSeconds = diff / 1000 % 60;
+        long diffMinutes = diff / (60 * 1000) % 60;
+        long diffHours = diff / (60 * 60 * 1000);
+		
 		output.println();
 		output.println("-- Numbers: " + numTrNumbers + ", Events: " + relevantExits);
+		output.println("-- It took " + diffHours + "h" + diffMinutes + "min" + diffSeconds + "s to complete this trace");
 		output.close();
 	}
 	
@@ -396,19 +399,27 @@ public class TRFTracer {
 	}
 	private MethodExitRequest requestMethodExit(ReferenceType t, EventRequestManager mgr) {
 		System.out.println("- Generating method exit request for " + t.name());
-		MethodExitRequest request = mgr.createMethodExitRequest();
-		request.addClassFilter(t);
-		request.setSuspendPolicy(MethodExitRequest.SUSPEND_ALL);
-		request.enable();
-		
-		superClassMap.put(request, t.name());
+		MethodExitRequest request2 = mgr.createMethodExitRequest();
+		request2.setSuspendPolicy(MethodExitRequest.SUSPEND_ALL);
+		request2.addClassFilter(t);
+		request2.putProperty("filter", t.name());
+		request2.enable();
 		
 		unloadedSubclassNames.remove(t.name());
-		System.out.println("- Request has been successfully added. " + unloadedSubclassNames.size() + " more to load.");
+		System.out.println("  Request has been successfully added. " + unloadedSubclassNames.size() + " more to load.");
 		
-		return request;
+		return request2;
 	}
-	private void translate(int id, String cl, String method, String rv) {
+	private void translate(int id, MethodExitEvent event) {
+		String cl = (String) event.request().getProperty("filter");
+		String method = event.method().name();
+		String rv = event.returnValue() == null ? "null" : event.returnValue().toString();
+		
+		if(cl == null) {
+			System.err.println("Evaluation for '" + event.method().declaringType().toString() + "." + method + ":" + rv + "' failed (skipping)");
+			return;
+		}
+		
 		//Apply the same procedure as in the TRF protocol
 		for(RuleEvaluator re : evaluators) {
 			try {
@@ -416,13 +427,14 @@ public class TRFTracer {
 				
 				outputTranslationBatch(list);
 			} catch (Exception e) {
-				System.err.println("Evaluation for '" + cl + "' failed (skipping): " + e.getMessage());
+				System.err.println("Evaluation for '" + cl + "." + method + ":" + rv + "' failed (skipping)");
 			}
 		}
 	}
 	private void outputTranslationBatch(List<Integer> numbers) {
-		if(numbers == null)
+		if(numbers == null) {
 			return;
+		}
 		
 		for(Integer i : numbers) {
 			output.print(i + " ");
@@ -431,6 +443,9 @@ public class TRFTracer {
 		relevantExits++;
 		numTrNumbers += numbers.size();
 	}
+	protected String reconstructMethod(String cl, String method, String rv) {
+		return cl + "." + method + ":" + rv;
+	}
 	
 	//Launchpad	
 	public static void main(String[] args) {
@@ -438,6 +453,7 @@ public class TRFTracer {
 	}
 	public void run(String[] args) {
 		try {
+			startDate = new Date();
 			System.out.println("[TRACER - TRF version]");
 			
 			//Set some params
