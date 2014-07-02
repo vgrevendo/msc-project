@@ -573,4 +573,184 @@ Radu just sent examples of properties – analysing and implementing, since thes
 Starting with the servlet property: not outputstream and writer at the same time!
 https://github.com/rgrig/topl/blob/master/examples/dacapo/tomcat.topl#L35
 
+06/27/14 (Friday)
+Major improvement to the Tracer and running script, benchmarks are ready to be collected.
 
+06/29/14 (Sunday)
+Catching up on Today & Yesterday.
+
+* What the report guidelines say:
+
+The main body of the dissertation should be preceded by a table of contents listing chapters and sections. Every page in the main body should carry a header
+indicating the current chapter or section.
+
+The main body of the text of a typical dissertation will contain:
+ - an introduction: the first chapter should introduce the subject of the
+dissertation and explain the structure of the text to the reader.
+ - an explanation of the problem: a second chapter should explain the problem
+to be studied, or the context in which the work takes place.
+ - a description of the method: a third chapter should introduce the method used
+to solve the problem, or the formal techniques employed.
+ - an account of the work: the following chapters should present the work
+carried out during the project, including any practical results and theoretical
+insights obtained.
+ - conclusions: the final chapter should contain conclusions drawn from the
+project, comparisons which may be made between this and existing work or
+practice, and suggestions regarding the extension or continuation of the work.
+ - a bibliography, and/or list of references
+
+
+Material that is used to support the work but does not have a place within the body
+of the text may be included as an appendix. Typical examples include program
+code, mathematical proofs, and sample output.
+
+The dissertation should be securely bound in such a manner as will facilitate reading
+and assessment. Students may wish to submit additional material in electronic form;
+this will not affect the formal assessment of the dissertation, but may prove useful to
+the examiners. See also section 4.11.2.
+
+
+* How this project will be organised:
+
+[INTRODUCTION]
+- Introduction to register automata
+  * How they informally work 
+  * Why we need them 
+  * What can they do more as a consequence?
+- Application areas: scarce
+  * NOT runtime verification
+  * Find some examples in the French guy's paper
+- The plan of this project
+  * There is a problem that has not been solved (explain quickly)
+  * Take a look at alternative applications such as Runtime Verification and Software Verification (finding a path or testing a specification).
+  * Also do not assume to find the solution as the problem is supposed to be intractable.
+  * The problem is the theoretical performance of algorithms. Now we want to know the practice.
+  * Glimpse of the result: it has been found that these problems are not intractable.
+- Plan of this dissertation
+  * Formal presentation of the problem
+  * Description of the method
+  * Presentation of ideas and results
+
+[CONTEXT]
+- Notations
+  * Formal definition of a register automaton.
+  * Formal definition of a word and a language.
+- Some consequences of the infinite alphabet and registers
+  * This is not a finite-state automaton.
+
+[THE PROBLEM]
+ 
+- What problems around register automata are interesting:
+  * Membership
+  * Emptiness
+  * Inclusion
+- The problem itself:
+  * The assumption of an infinite alphabet makes the problem much harder compared to a finite automaton. Examples of things that don't work anymore.
+  * Theorems about how the problems are hard and intractable.
+  * But there is no practical research.
+- The problem's question.
+
+[THE METHOD]
+- The general method
+  * Given a problem, iterations over the following algorithm:
+	. Think
+	. Implement an algorithm/improve the current version
+	. Test for validity
+	. Test for performance
+	. Conclude on progress
+	. Profile for hot spots
+  * General advice found in the experimental programming paper: summarise
+- How this applies here
+  * Choice of instruments
+	. My computer
+	. Java: fast coding but sometimes unreliable
+	. Need for an optimisation measure 
+  * The test infrastructure
+  * The quest for examples
+	. First some “theoretical examples”
+	. Then some real-world ones: runtime verification
+	. Choose a time limit for testing (about 60s?)
+  * A versioning system to keep track of everything that happened.
+- The base version of an automaton when encoded
+
+[RESULTS: MEMBERSHIP]
+FIRST SUBSECTION: The problem for membership (introduction)
+- Some more theory about membership
+  * The deterministic case which is trivial
+  * The problem nondeterminism induces
+  * Why this can't be solved the way we would do it with finite-state automata.
+
+SECOND SUBSECTION: Finding samples to test membership on
+- We will try some theoretical examples at first
+- Randomly generated examples don't make much sense
+- Why runtime verification is a good idea
+  * Real-world examples.
+  * Might be useful in runtime verification (more general)
+- The properties we will test
+
+- The traces we collected: 20M events normally
+  * Theoretical ones
+  * Dacapo
+
+- This covers more than the current tools in runtime verification
+
+THIRD SUBSECTION: The actual results
+
+
+- Naive solutions
+  * A link with Intelligent Systems: this is a search problem.
+  * A presentation of the baseline algorithms that were implemented and quickly abandoned:
+	. LDFTS
+	. BFGS
+  * An improvement to BFGS: BFLGS
+  * A comparison of LDFTS and BFLGS
+	. BFLGS is usually better than LDFTS: we know how many steps, smaller frontier, smaller tree.
+	. but LDFTS can be asymptotically better than BFLGS in some twisted cases.
+  * This is a problem of “number of nodes expanded”: it is possible to improve the performance of node expansion (and examples will follow) but in the end what is important is the number of nodes that are expanded – and this rapidly grows to billions for a million-length word.
+- No need to remember paths! The example of forgetful BFLGS
+- Outlook on the real world: a possible application field is runtime verification.
+  * Trace collection 
+  * Property translation into automata 
+  * Comparison with references
+  * Observation: a lot of updates are useless!
+- Dominance of Greedy-MBS
+  * The idea
+  * The results
+  * Profiling results
+
+- A try at heuristics
+  * The idea
+  * Why it didn't work out well:
+	. Memory 
+	. Preprocessing
+	. The disastrous case of non-membership
+
+[RESULTS: EMPTINESS]
+
+[RESULTS: INCLUSION]
+
+[CONCLUSION]
+- The problems are not intractable
+
+- Newly acquired skills with this project
+  * How to make a tracer in Java
+  * Some catches in Java (pooling, etc.)
+
+
+* While this is all very interesting some research is left for membership:
+  - profiling on the latest algorihtm
+
+
+06/30/14
+* Property to automaton translation
+* Tomcat with forms manipulation: install then look at examples
+
+07/01/14
+Priority task: write up optimisations for membership, so other problems can be addressed later without any back thoughts.
+- Write LaTeX canvas
+- Start editing
+- Collect numbers where necessary
+
+- The figures that are necessary
+ * The deterministic membership check of a small automaton 
+ * 

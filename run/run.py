@@ -47,7 +47,7 @@ DACAPO_MAIN_CLASS = "MyCallback"
 DACAPO_ENTRY_METHOD = "start"
 DACAPO_EXIT_METHOD = "stop"
 TRACES_FOLDER = os.path.join(ROOT, "traces")
-
+AUTOMATA_FOLDER = os.path.join(ROOT, "automata")
 
 def main(argv):
     os.chdir(os.path.abspath(os.path.join(ROOT, os.pardir)))
@@ -145,7 +145,33 @@ def test_references():
     pass
 
 def test_home():
-    pass
+    print "(i) Testing HOME algorithms"
+    print "(i) Analysing parameters..."
+    print "   - pretranslated traces in the 'traces' folder"
+    
+    filenames = os.listdir(TRACES_FOLDER)
+    files = [os.path.join(TRACES_FOLDER, file) for file in filenames if file[-3:] == ".tr"]
+    
+    print "     Found " + str(len(files)) + " trace files."
+    print "(i) Now running " + str(len(files)) + " tests on GreedyPT Testbench 1.0:0.1"
+    
+    for trace_path, trace_name in files, filenames:
+        run_home_test(trace_path,trace_name[:-3], "greedyPT")
+        
+def run_home_test(trace_path, trace_name, algorithm):
+    #Consitute run command
+    trace_tokens = trace_name.split("-")
+    property = trace_tokens[0]
+    bmark = trace_tokens[1]
+    
+    cmd = ["java", "-cp", "bin", "testbench/Testbench", algorithm,
+           trace_path, os.path.join(AUTOMATA_FOLDER, property + ".fma"),
+           "1.0:0.1"]
+    
+    print "(x) RUN: " + " ".join(cmd)
+    
+    subprocess.call(cmd)
+    time.sleep(2)
 
 if __name__ == "__main__":
     main(sys.argv[1:])
