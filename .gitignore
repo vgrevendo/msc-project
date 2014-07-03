@@ -6,3 +6,5 @@ misc/.*
 gen/*
 *.jar
 scratch
+run/traces/*
+*.log
