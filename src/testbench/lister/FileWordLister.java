@@ -1,12 +1,10 @@
-package testbench.programs;
+package testbench.lister;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
-
-import testbench.lister.TestLister;
 
 public class FileWordLister extends TestLister<List<Integer>> {
 	private final double testStep;
@@ -16,7 +14,6 @@ public class FileWordLister extends TestLister<List<Integer>> {
 	public FileWordLister(double step, double percentage, String filename) throws FileNotFoundException {
 		Scanner sc = new Scanner(new File(filename));
 		this.testStep = step;
-		this.testPercentage = percentage;
 		
 		//Load trace file
 		System.out.print("[FWL] Loading trace file....");
@@ -28,6 +25,18 @@ public class FileWordLister extends TestLister<List<Integer>> {
 		translation = new ArrayList<>(3_000_000);
 		while(intScanner.hasNextInt()) {
 			translation.add(intScanner.nextInt());
+		}
+		
+		if(percentage > 1.1) {
+			int sizeLimit = (int) percentage;
+			
+			if(sizeLimit > translation.size()) {
+				System.out.println("(w) Size limit to big! Adjusting to 100%: " + translation.size());
+				testPercentage = 1.0D;
+			} else
+				this.testPercentage = ((double)sizeLimit)/((double)translation.size());
+		} else {
+			testPercentage = percentage;
 		}
 		
 		intScanner.close();
@@ -44,7 +53,7 @@ public class FileWordLister extends TestLister<List<Integer>> {
 
 	@Override
 	public int size() {
-		return (int) (testPercentage/testStep);
+		return (int) (1.0/testStep);
 	}
 
 }

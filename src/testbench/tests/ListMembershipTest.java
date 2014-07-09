@@ -36,6 +36,21 @@ public class ListMembershipTest extends Test {
 		results = new boolean[twg.size()];
 		times = new int[algorithms.length][twg.size()];
 	}
+	
+	public ListMembershipTest(Automaton a, 
+			MBSDecisionAlgorithm[] algorithms, 
+			TestLister<List<Integer>> twg,
+			String outputFilename) {
+		super("Listed Membership Checks", a, outputFilename);
+		this.algorithms = algorithms;
+		this.twg = twg;
+		
+		maxProgression = twg.size()*algorithms.length;
+		
+		totalTimes = new long[algorithms.length];
+		results = new boolean[twg.size()];
+		times = new int[algorithms.length][twg.size()];
+	}
 
 	@Override
 	protected void run() throws TestException {

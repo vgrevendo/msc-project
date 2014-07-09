@@ -6,5 +6,6 @@
 	<classpathentry kind="lib" path="/home/vincent/programmation/Tools/dacapo/dacapo-9.12-bach.jar"/>
 	<classpathentry kind="lib" path="/data/data/Programmation/Eclipse/workspaces/ubuntu/javamop/lib/rvmonitor.jar"/>
 	<classpathentry kind="lib" path="/data/data/Programmation/Eclipse/workspaces/ubuntu/javamop/lib/rt.jar"/>
+	<classpathentry kind="lib" path="/home/vincent/infinite-alphabets/javassist.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -38,6 +38,7 @@ import time
 ROOT = os.path.dirname(__file__)
 TRF_FOLDER_PATH = os.path.join(ROOT, "trf/")
 BENCHMARKS_RES_PATH = os.path.join(ROOT, "benchmarks.res")
+HOME_TESTS_RES_PATH = os.path.join(ROOT, "home-tests.res")
 DACAPO_PATH = "dacapo-9.12-bach.jar"
 DEBUGGER_PORT = "42892"
 DEBUG_LIB_CMD = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address="+str(DEBUGGER_PORT)
@@ -48,6 +49,7 @@ DACAPO_ENTRY_METHOD = "start"
 DACAPO_EXIT_METHOD = "stop"
 TRACES_FOLDER = os.path.join(ROOT, "traces")
 AUTOMATA_FOLDER = os.path.join(ROOT, "automata")
+RUN_RESULTS_FOLDER = os.path.join(ROOT, "results")
 
 def main(argv):
     os.chdir(os.path.abspath(os.path.join(ROOT, os.pardir)))
@@ -146,27 +148,51 @@ def test_references():
 
 def test_home():
     print "(i) Testing HOME algorithms"
-    print "(i) Analysing parameters..."
-    print "   - pretranslated traces in the 'traces' folder"
+    print "(i) Parsing file 'home-tests.res'..."
     
-    filenames = os.listdir(TRACES_FOLDER)
-    files = [os.path.join(TRACES_FOLDER, file) for file in filenames if file[-3:] == ".tr"]
+    torun = parse_home_tests_res()
     
-    print "     Found " + str(len(files)) + " trace files."
-    print "(i) Now running " + str(len(files)) + " tests on GreedyPT Testbench 1.0:0.1"
+    print "    Found " + str(len(torun)) + " executions"
+    print "(i) Initiating run sequence:"
     
-    for trace_path, trace_name in files, filenames:
-        run_home_test(trace_path,trace_name[:-3], "greedyPT")
+    for e in torun:
         
-def run_home_test(trace_path, trace_name, algorithm):
+        run_home_test(e)
+
+def parse_home_tests_res():
+    with open(HOME_TESTS_RES_PATH) as f:
+        lines = f.readlines()
+        
+        runs = []
+        for line in lines:
+            if line.startswith("--"):
+                continue
+            
+            tokens = line.split(":")
+            run = {}
+            run["property"] = tokens[0].strip(' \t\r')
+            run["benchmark"] = tokens[1].strip(' \t\r')
+            run["algorithm"] = tokens[2].strip(' \t\r')
+            run["difficulty"] = tokens[3].strip(' \t\r')
+            run["jvmparams"] = tokens[4].strip(' \t\r\n')
+            
+            runs.append(run)
+        
+        return runs
+
+def run_home_test(rundata):
     #Consitute run command
-    trace_tokens = trace_name.split("-")
-    property = trace_tokens[0]
-    bmark = trace_tokens[1]
+    trace_name = rundata["property"] + "-" + rundata["benchmark"] + ".tr"
+    trace_path = os.path.join(TRACES_FOLDER, trace_name)
+    automaton_path = os.path.join(AUTOMATA_FOLDER, rundata["property"] + ".fma")
+    output_path = os.path.join(RUN_RESULTS_FOLDER, 
+                               rundata["property"] + "-" + rundata["benchmark"] +
+                               "-" + rundata["algorithm"] + ".csv")
     
-    cmd = ["java", "-cp", "bin", "testbench/Testbench", algorithm,
-           trace_path, os.path.join(AUTOMATA_FOLDER, property + ".fma"),
-           "1.0:0.1"]
+    cmd = ["java", rundata["jvmparams"], "-cp", "bin", 
+           "testbench/Testbench", "mbs",
+           rundata["algorithm"], automaton_path,
+           trace_path, rundata["difficulty"], output_path]
     
     print "(x) RUN: " + " ".join(cmd)
     

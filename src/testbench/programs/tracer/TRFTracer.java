@@ -394,7 +394,9 @@ public class TRFTracer {
 		subclasses.add(t);
 		System.out.println("- Cancelling preparation request");
 		prepEvent.request().disable();
+		mgr.deleteEventRequest(prepEvent.request());
 		
+		unloadedSubclassNames.remove(t.name());
 		return requestMethodExit(t, mgr);
 	}
 	private MethodExitRequest requestMethodExit(ReferenceType t, EventRequestManager mgr) {
@@ -402,11 +404,11 @@ public class TRFTracer {
 		MethodExitRequest request2 = mgr.createMethodExitRequest();
 		request2.setSuspendPolicy(MethodExitRequest.SUSPEND_ALL);
 		request2.addClassFilter(t);
+		//request2.addClassFilter("java.util.Iterator"); 
 		request2.putProperty("filter", t.name());
 		request2.enable();
 		
-		unloadedSubclassNames.remove(t.name());
-		System.out.println("  Request has been successfully added. " + unloadedSubclassNames.size() + " more to load.");
+		System.out.println("  Request has been successfully added!");
 		
 		return request2;
 	}

@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.Stack;
 
+import testbench.Testbench;
 import algorithms.membership.MBSDecisionAlgorithm;
 import algorithms.membership.PrioritySet;
 import algorithms.membership.SearchNode;
@@ -41,21 +42,14 @@ public class Membership {
 			int containingRegister = 0;
 			Integer assignmentRegister = 0;
 			
-			int[] word = new int[w.size()];
-			int i = 0;
-			for(int l : w) {
-				word[i] = l;
-				i++;
-			}
-			
 			//Simply follow the path
-			for(int wcursor = 0; wcursor < word.length; wcursor++) {
+			for(int symbol : w) {
 				//If our registers do not contain the current symbol
-				if((containingRegister = Tools.registersContain(registers, word[wcursor])) < 0) {
+				if((containingRegister = Tools.registersContain(registers, symbol)) < 0) {
 					//If a rho value is defined
 					if((assignmentRegister = automaton.getAssignmentRegister(currentState)) != null) {
 						containingRegister = assignmentRegister;
-						registers[containingRegister] = word[wcursor];
+						registers[containingRegister] = symbol;
 					}
 				}
 				
@@ -86,6 +80,8 @@ public class Membership {
 	 * for components. DFTS implies a stack as a frontier. 
 	 */
 	public static final MBSDecisionAlgorithm ldftsCheck = new MBSDecisionAlgorithm("Ldfts-mbs") {
+		private int maxFrontierSize = 0;
+		
 		@Override
 		public boolean decide(Automaton a, List<Integer> word) {
 			RegisterAutomaton automaton = (RegisterAutomaton) a;
@@ -98,6 +94,9 @@ public class Membership {
 			
 			//Main search loop
 			while(!frontier.isEmpty()) {
+				if(Testbench.COLLECT_STATS)
+					maxFrontierSize = Math.max(maxFrontierSize, frontier.size());
+				
 				SearchNode node = frontier.pop();
 				if(node.state.isFinal()) {
 					return true;
@@ -115,6 +114,10 @@ public class Membership {
 
 		@Override
 		protected void yieldStatistics(String sessionName, ResultsContainer rc) {
+			SearchNode.yieldStatistics(sessionName, rc);
+			rc.addSessionNumber(sessionName, "frontier size", maxFrontierSize);
+			
+			maxFrontierSize = 0;
 		}
 	};
 	
@@ -184,6 +187,7 @@ public class Membership {
 	 * BFLGS implies a double-set structure as a frontier. 
 	 */
 	public static final MBSDecisionAlgorithm optiBflgsCheck = new MBSDecisionAlgorithm("Opti-Bflgs-mbs") {
+		private int maxFrontierSize = 0;
 		
 		@Override
 		public boolean decide(Automaton a, List<Integer> word) {
@@ -204,6 +208,9 @@ public class Membership {
 				// start filling up the next frontier
 				Set<BFLGSSearchNode> nextFrontier = new HashSet<BFLGSSearchNode>();
 				for(BFLGSSearchNode node: frontier) {
+					if(Testbench.COLLECT_STATS)
+						maxFrontierSize = Math.max(maxFrontierSize, frontier.size());
+					
 					if(node.state.isFinal()) {
 						return true;
 					}
@@ -225,8 +232,10 @@ public class Membership {
 
 		@Override
 		protected void yieldStatistics(String sessionName, ResultsContainer rc) {
-			// TODO Auto-generated method stub
+			BFLGSSearchNode.yieldStatistics(sessionName, rc);
 			
+			rc.addSessionNumber(sessionName, "frontier size", maxFrontierSize);
+			maxFrontierSize = 0;
 		}
 	};
 	

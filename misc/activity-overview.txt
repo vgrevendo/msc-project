@@ -752,5 +752,29 @@ Priority task: write up optimisations for membership, so other problems can be a
 - Collect numbers where necessary
 
 - The figures that are necessary
- * The deterministic membership check of a small automaton 
+ * The deterministic membership check of a small automaton [OK]
  * 
+
+07/05/14
+WHERE ARE WE NOW?
+
+We have the deterministic check of the “abacb” automaton: 50M symbols in 2 sec.
+
+For nondeterminism:
+Traces collected (8):
+- Has_next on avrora, 15M symbols
+- Has_next on custom, 20M symbols
+- Has_next on tomcat, 8M symbols
+- Safe_iter on custom, 100k symbols
+- Safe_iter on tomcat, 13M symbols
+- Tainted Sink Source on custom, 20M symbols
+- Unique servlet output on tomcat, 1M symbols
+- Unsafe map iter on tomcat, 3.5M symbols
+- Unsafe map iter on pmd, 7.8M symbols
+- Unsafe map iter on xalan, 2.3M symbols
+
+07/06/14
+Results collection plan:
+
+Has_next.avrora as a basis for all small algorithms: LDFTS, BFGS, BFLGS, F-BFLGS
+Then has_next.avrora, safe_iter.tomcat, tss.tss_custom, uso.tomcat, umi.pmd on G-BFLGS

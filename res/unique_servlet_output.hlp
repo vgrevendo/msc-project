@@ -1,0 +1,40 @@
+--------------------------------------
+-- Unique Servlet Output
+-- Experimental High-level Property
+--------------------------------------
+observe init javax.servlet.ServletResponse.<init>
+observe getOutputStream javax.servlet.ServletResponse.getOutputStream
+observe getWriter javax.servlet.ServletResponse.getWriter
+observe useS javax.servlet.ServletOutputStream.print
+observe useS javax.servlet.ServletOutputStream.println
+observe useS javax.servlet.ServletOutputStream.write
+observe useS javax.servlet.ServletOutputStream.flush
+observe useW java.io.PrintWriter.append
+observe useW java.io.PrintWriter.flush
+observe useW java.io.PrintWriter.print
+observe useW java.io.PrintWriter.printf
+observe useW java.io.PrintWriter.println
+observe useW java.io.PrintWriter.write
+implicit finalize
+variables S W SR
+start -> start : *
+start -> servlet : SR.init
+servlet -> servlet : SR.getOutputStream SR.getWriter
+servlet -> s : S=SR.getOutputStream
+servlet -> w : W=SR.getWriter
+s -> us : S.useS
+us -> us : S.useS
+us -> usw : W=SR.getWriter
+usw -> usw : S.useS SR.getOutputStream SR.getWriter
+usw -> error : W.useW
+w -> uw : W.useW
+uw -> uw : W.useW
+uw -> suw : S=SR.getOutputStream
+suw -> suw : W.useW SR.getOutputStream SR.getWriter
+suw -> error : S.useS
+error -> error : *
+s -> sw : W=SR.getWriter
+w -> sw : S=SR.getOutputStream
+sw -> sw : SR.getOutputStream SR.getWriter
+sw -> usw : S.useS
+sw -> suw : W.useW

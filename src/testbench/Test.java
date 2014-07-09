@@ -20,6 +20,8 @@ public abstract class Test {
 	private final String name;
 	protected final Automaton a;
 	
+	private final String outputFilename;
+	
 	//Characteristics
 	private long runtime = 0L;
 	private int progression = -1;
@@ -36,6 +38,14 @@ public abstract class Test {
 		this.name = name;
 		this.a = a;
 		this.rc = ResultsContainer.getContainer();
+		this.outputFilename = chooseFileName();
+	}
+	
+	public Test(String name, Automaton a, String filename) {
+		this.name = name;
+		this.a = a;
+		this.rc = ResultsContainer.getContainer();
+		this.outputFilename = filename;
 	}
 	
 	/**
@@ -138,7 +148,7 @@ public abstract class Test {
 		if(csvLists.isEmpty())
 			return null;
 		
-		String filename = chooseFileName();
+		String filename = outputFilename;
 		PrintWriter pw = new PrintWriter(filename);
 		
 		final int length = csvLists.get(0).size();

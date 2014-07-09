@@ -1,0 +1,126 @@
+----------------------------------------------------
+-- UNIQUE SERVLET OUTPUT
+-- Specific to Dacapo/Tomcat
+----------------------------------------------------
+-- This is an example of an automaton that should be 
+-- generated automatically.
+----------------------------------------------------
+-- Encoding:
+-- #reg	val	Designation
+-- 1	0	Servlet.<init>
+-- 2	1	Servlet.createStream
+-- 3	2	Servlet.createWriter
+-- 4	3	Stream.use
+-- 5	4	Writer.use
+-- 6	5	Stream.finalize
+-- 7	6	Writer.finalize
+-- 8	7	Servlet.finalize
+-- 9	#	Servlet.ID
+-- 10	#	Stream.ID
+-- 11	#	Writer.ID
+-- 12	#	[Trash]
+----------------------------------------------------
+start 9
+servlet 12
+int0 12
+int2 10
+s 12
+int8 12
+us 12
+int10 12
+int12 11
+usw 12
+int14
+error 12 F
+int4 12
+int6 11
+sw 12
+int16 12
+int9 12
+suw 12
+int15 12
+int1 11
+w 12
+int3 12
+int5 10
+int7 12
+uw 12
+int11 12
+int13 10
+int20 12
+int18 12
+serv_fin 12
+int21 12
+int23 12
+int36 12
+int25 12
+-
+start
+0 1 2 3 4 5 6 7 # # # #
+-
+start * start
+start 1 servlet
+servlet 1,2,3,4,5,6,7,8,10,11,12 servlet
+servlet 9 int0
+int0 2,3,12 servlet
+int0 2 int2
+int0 3 int1
+int2 10 s
+s 1,2,3,4,5,6,7,8,11,12 s
+s 10 int8
+s 9 int4
+int8 12 s
+int8 4 us
+us 1,2,3,4,5,6,7,8,11,12 us
+us 10 int20
+us 9 int10
+int20 4,12 us
+int10 2,3,12 us
+int10 3 int12
+int12 11 usw
+usw 1,2,3,4,5,6,7,8,12 usw
+usw 10 int18
+usw 11 int14
+int18 4,12 usw
+int14 12 usw
+int14 5 error
+error * error
+s 9 int4
+int4 2,3,12 s
+int4 3 int6
+int6 11 sw
+sw 1,2,3,4,5,6,7,8,12 sw
+sw 9 serv_fin
+serv_fin 2,3,12 sw
+sw 10 int16
+sw 11 int9
+int16 12 sw
+int16 4 usw
+int9 12 sw
+int9 5 suw
+suw 1,2,3,4,5,6,7,8,12 suw
+suw 9 int21
+int21 2,3,12 suw
+suw 11 int23
+int23 5,12 suw
+suw 10 int15
+int15 12 suw
+int15 4 error
+usw 9 int36
+int36 2,3,12 usw
+int1 11 w
+w 1,2,3,4,5,6,7,8,10,12 w
+w 9 int3
+int3 2,3,12 w
+int3 2 int5
+int5 10 sw
+w 11 int7
+int7 12 w
+int7 5 uw
+uw 1,2,3,4,5,6,7,8,10,12 uw
+uw 11 int25
+int25 5,12 uw
+uw 9 int11
+int11 2,3,12 uw
+int11 2 int13
+int13 10 suw

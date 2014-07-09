@@ -67,4 +67,13 @@ public class SubClassEvaluator extends RuleEvaluator {
 		return names;
 	}
 
+	public Map<String, Set<String>> getClassToMethodNames() {
+		Map<String, Set<String>> m = new HashMap<>();
+		
+		for(Entry<String, Map<String, ReturnEvaluator>> e: quickSubclassMap.entrySet()) {
+			m.put(e.getKey(), e.getValue().keySet());
+		}
+		
+		return m;
+	}
 }

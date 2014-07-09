@@ -2,6 +2,7 @@ package algorithms.membership;
 
 import java.util.Stack;
 
+import testbench.Testbench;
 import algorithms.tools.ResultsContainer;
 
 /**
@@ -14,11 +15,17 @@ public class SearchNode {
 	public final SearchNode parent;
 	public final int previousTransition;
 	
+	//STATISTICS
+	private static int numNodes = 0;
+	
 	
 	public SearchNode(SearchState state, SearchNode parent, int previousTransition) {
 		this.state = state;
 		this.parent = parent;
 		this.previousTransition = previousTransition;
+		
+		if(Testbench.COLLECT_STATS)
+			numNodes++;
 	}
 	
 	/**
@@ -69,5 +76,12 @@ public class SearchNode {
 	@Override
 	public String toString() {
 		return state.toString();
+	}
+	
+	//STATISTICS
+	public static void yieldStatistics(String session, ResultsContainer rc) {
+		rc.addSessionNumber(session, "nodes", numNodes);
+		
+		numNodes = 0;
 	}
 }

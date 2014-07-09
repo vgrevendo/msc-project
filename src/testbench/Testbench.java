@@ -4,13 +4,15 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import references.MembershipAlgorithms;
+import testbench.lister.FileWordLister;
 import testbench.lister.TestLister;
 import testbench.lister.TestWordLister;
-import testbench.programs.FileWordLister;
 import testbench.programs.translator.SafeIterTranslator;
 import testbench.programs.translator.StrictHasNextTranslator;
 import testbench.programs.translator.TRFTranslator;
@@ -20,9 +22,12 @@ import testbench.tests.ListMembershipTest;
 import algorithms.Membership;
 import algorithms.membership.MBSDecisionAlgorithm;
 import algorithms.tools.ResultsContainer;
+import automata.Automaton;
+import automata.OptimisedRA;
 import automata.RegisterAutomaton;
 import automata.gen.AutomatonGenerator;
 import automata.gen.BuildException;
+import automata.gen.HighLevelPropertyGenerator;
 import automata.gen.RootBranchGenerator;
 import automata.gen.SpecificationSynthGenerator;
 import automata.greedy.GreedyRA;
@@ -33,7 +38,7 @@ public class Testbench {
 	public final static String HNP_TEST_TRACE_PATH = "gen/trace4.tr";
 
 	public final static boolean DEBUG = false;
-	public final static boolean COLLECT_STATS = false;
+	public final static boolean COLLECT_STATS = true;
 
 	/**
 	 * A stub for parameter parsing has been implemented here, to make launches
@@ -48,12 +53,15 @@ public class Testbench {
 		try {
 
 			switch (args[0]) {
+			case "mbs": mbsTests(args); break;
+			case "deterministic-check":
+				deterministicTest(); break;
 			case "synth":
-				synthesisTest();
-				break;
+				synthesisTest(); break;
+			case "synth2":
+				hlpTest(); break;
 			case "translation":
-				translationTest();
-				break;
+				translationTest(); break;
 			case "safeIter":
 				p = Double.parseDouble(args[2]);
 				if (args[1].equals("LATEST"))
@@ -102,37 +110,61 @@ public class Testbench {
 			e.printStackTrace();
 		}
 	}
-
-	public static void mbsTests() throws FileNotFoundException, ParseException {
-		MBSDecisionAlgorithm[] algorithms = new MBSDecisionAlgorithm[] {
-				// Membership.ldftsCheck,
-				Membership.bflgsCheck, Membership.bestFirstCheck };
-
-		RegisterAutomaton ra = new HRAutomaton("res/example3.fma", TEST_LENGTH);
-		ra.displayInfo();
-
-		TestLister<List<Integer>> twg = new TestLister<List<Integer>>() {
-			@Override
-			public int size() {
-				return TEST_LENGTH - 7;
-			}
-
-			@Override
-			protected List<Integer> nextResource() {
-				List<Integer> l = new ArrayList<>(index + 5);
-				for (int i = 0; i < index + 5; i++) {
-					l.add(0);
-				}
-				return l;
-			}
+	private static void hlpTest() throws FileNotFoundException, BuildException {
+		HighLevelPropertyGenerator hlpg = new HighLevelPropertyGenerator("res/unique_servlet_output.hlp");
+		hlpg.generate();
+	}
+	public static void mbsTests(String[] args) throws FileNotFoundException, ParseException {
+		//Build resources
+		Map<String, MBSDecisionAlgorithm> algorithms = new HashMap<>();
+		algorithms.put("LDFTS", Membership.ldftsCheck);
+		algorithms.put("BFLGS", Membership.bflgsCheck);
+		algorithms.put("OBFLGS", Membership.optiBflgsCheck);
+		algorithms.put("FBFLGS", Membership.forgetfulBflgsCheck);
+		algorithms.put("GBFLGS", Membership.greedyCheck);
+		
+		//Parse arguments
+		String chosenAlgorithm = args[1];
+		String automaton = args[2];
+		String tracePath = args[3];
+		String difficulty = args[4];
+		String[] dTokens = difficulty.split("/");
+		final double tracePercentage = Double.parseDouble(dTokens[0]);
+		final double traceStep = Double.parseDouble(dTokens[1]);
+		String outputPath = args[5];
+		
+		//Build parameters
+		MBSDecisionAlgorithm[] chosenAlgorithms = {
+				algorithms.get(chosenAlgorithm)
 		};
+		
+		Automaton a = null;
+		
+		switch(chosenAlgorithm) {
+		case "G-BFLGS":
+			GreedyRA gra = new GreedyRA(automaton);
+			gra.displayInfo();
+			a = gra;
+			break;
+		case "":
+			OptimisedRA ora = new OptimisedRA(automaton);
+			ora.displayInfo();
+			a = ora;
+			break;
+		default:
+			RegisterAutomaton ra = new RegisterAutomaton(automaton);
+			ra.displayInfo();
+			a = ra;
+		}
+		
 
-		Test lmt = new ListMembershipTest(ra, algorithms, twg);
+		TestLister<List<Integer>> twg = new FileWordLister(traceStep, tracePercentage, tracePath);
+
+		Test lmt = new ListMembershipTest(a, chosenAlgorithms, twg, outputPath);
 		lmt.test();
 
 		ResultsContainer.getContainer().flush();
 	}
-
 	/**
 	 * Tests for membership on sequences of (automaton, word)
 	 * 
@@ -191,7 +223,6 @@ public class Testbench {
 
 		ResultsContainer.getContainer().flush();
 	}
-
 	public static void generatorTests() throws FileNotFoundException,
 			ParseException, BuildException {
 		System.out.println("This is GENERATOR TESTBENCH");
@@ -202,7 +233,6 @@ public class Testbench {
 		RegisterAutomaton ra = new RegisterAutomaton(filename);
 		ra.displayInfo();
 	}
-
 	/**
 	 * Testing the hasNext property with the newly created automata
 	 * example6.fma, while translating the input trace intelligently
@@ -263,7 +293,6 @@ public class Testbench {
 
 		ResultsContainer.getContainer().flush();
 	}
-
 	/**
 	 * Just a test to see what the translation gives
 	 * 
@@ -317,7 +346,6 @@ public class Testbench {
 				+ " were agreed upon.");
 		System.out.println("DONE");
 	}
-
 	private static String findLatestFilename(String root, String extension) {
 		int id = 0;
 
@@ -327,14 +355,12 @@ public class Testbench {
 
 		return root + (id - 1) + "." + extension;
 	}
-
 	private static void synthesisTest() throws FileNotFoundException,
 			BuildException {
 		AutomatonGenerator propRAGen = new SpecificationSynthGenerator(
 				"res/has_next.mra");
 		propRAGen.generate();
 	}
-
 	private static void safeIterTest(final String tracePath,
 			final double tracePercentage) throws FileNotFoundException,
 			ParseException {
@@ -388,7 +414,6 @@ public class Testbench {
 
 		ResultsContainer.getContainer().flush();
 	}
-
 	/**
 	 * A tool for automatic and quick testing. A trace should be provided, as
 	 * well as a translation rules file, and an MRA macro automaton.
@@ -488,7 +513,6 @@ public class Testbench {
 		System.out.println("Test finished with success");
 
 	}
-
 	/**
 	 * Same as above but with the greedy infrastructure
 	 * @param traceCommand
@@ -586,7 +610,6 @@ public class Testbench {
 		System.out.println("Test finished with success");
 
 	}
-	
 	public static void greedyPTTest(String traceCommand,
 									String propertyCommand, String testCommand) {
 		try {
@@ -673,5 +696,49 @@ public class Testbench {
 
 		System.out.println("Test finished with success");
 
+	}
+	public static void deterministicTest() throws FileNotFoundException, ParseException {
+		//Test example2 which is deterministic
+		final int TOTAL_SIZE = 50_000_000;
+		
+		TestLister<List<Integer>> twg = new TestLister<List<Integer>>() {
+			private List<Integer> word = new ArrayList<>();
+			private final Integer[] LETTERS = {1,3,2};
+			private boolean init = false;
+
+			@Override
+			protected List<Integer> nextResource() {
+				int currentSize = (TOTAL_SIZE/size())*(index+1);
+				
+				if(!init) {
+					init = true;
+					word.add(LETTERS[0]);
+					word.add(LETTERS[2]);
+				}
+				
+				//Generate next word
+				
+				for(int i = word.size()-2; i < currentSize-2; i++) {
+					word.add(LETTERS[i%3]);
+				}
+				
+				return word;
+			}
+
+			@Override
+			public int size() {
+				return 10;
+			}
+		};
+		
+		RegisterAutomaton ra = new RegisterAutomaton("res/example2.fma");
+		
+		MBSDecisionAlgorithm[] algorithms = {
+				Membership.deterministicCheck,
+		};
+		
+		ListMembershipTest lmt = new ListMembershipTest(ra, algorithms, twg);
+		lmt.test();
+		ResultsContainer.getContainer().flush();
 	}
 }

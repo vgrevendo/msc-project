@@ -2,6 +2,7 @@ package algorithms.membership.bflgs;
 
 import java.util.Stack;
 
+import testbench.Testbench;
 import algorithms.tools.ResultsContainer;
 
 /**
@@ -14,9 +15,15 @@ public class BFLGSSearchNode {
 	public final BFLGSSearchState state;
 	public final BFLGSSearchNode parent;
 	
+	//STATS
+	private static int numNodes = 0;
+	
 	public BFLGSSearchNode(BFLGSSearchState state, BFLGSSearchNode parent) {
 		this.state = state;
 		this.parent = parent;
+		
+		if(Testbench.COLLECT_STATS)
+			numNodes++;
 	}
 	
 	/**
@@ -67,5 +74,12 @@ public class BFLGSSearchNode {
 	@Override
 	public String toString() {
 		return state.toString();
+	}
+	
+	//STATS
+	public static void yieldStatistics(String sessionName, ResultsContainer rc) {
+		rc.addSessionNumber(sessionName, "Nodes", numNodes);
+		
+		numNodes = 0;
 	}
 }
