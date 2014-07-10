@@ -15,7 +15,6 @@ import java.util.Scanner;
 import java.util.Set;
 import java.util.Map.Entry;
 
-import sun.rmi.rmic.iiop.Generator.OutputType;
 import testbench.programs.translator.trf.EqualityEvaluator;
 import testbench.programs.translator.trf.RuleEvaluator;
 import testbench.programs.translator.trf.SubClassEvaluator;
@@ -47,10 +46,13 @@ public class Tracer {
 	private Map<String, RuleEvaluator> rules = new HashMap<>();
 	private List<RuleEvaluator> evaluators = new ArrayList<>();
 	private Set<String> subclassNames;
+	private Set<Class<?>> subclasses = new HashSet<>();
 	private Map<String, Set<String>> clToMethods;
 	private PrintWriter output;
 	
 	private int uniqueIDCount = 2;
+	
+	private final Map<SaneWeakReference<Object>, Integer> idMap = new HashMap<>();
 	
 	//Monitoring
 	private boolean traceInProgress = false;
@@ -74,10 +76,34 @@ public class Tracer {
 		//Load TRF
 		loadTRF(trfFilename);
 		
+		//Load subclasses
+		loadSubclasses();
+		
 		//Create output file
 		initOutputFile(outputFilename);
 	}
-	
+	private void loadSubclasses() {
+		System.out.println("- Loading subclasses...");
+		
+		for(String scStr : subclassNames) {
+			try {
+				subclasses.add(Class.forName(scStr));
+			} catch (ClassNotFoundException | NullPointerException e) {
+				System.out.println("  (e) Subclass load failed: " + e.getMessage());
+			}
+		}
+
+		if(subclasses.isEmpty()) {
+			System.out.println("  (w) Could not load any subclasses!");
+			return;
+		}
+		
+		System.out.println("  Found following interesting superclasses:");
+		
+		for(Class<?> c : subclasses) {
+			System.out.println("  * " + c.getName());
+		}
+	}
 	private void parseArgs(String args) throws Exception {
 		String[] argTokens = args.split(",");
 		
@@ -107,7 +133,6 @@ public class Tracer {
 		
 		startDate = new Date();
 	}
-	
 	private void loadTRF(String filename) throws Exception {
 		Scanner sc = new Scanner(new File(filename));
 		
@@ -155,8 +180,11 @@ public class Tracer {
 		
 		System.out.println("- Rules were loaded with success.");
 		sc.close();
+		
+		for(RuleEvaluator re : rules.values()) {
+			uniqueIDCount = Math.max(uniqueIDCount, re.getMaxCode());
+		}
 	}
-	
 	private void initOutputFile(String filename) throws FileNotFoundException {
 		File f = new File(filename);
 		if(f.exists())
@@ -168,8 +196,8 @@ public class Tracer {
 		Date date = new Date();
 		output.println("-- Listening for method exits in main class " + mainClassName);
 		output.println("-- This trace was generated on " + dateFormat.format(date));
+		output.flush();
 	}
-	
 	private void finaliseOutputFile() {
 		
 		long diff = new Date().getTime() - startDate.getTime();
@@ -190,17 +218,22 @@ public class Tracer {
 	public Set<String> getMethodsToInstrument(String clName) {
 		return clToMethods.get(clName);
 	}
-	public boolean isStartMethod(String className, String methodName) {
-		return mainClassName.equals(className) && methodName.equals(methodName);
+	public boolean isMainClass(String className) {
+		return mainClassName.equals(className);
 	}
-	public boolean isEndMethod(String className, String methodName) {
-		return mainClassName.equals(className) && methodName.equals(methodName);
+	public String getStartMethodName() {
+		return startMethod;
 	}
-	
-	
-	//Accessors
-	public int getId() {
-		return uniqueIDCount++;
+	public String getEndMethodName() {
+		return endMethod;
+	}
+	public String isInterestingSubclass(Class<?> klass) {
+		for(Class<?> sc : subclasses) {
+			if(sc.isAssignableFrom(klass))
+				return sc.getName();
+		}
+		
+		return null;
 	}
 	
 	//Hooks
@@ -230,21 +263,70 @@ public class Tracer {
 	 * @param method
 	 * @param rv
 	 */
-	public void add(int id, String cl, String method, String rv) {
+	public void add(Object implicitArgument, String cl, 
+			        String method, String rv) {
 		entries++;
 		
 		if(!traceInProgress) 
 			return;
 		
+		//Protect against infinite loops
+		traceInProgress = false;
+		
+		//If this is a constructor/static method (??), ignore
+		if(implicitArgument == null)
+			return;
+		
+		//Manage implicit argument's ID
+		//If the object wasn't known yet, we will need to add an <init> statement
+		int id = 0;
+		if(!idMap.containsKey(implicitArgument)) {
+			id = uniqueIDCount++;
+			idMap.put(new SaneWeakReference<Object>(implicitArgument), 
+					id);
+			
+			addToTranslation(id, cl, "<init>", "null");
+		} else
+			id = idMap.get(implicitArgument);
+		
+		if(!method.equals("<init>"))
+			addToTranslation(id, cl, method, rv);
+		
+		traceInProgress = true;
+	}
+	/**
+	 * Call if the return value is an object of which the string 
+	 * @param implicitArgument
+	 * @param cl
+	 * @param method
+	 * @param returnObject
+	 */
+	public void addObjectRV(Object implicitArgument, String cl, 
+			        String method, Object returnObject) {
+		add(implicitArgument, cl, method, 
+			returnObject == null ? Integer.toString(manageObjectID(returnObject)) : "null");
+	}
+	private int manageObjectID(Object o) {
+		if(!idMap.containsKey(o)) {
+			idMap.put(new SaneWeakReference<Object>(o), 
+					  uniqueIDCount++);
+		}
+		
+		return idMap.get(o);
+	}
+	private void addToTranslation(int id, String cl, String method, String rv) {
 		//Apply the same procedure as in the TRF protocol
 		for(RuleEvaluator re : evaluators) {
 			try {
+				cl = cl.replace("/", ".");
 				List<Integer> list = re.evaluate(id, cl, method, rv);
 				
 				outputTranslationBatch(list);
 				
-				if(list != null)
+				if(list != null) {
+					System.out.println("Logging '" + cl + "." + method + ":" + rv + "': " + list.toString());
 					break;
+				}
 			} catch (Exception e) {
 				System.err.println("Evaluation for '" + cl + "." + method + ":" + rv + "' failed (skipping)");
 			}

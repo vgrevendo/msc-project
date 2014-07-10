@@ -5,13 +5,12 @@ import java.io.IOException;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.security.ProtectionDomain;
-import java.util.HashSet;
 import java.util.Set;
 
 import javassist.CannotCompileException;
 import javassist.ClassPool;
 import javassist.CtClass;
-import javassist.CtField;
+import javassist.CtConstructor;
 import javassist.Modifier;
 import javassist.CtMethod;
 import javassist.NotFoundException;
@@ -22,98 +21,151 @@ import javassist.NotFoundException;
  *
  */
 public class Inspector implements ClassFileTransformer {
+	private final static String TRACER_PATH = "testbench.programs.agent.Tracer";
+	
 	private final Tracer tracer;
-	private final Set<String> classesToInstrument;
 	
 	public Inspector(Tracer tracer) {
 		this.tracer = tracer;
-		this.classesToInstrument = translateClassNames(tracer.getClassesToInstrument());
+		
+		System.out.println("(i) Inspector is online.");
 	}
 
 	@Override
 	public byte[] transform(ClassLoader loader, String cl, Class<?> klass,
 			ProtectionDomain pd, byte[] rawClass)
 			throws IllegalClassFormatException {
+		if(tracer.isMainClass(cl))
+			try {
+				return instrumentMainClass(cl, rawClass);
+			} catch (IOException | RuntimeException | NotFoundException
+					| CannotCompileException | Error e1) {
+				System.out.println("(e) Could not instrument main class for tracer hooks:");
+				e1.printStackTrace();
+				return rawClass;
+			}
+		
 		//To do better with subclassing issues
-		if(!classesToInstrument.contains(cl))
+		String superclassName = tracer.isInterestingSubclass(klass);
+		if(superclassName == null)
 			return rawClass;
 		
-		System.out.println("(i) Inspector is handling '" + cl + "' which is flagged for modification...");
+		System.out.println("(i) Inspector: '" + cl + "' for superclass '" + superclassName + "':");
 		
 		//Find methods to instrument
-		Set<String> methods = tracer.getMethodsToInstrument(cl);
+		Set<String> methods = tracer.getMethodsToInstrument(superclassName);
 		
 		//Instrument class		
 		try {
 			return instrumentClass(methods, cl, rawClass);
-		} catch (Exception e) {
+		} catch (Exception | Error e) {
 			System.out.println("(e) Could not instrument class, here's why:");
 			e.printStackTrace();
+			return rawClass;
 		}
-		
-		return rawClass;
 	}
 	
 	//Instrumentation
 	private byte[] instrumentClass(Set<String> methods, String cl, byte[] rawCode) 
 			throws IOException, RuntimeException, CannotCompileException, 
 			       NotFoundException {
+		int constrCount = 0, methodCount = 0;
+		
 		//BUILD JAVAASSIST CLASS
 		ClassPool ctp = ClassPool.getDefault();
 		CtClass ctc = ctp.makeClass(new ByteArrayInputStream(rawCode));
 		
-		//Add a field for storing the reference to the tracer
-		CtClass tracerClass = ctp.get("testbench.programs.agent.Tracer");
-		CtField tracerField = new CtField(tracerClass, "_tracer", ctc);
-		ctc.addField(tracerField, "Tracer.getTracer()");
-		
-		//Add a field to store the unique ID once it was received
-		CtClass integerClass = ctp.get("java.lang.Integer");
-		CtField idField = new CtField(integerClass, "_id", ctc);
-		idField.setModifiers(Modifier.PUBLIC);
-		ctc.addField(idField, "0");
-		
 		for(String method : methods) {
-			CtMethod ctm = ctc.getDeclaredMethod(method);
-			
-			//Get return type
-			CtClass returnType = ctm.getReturnType();
-			
-			//Add ID retrieval statement and tracer information operation
-			if(returnType.isPrimitive())
-				ctm.insertAfter("{"
-								+ "if(_id <= 0) _id = _tracer.getId();"
-								+ "_tracer.add(_id, " + cl + ","
-													  + method + ","
-													  + "$w.toString($_));"
+			if(method.equals("<init>")) { //Modify the constructor instead!
+				CtConstructor[] constructors = ctc.getConstructors();
+				
+				if(constructors.length == 0) {
+					System.out.println("    (w) No constructors found in this class!");
+				}
+				
+				for(CtConstructor ctCons : constructors) {
+					ctCons.insertAfter("{"
+							+ TRACER_PATH + ".getTracer().add(this, \"" + cl + "\",\""
+							+ method + "\","
+							+ "\"null\");"
+							+ "}");
+				}
+				
+				constrCount ++;
+				
+			} else {
+				CtMethod ctm;
+				try {
+					ctm = ctc.getDeclaredMethod(method);
+					if(Modifier.isNative(ctm.getModifiers()) || ctm.isEmpty()) {
+						System.out.println("    (w) Could not instrument " + ctm.getName() + ": this method has no body!");
+						continue;
+					}
+					
+					//Get return type
+					CtClass returnType = ctm.getReturnType();
+					//Add ID retrieval statement and tracer information operation
+					if(returnType.isPrimitive())
+						ctm.insertAfter("{"
+								+ TRACER_PATH + ".getTracer().getTracer().add(this, \"" + cl + "\",\""
+								+ method + "\","
+								+ getWrapperName(returnType) + ".toString($_));"
 								+ "}");
-			else {
-				ctm.insertAfter("{"
-								+ "if(_id <= 0) _id = _tracer.getId();"
-								+ "_tracer.add(_id, " + cl + ","
-								+ method + ","
-								+ "Integer.toString($_._id);"
-						+ "}");
+					else {
+						ctm.insertAfter("{"
+								+ TRACER_PATH + ".getTracer().getTracer().addObjectRV(this, \"" + cl + "\",\""
+									+ method + "\",$_);"
+								+ "}");
+					}
+					
+					methodCount++;
+				} catch (NotFoundException e) {
+					System.out.println("    (w) Could not find '" + method + "' in this class, skipping");
+				}
 				
 			}
+			
+			
 		}
 		
 		//Return the modified class's code
 		byte[] changedCode = ctc.toBytecode();
 		ctc.detach();
+		System.out.println("    " + constrCount + " constructors, " + methodCount + " methods instrumented.");
 		
 		return changedCode;
 	}
-
-	//Tools
-	private Set<String> translateClassNames(Set<String> classesToInstrument) {
-		Set<String> translatedSet = new HashSet<>();
+	private byte[] instrumentMainClass(String cl, byte[] rawCode) 
+			throws IOException, RuntimeException, NotFoundException, CannotCompileException {
+		System.out.println("(i) Inspector is instrumenting main class... ");
 		
-		for(String cl : classesToInstrument) {
-			String newName = cl.replace('.','/');
-			translatedSet.add(newName);
-		}
+		//BUILD JAVAASSIST CLASS
+		ClassPool ctp = ClassPool.getDefault();
+		CtClass ctc = ctp.makeClass(new ByteArrayInputStream(rawCode));
+		
+		
+		//Instrument start method
+		CtMethod ctm = ctc.getDeclaredMethod(tracer.getStartMethodName());
+		ctm.insertBefore("{ " + TRACER_PATH + ".getTracer().onTraceStart(); }");
+		
+		//Instrument end method
+		CtMethod ctm2 = ctc.getDeclaredMethod(tracer.getEndMethodName());
+		ctm2.insertAfter("{ testbench.programs.agent.Tracer.getTracer().onTraceStop(); }");
+		
+		//Return the modified class's code
+		byte[] changedCode = ctc.toBytecode();
+		ctc.detach();
 
-		return translatedSet;
+		return changedCode;
+	}
+
+	//TOOLS
+	private String getWrapperName(CtClass type) {
+		if(!type.isPrimitive())
+			return type.getName();
+		
+		String name = type.getName();
+		return name.substring(0, 1).toUpperCase() + name.substring(1);
+			
 	}
 }

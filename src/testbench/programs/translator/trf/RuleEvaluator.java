@@ -13,6 +13,9 @@ public abstract class RuleEvaluator {
 	private int methodCode;
 	private ReturnEvaluator re;
 	
+	//Monitoring
+	private int maxCode = 0;
+	
 	//Contracts
 	public abstract void addRule(String ruleLine) throws Exception;
 	public abstract LinkedList<Integer> evaluate(int id, String cl, String method, String rv)
@@ -31,6 +34,7 @@ public abstract class RuleEvaluator {
 		subTokens = tokens[1].split(":");
 		methodName = subTokens[0];
 		methodCode = Integer.parseInt(subTokens[1]);
+		maxCode = Math.max(maxCode, methodCode);
 		
 		//Return rules: each token is a return rule
 		re = new ReturnEvaluator(methodCode);
@@ -41,17 +45,25 @@ public abstract class RuleEvaluator {
 			case 1:
 				if(subTokens[0].equals("_"))
 					re.setIgnored();
-				else
-					re.setDefaultNumber(Integer.parseInt(subTokens[0]));
+				else {
+					int code1 = Integer.parseInt(subTokens[0]);
+					maxCode = Math.max(maxCode, code1);
+					re.setDefaultNumber(code1);
+				}
 				break;
 			case 2:
 				if(subTokens[1].equals("ID"))
 					re.addIDObjectAction();
-				else
-					re.addNumberObjectAction(Integer.parseInt(subTokens[1]));
+				else {
+					int code2 = Integer.parseInt(subTokens[1]);
+					maxCode = Math.max(maxCode, code2);
+					re.addNumberObjectAction(code2);
+				}
 				break;
 			case 3:
-				re.addEqualityNumber(subTokens[1], Integer.parseInt(subTokens[2]));
+				int code3 = Integer.parseInt(subTokens[2]);
+				re.addEqualityNumber(subTokens[1], code3);
+				maxCode = Math.max(maxCode, code3);
 				break;
 			}
 		}
@@ -155,4 +167,8 @@ public abstract class RuleEvaluator {
 		return toAttach;
 	}
 	
+	//Accessors
+	public int getMaxCode() {
+		return maxCode;
+	}
 }

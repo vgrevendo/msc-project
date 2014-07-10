@@ -1,2 +1,4 @@
 Manifest-Version: 1.0
 Premain-Class: testbench.programs.agent.Agent
+Can-Retransform-Classes: true
+Boot-Class-Path: javassist.jar
