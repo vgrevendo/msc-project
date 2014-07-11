@@ -51,6 +51,11 @@ TRACES_FOLDER = os.path.join(ROOT, "traces")
 AUTOMATA_FOLDER = os.path.join(ROOT, "automata")
 RUN_RESULTS_FOLDER = os.path.join(ROOT, "results")
 
+#NEW TRACER
+NT_AGENT = "-javaagent:agent.jar="
+NT_CP = "-Xbootclasspath/a:bin:agent.jar"
+NT_USE_NT = True
+
 def main(argv):
     os.chdir(os.path.abspath(os.path.join(ROOT, os.pardir)))
     
@@ -121,27 +126,73 @@ def run_trace(bmark, trf_files):
     output_filename = trf_name + "-" + bm_name + ".tr"
     output_path = os.path.join(TRACES_FOLDER,output_filename)
     
-    if dacapo:
-        target_cmd = ["java", DEBUG_LIB_CMD, "-jar", DACAPO_PATH, "-c", "MyCallback",
-                      "-s", "large", bm_name]
-        debug_cmd = ["java", "-cp", JDI_JAR_PATH, TRF_TRACER, DEBUGGER_PORT, DACAPO_MAIN_CLASS,
-                     DACAPO_ENTRY_METHOD, DACAPO_EXIT_METHOD, trf, output_path]
+    if dacapo: 
+        if NT_USE_NT:
+            #not very efficient...
+            agent_options = "trf="
+            agent_options += trf
+            agent_options += ",out="
+            agent_options += output_path
+            agent_options += ",hook="
+            agent_options += DACAPO_MAIN_CLASS
+            agent_options += ",inmethod="
+            agent_options += DACAPO_ENTRY_METHOD
+            agent_options += ",outmethod="
+            agent_options += DACAPO_EXIT_METHOD
+            agent_options += ",limit=false"
+            target_cmd = ["java", NT_AGENT + agent_options, NT_CP, "-jar",
+                          DACAPO_PATH, "-c", DACAPO_MAIN_CLASS, "-s", "large",
+                          bm_name]
+            debug_cmd = None
+        else:
+            target_cmd = ["java", DEBUG_LIB_CMD, "-jar", DACAPO_PATH, "-c", "MyCallback",
+                          "-s", "large", bm_name]
+            debug_cmd = ["java", "-cp", JDI_JAR_PATH, TRF_TRACER, DEBUGGER_PORT, DACAPO_MAIN_CLASS,
+                         DACAPO_ENTRY_METHOD, DACAPO_EXIT_METHOD, trf, output_path]
     else: #other
-        target_cmd = ["java", DEBUG_LIB_CMD, "-cp", "bin"]
-        target_cmd += tokens[3].split(" ")
-        debug_cmd = ["java", "-cp", JDI_JAR_PATH, TRF_TRACER, DEBUGGER_PORT]
-        debug_cmd += tokens[4].split(" ")
-        debug_cmd += [trf, output_path]
+        if NT_USE_NT:
+            hook_options = tokens[4].split(" ")
+            
+            #Build agent parameters
+            agent_options = "trf="
+            agent_options += trf
+            agent_options += ",out="
+            agent_options += output_path
+            agent_options += ",hook="
+            agent_options += hook_options[0]
+            agent_options += ",inmethod="
+            agent_options += hook_options[1]
+            agent_options += ",outmethod="
+            agent_options += hook_options[2]
+            agent_options += ",limit="
+            agent_options += hook_options[3]            
+            
+            #Build command
+            target_cmd = ["java", NT_AGENT + agent_options, NT_CP]
+            target_cmd += tokens[3].split(" ")
+            debug_cmd = None
+        else:
+            target_cmd = ["java", DEBUG_LIB_CMD, "-cp", "bin"]
+            target_cmd += tokens[3].split(" ")
+            debug_cmd = ["java", "-cp", JDI_JAR_PATH, TRF_TRACER, DEBUGGER_PORT]
+            debug_cmd += tokens[4].split(" ")
+            debug_cmd += [trf, output_path]
         
     # Run commands intelligently
     print "(x) TARGET: " + " ".join(target_cmd)
-    print "(x) DEBUGGER: " + " ".join(debug_cmd)
     
-    target = subprocess.Popen(target_cmd)
-    time.sleep(2)
-    subprocess.call(debug_cmd)
-    target.terminate()
-    time.sleep(2)
+    if debug_cmd is not None:
+        print "(x) DEBUGGER: " + " ".join(debug_cmd)
+        target = subprocess.Popen(target_cmd)
+        time.sleep(2)
+    
+        subprocess.call(debug_cmd)
+        target.terminate()
+        time.sleep(2)
+        
+    else:
+        subprocess.call(target_cmd)
+        time.sleep(2)
 
 def test_references():
     pass

@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.Map.Entry;
+import java.util.WeakHashMap;
 
 import testbench.programs.translator.trf.EqualityEvaluator;
 import testbench.programs.translator.trf.RuleEvaluator;
@@ -41,6 +42,7 @@ public class Tracer {
 	private String mainClassName;
 	private String startMethod;
 	private String endMethod;
+	private boolean enforceLimit = false;
 	
 	//Resources
 	private Map<String, RuleEvaluator> rules = new HashMap<>();
@@ -52,7 +54,7 @@ public class Tracer {
 	
 	private int uniqueIDCount = 2;
 	
-	private final Map<SaneWeakReference<Object>, Integer> idMap = new HashMap<>();
+	private final Map<Object, Integer> idMap = new WeakHashMap<>();
 	
 	//Monitoring
 	private boolean traceInProgress = false;
@@ -107,7 +109,7 @@ public class Tracer {
 	private void parseArgs(String args) throws Exception {
 		String[] argTokens = args.split(",");
 		
-		if(argTokens.length != 5)
+		if(argTokens.length < 5)
 			throw new Exception("Expecting arguments trf, out, hook, inmethod, outmethod");
 		
 		for(String token : argTokens) {
@@ -126,6 +128,9 @@ public class Tracer {
 				startMethod = value; break;
 			case "outmethod":
 				endMethod = value; break;
+			case "limit":
+				enforceLimit = Boolean.parseBoolean(value);
+				break;
 			default:
 				throw new Exception("Unrecognised option '" + label + "'");
 			}
@@ -184,6 +189,7 @@ public class Tracer {
 		for(RuleEvaluator re : rules.values()) {
 			uniqueIDCount = Math.max(uniqueIDCount, re.getMaxCode());
 		}
+		uniqueIDCount++;
 	}
 	private void initOutputFile(String filename) throws FileNotFoundException {
 		File f = new File(filename);
@@ -245,6 +251,7 @@ public class Tracer {
 		traceInProgress = true;
 		
 		System.out.println("(i) Tracer reached main class, trace is now in progress.");
+		System.out.println("========================================================================");
 	}
 	/**
 	 * Called when the main hook exit mehod is reached. Call only once.
@@ -252,6 +259,7 @@ public class Tracer {
 	public void onTraceStop() {
 		traceInProgress = false;
 		
+		System.out.println("========================================================================");
 		System.out.println("(i) Tracer reached end of traceable section, trace has stopped.");
 		finaliseOutputFile();
 		System.out.println("(i) Trace file is finalised and ready for use.");
@@ -282,8 +290,7 @@ public class Tracer {
 		int id = 0;
 		if(!idMap.containsKey(implicitArgument)) {
 			id = uniqueIDCount++;
-			idMap.put(new SaneWeakReference<Object>(implicitArgument), 
-					id);
+			idMap.put(implicitArgument, id);
 			
 			addToTranslation(id, cl, "<init>", "null");
 		} else
@@ -292,7 +299,12 @@ public class Tracer {
 		if(!method.equals("<init>"))
 			addToTranslation(id, cl, method, rv);
 		
-		traceInProgress = true;
+		if(enforceLimit && numTrNumbers >= MAX_NUM_NUMBERS_TR) {
+			System.out.print("Reached limit: "); 
+			System.out.format("%,d", numTrNumbers);
+			System.out.println(" numbers reached.");
+		} else		
+			traceInProgress = true;
 	}
 	/**
 	 * Call if the return value is an object of which the string 
@@ -308,8 +320,7 @@ public class Tracer {
 	}
 	private int manageObjectID(Object o) {
 		if(!idMap.containsKey(o)) {
-			idMap.put(new SaneWeakReference<Object>(o), 
-					  uniqueIDCount++);
+			idMap.put(o, uniqueIDCount++);
 		}
 		
 		return idMap.get(o);
@@ -324,7 +335,6 @@ public class Tracer {
 				outputTranslationBatch(list);
 				
 				if(list != null) {
-					System.out.println("Logging '" + cl + "." + method + ":" + rv + "': " + list.toString());
 					break;
 				}
 			} catch (Exception e) {
@@ -333,11 +343,14 @@ public class Tracer {
 		}
 		
 		if(numTrNumbers >= nextMileStone) {
-			System.out.println(numTrNumbers + " numbers recorded (" + entries + " method exits, " 
-							   + relevantExits + " events, "
+			System.out.println(numTrNumbers + " numbers recorded (" + String.format("%,d", entries) + " method exits, " 
+							   + String.format("%,d", relevantExits) + " events, "
 							   + 100.0*(double)numTrNumbers/(double)MAX_NUM_NUMBERS_TR + "%)");
 			nextMileStone += DISPLAY_PROGRESS_MILESTONE;
 		}
+	}
+	public int getId() {
+		return uniqueIDCount++;
 	}
 	
 	//Translation
