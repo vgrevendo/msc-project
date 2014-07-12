@@ -778,3 +778,9 @@ Results collection plan:
 
 Has_next.avrora as a basis for all small algorithms: LDFTS, BFGS, BFLGS, F-BFLGS
 Then has_next.avrora, safe_iter.tomcat, tss.tss_custom, uso.tomcat, umi.pmd on G-BFLGS
+
+-Better multitype support
+-Better exception handling: is class not found important?
+
+07/12/14
+

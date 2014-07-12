@@ -57,7 +57,7 @@ public class Tracer {
 	private final Map<Object, Integer> idMap = new WeakHashMap<>();
 	
 	//Monitoring
-	private boolean traceInProgress = false;
+	private TraceStatus traceStatus = TraceStatus.INIT;
 	private Date startDate;
 	private int relevantExits = 0;
 	private int numTrNumbers = 0;
@@ -233,13 +233,8 @@ public class Tracer {
 	public String getEndMethodName() {
 		return endMethod;
 	}
-	public String isInterestingSubclass(Class<?> klass) {
-		for(Class<?> sc : subclasses) {
-			if(sc.isAssignableFrom(klass))
-				return sc.getName();
-		}
-		
-		return null;
+	public Set<Class<?>> getSuperclasses() {
+		return subclasses;
 	}
 	
 	//Hooks
@@ -248,7 +243,7 @@ public class Tracer {
 	 * Can be called several times.	
 	 */
 	public void onTraceStart() {
-		traceInProgress = true;
+		traceStatus = TraceStatus.IN_PROGRESS;
 		
 		System.out.println("(i) Tracer reached main class, trace is now in progress.");
 		System.out.println("========================================================================");
@@ -257,7 +252,7 @@ public class Tracer {
 	 * Called when the main hook exit mehod is reached. Call only once.
 	 */
 	public void onTraceStop() {
-		traceInProgress = false;
+		traceStatus = TraceStatus.STOPPED;
 		
 		System.out.println("========================================================================");
 		System.out.println("(i) Tracer reached end of traceable section, trace has stopped.");
@@ -271,15 +266,15 @@ public class Tracer {
 	 * @param method
 	 * @param rv
 	 */
-	public void add(Object implicitArgument, String cl, 
+	public synchronized void add(Object implicitArgument, String cl, 
 			        String method, String rv) {
 		entries++;
 		
-		if(!traceInProgress) 
+		if(traceStatus != TraceStatus.IN_PROGRESS) 
 			return;
 		
 		//Protect against infinite loops
-		traceInProgress = false;
+		traceStatus = TraceStatus.WAITING;
 		
 		//If this is a constructor/static method (??), ignore
 		if(implicitArgument == null)
@@ -304,7 +299,7 @@ public class Tracer {
 			System.out.format("%,d", numTrNumbers);
 			System.out.println(" numbers reached.");
 		} else		
-			traceInProgress = true;
+			traceStatus = TraceStatus.IN_PROGRESS;
 	}
 	/**
 	 * Call if the return value is an object of which the string 
@@ -375,5 +370,9 @@ public class Tracer {
 	
 	public static Tracer getTracer() {
 		return instance;
+	}
+
+	public static enum TraceStatus {
+		INIT, WAITING, IN_PROGRESS, STOPPED
 	}
 }
