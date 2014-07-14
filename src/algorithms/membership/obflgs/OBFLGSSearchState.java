@@ -111,7 +111,7 @@ public class OBFLGSSearchState {
 
 	@Override
 	public String toString() {
-		return state.name + " " + Arrays.toString(registers)
+		return state.name + "(" + nextIdx + ") " + Arrays.toString(a.getFixedRegisters()) + Arrays.toString(registers)
 				+ ", w:" + fullWord.subList(nextIdx, Math.min(nextIdx+4, fullWord.size())).toString(); 
 	}
 	

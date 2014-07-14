@@ -7,7 +7,7 @@
 -- TSS : Tainted Source Sink (Property)
 ---------------------------------------------
 -- TOMCAT -----------------------------------
-dacapo	:tomcat		:has_next
+--dacapo	:tomcat		:has_next
 --dacapo	:tomcat		:unique_servlet_output
 --dacapo	:tomcat		:safe_iter
 --dacapo	:tomcat		:unsafe_map_iter
@@ -24,6 +24,6 @@ dacapo	:tomcat		:has_next
 --dacapo	:xalan		:safe_iter
 --dacapo	:xalan		:unsafe_map_iter
 -- CUSTOM -----------------------------------
---other	:hnp_custom	:has_next			:testbench/programs/HasNextPropertyTracer MULTIPLE 2000 2000:testbench.programs.HasNextPropertyTracer main main true
+other	:hnp_custom	:has_next			:testbench/programs/HasNextPropertyTracer MULTIPLE 2000 2000:testbench.programs.HasNextPropertyTracer main main true
 --other	:sip_custom	:safe_iter			:testbench/programs/SafeIterProgram:testbench.programs.SafeIterProgram main main
 --other	:tss_custom	:tainted_sink_source		:testbench/programs/SourceSinkProgram 1000 100000:testbench.programs.SourceSinkProgram main main true

@@ -54,10 +54,13 @@ public class Tracer {
 	
 	private int uniqueIDCount = 2;
 	
-	private final Map<Object, Integer> idMap = new WeakHashMap<>();
+	private final Map<Object, Integer> idMap = new WeakHashMap<Object, Integer>() {
+		
+	};
+	private HashMap<Thread, TraceStatus> traceStatus = new HashMap<>();
+	private TraceStatus generalTraceStatus = TraceStatus.INIT;
 	
 	//Monitoring
-	private TraceStatus traceStatus = TraceStatus.INIT;
 	private Date startDate;
 	private int relevantExits = 0;
 	private int numTrNumbers = 0;
@@ -211,7 +214,6 @@ public class Tracer {
         long diffMinutes = diff / (60 * 1000) % 60;
         long diffHours = diff / (60 * 60 * 1000);
 		
-		output.println();
 		output.println("-- Numbers: " + numTrNumbers + ", Events: " + relevantExits);
 		output.println("-- It took " + diffHours + "h" + diffMinutes + "min" + diffSeconds + "s to complete this trace");
 		output.close();
@@ -236,14 +238,17 @@ public class Tracer {
 	public Set<Class<?>> getSuperclasses() {
 		return subclasses;
 	}
+	public boolean shouldInstrument() {
+		return generalTraceStatus != TraceStatus.STOPPED;
+	}
 	
-	//Hooks
+	//Interface with instrumentation
 	/**
 	 * Called when the main hook entry method is reached. 
 	 * Can be called several times.	
 	 */
 	public void onTraceStart() {
-		traceStatus = TraceStatus.IN_PROGRESS;
+		generalTraceStatus = TraceStatus.IN_PROGRESS;
 		
 		System.out.println("(i) Tracer reached main class, trace is now in progress.");
 		System.out.println("========================================================================");
@@ -252,7 +257,10 @@ public class Tracer {
 	 * Called when the main hook exit mehod is reached. Call only once.
 	 */
 	public void onTraceStop() {
-		traceStatus = TraceStatus.STOPPED;
+		generalTraceStatus = TraceStatus.STOPPED;
+		for(Entry<Thread, TraceStatus> e: traceStatus.entrySet()) {
+			e.setValue(TraceStatus.STOPPED);
+		}
 		
 		System.out.println("========================================================================");
 		System.out.println("(i) Tracer reached end of traceable section, trace has stopped.");
@@ -260,46 +268,73 @@ public class Tracer {
 		System.out.println("(i) Trace file is finalised and ready for use.");
 	}
 	/**
-	 * Call for every method call that should be traced.
+	 * Call for every method call that should be traced. 
 	 * @param id
 	 * @param cl
 	 * @param method
-	 * @param rv
+	 * @param rv 
 	 */
-	public synchronized void add(Object implicitArgument, String cl, 
+	public void add(Object implicitArgument, String cl, 
 			        String method, String rv) {
+		/*
+		 * This method is flagged by trace status to suspend tracing
+		 * when called: the reason for this is that calls may loop
+		 * back to this method if it uses instrumented tools inside.
+		 * 
+		 * Flagging makes recursive calls being abandoned.
+		 * 
+		 * This method needs to be automatically
+		 * or manually synchronized, to prevent threads from abandoning the trace
+		 * because another thread flagged it.
+		 * 
+		 *  
+		 */
+		
+		//Manage trace status per thread
+		if(generalTraceStatus != TraceStatus.IN_PROGRESS) 
+			return;
+		if(!traceStatus.containsKey(Thread.currentThread()))
+			traceStatus.put(Thread.currentThread(), TraceStatus.IN_PROGRESS);
+		if(traceStatus.get(Thread.currentThread()) != TraceStatus.IN_PROGRESS)
+			return;
+		
 		entries++;
-		
-		if(traceStatus != TraceStatus.IN_PROGRESS) 
-			return;
-		
 		//Protect against infinite loops
-		traceStatus = TraceStatus.WAITING;
-		
+		traceStatus.put(Thread.currentThread(), TraceStatus.WAITING);
 		//If this is a constructor/static method (??), ignore
-		if(implicitArgument == null)
+		if (implicitArgument == null)
 			return;
-		
 		//Manage implicit argument's ID
 		//If the object wasn't known yet, we will need to add an <init> statement
 		int id = 0;
-		if(!idMap.containsKey(implicitArgument)) {
-			id = uniqueIDCount++;
-			idMap.put(implicitArgument, id);
-			
-			addToTranslation(id, cl, "<init>", "null");
-		} else
-			id = idMap.get(implicitArgument);
 		
-		if(!method.equals("<init>"))
-			addToTranslation(id, cl, method, rv);
-		
-		if(enforceLimit && numTrNumbers >= MAX_NUM_NUMBERS_TR) {
-			System.out.print("Reached limit: "); 
-			System.out.format("%,d", numTrNumbers);
-			System.out.println(" numbers reached.");
-		} else		
-			traceStatus = TraceStatus.IN_PROGRESS;
+		synchronized(this) {
+			try {
+				if (!idMap.containsKey(implicitArgument)) {
+					id = uniqueIDCount++;
+					idMap.put(implicitArgument, id);
+	
+					addToTranslation(id, cl, "<init>", "null");
+				} else
+					id = idMap.get(implicitArgument);
+			} catch (Exception e) {
+				System.out.println("FAIL!");
+				System.out.println("Implicit argument: " + implicitArgument);
+				System.out.println("cl: " + cl);
+				System.out.println("method: " + method);
+				System.out.println("rv: " + rv);
+				e.printStackTrace();
+				System.exit(0);
+			}
+			if (!method.equals("<init>"))
+				addToTranslation(id, cl, method, rv);
+			if (enforceLimit && numTrNumbers >= MAX_NUM_NUMBERS_TR) {
+				System.out.print("Reached limit: ");
+				System.out.format("%,d", numTrNumbers);
+				System.out.println(" numbers reached.");
+			} else
+				traceStatus.put(Thread.currentThread(), TraceStatus.IN_PROGRESS);
+		}
 	}
 	/**
 	 * Call if the return value is an object of which the string 
@@ -333,12 +368,12 @@ public class Tracer {
 					break;
 				}
 			} catch (Exception e) {
-				System.err.println("Evaluation for '" + cl + "." + method + ":" + rv + "' failed (skipping)");
+				System.err.println("Evaluation for '" + cl + "." + method + ":" + rv + "' failed: " + e.toString());
 			}
 		}
 		
 		if(numTrNumbers >= nextMileStone) {
-			System.out.println(numTrNumbers + " numbers recorded (" + String.format("%,d", entries) + " method exits, " 
+			System.out.println(String.format("%,d", numTrNumbers) + " numbers recorded (" + String.format("%,d", entries) + " method exits, " 
 							   + String.format("%,d", relevantExits) + " events, "
 							   + 100.0*(double)numTrNumbers/(double)MAX_NUM_NUMBERS_TR + "%)");
 			nextMileStone += DISPLAY_PROGRESS_MILESTONE;
@@ -347,6 +382,13 @@ public class Tracer {
 	public int getId() {
 		return uniqueIDCount++;
 	}
+	/**
+	 * Call to protect any potential backlooping methods
+	 * @return
+	 */
+	public boolean traceInProgress() {
+		return traceStatus.get(Thread.currentThread()) == TraceStatus.IN_PROGRESS;
+	}
 	
 	//Translation
 	private void outputTranslationBatch(List<Integer> numbers) {
@@ -354,7 +396,7 @@ public class Tracer {
 			return;
 		
 		for(Integer i : numbers) {
-			output.print(i + " ");
+			output.print(i + "\n");
 		}
 		
 		relevantExits++;

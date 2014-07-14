@@ -141,7 +141,7 @@ public class Testbench {
 		Automaton a = null;
 		
 		switch(chosenAlgorithm) {
-		case "G-BFLGS":
+		case "GBFLGS":
 			GreedyRA gra = new GreedyRA(automaton);
 			gra.displayInfo();
 			a = gra;

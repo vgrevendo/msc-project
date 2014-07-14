@@ -54,7 +54,7 @@ public class OptimisedRA extends RegisterAutomaton {
 		Map<Integer, Integer> rewriteMap = new HashMap<Integer, Integer>();
 		int[] oldRegisters = registers;
 		registers = new int[writableRegisters.size()];
-		fixedRegisters = new int[readOnlyRegisters.size()+1];
+		fixedRegisters = new int[readOnlyRegisters.size()];
 		writeOffset = readOnlyRegisters.size();
 		
 		int counter = 0;
@@ -65,7 +65,7 @@ public class OptimisedRA extends RegisterAutomaton {
 		}
 		for(Integer i : writableRegisters) {
 			rewriteMap.put(i, counter);
-			registers[counter-fixedRegisters.length+1] = oldRegisters[i];
+			registers[counter-fixedRegisters.length] = oldRegisters[i];
 			counter++;
 		}
 		
@@ -97,7 +97,7 @@ public class OptimisedRA extends RegisterAutomaton {
 	}
 	
 	public int findContainingRegister(int[] registers, int symbol) {
-		if(symbol > 0 && symbol <= fixedRegisters.length) 
+		if(symbol >= 0 && symbol < fixedRegisters.length) 
 			return fixedRegisters[symbol];
 		int i =0;
 		for(int s : registers) {

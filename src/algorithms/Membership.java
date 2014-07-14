@@ -266,6 +266,7 @@ public class Membership {
 				Set<OBFLGSSearchState> nextFrontier = new HashSet<OBFLGSSearchState>();
 				for(OBFLGSSearchState node: frontier) {
 					if(node.isFinal()) {
+						System.out.println("Terminated on " + node.toString());
 						return true;
 					}
 

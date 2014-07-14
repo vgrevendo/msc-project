@@ -27,6 +27,10 @@ import javassist.NotFoundException;
 public class Inspector implements ClassFileTransformer {
 	private final static String TRACER_PATH = "testbench.programs.agent.Tracer";
 	
+	//Instrumentation text
+	private final static String EQUALS_CODE = "{if(!" + TRACER_PATH + ".getTracer().traceInProgress())"
+											+ " return false; }";
+	
 	//Ressources
 	private final Tracer tracer;
 	private final Set<Class<?>> superclasses;
@@ -59,6 +63,9 @@ public class Inspector implements ClassFileTransformer {
 	public byte[] transform(ClassLoader loader, String cl, Class<?> klass,
 			ProtectionDomain pd, byte[] rawClass)
 			throws IllegalClassFormatException {
+		if(!tracer.shouldInstrument())
+			return rawClass;
+		
 		if(tracer.isMainClass(cl))
 			try {
 				return instrumentMainClass(cl, klass, rawClass);
@@ -93,7 +100,7 @@ public class Inspector implements ClassFileTransformer {
 			Set<String> methods = tracer.getMethodsToInstrument(superclassName);
 			try {
 				//Instrument class		
-				return instrumentClass(methods, cl, klass, rawClass);
+				return instrumentClass(methods, superclassName, klass, rawClass);
 			} catch (Exception | Error e) {
 				System.out.println("(e) Could not instrument class, here's why:");
 				e.printStackTrace();
@@ -119,6 +126,9 @@ public class Inspector implements ClassFileTransformer {
 		
 		Tools.println("Inspector: '" + ctc.getName() + "' is being loaded.", Tools.ANSI_GREEN);
 		
+		//Add equals protection
+		instrumentEqualsMethod(ctc);
+		
 		Set<String> methods = tracer.getMethodsToInstrument(superclassName);
 		
 		for(String method : methods) {
@@ -131,7 +141,7 @@ public class Inspector implements ClassFileTransformer {
 				
 				for(CtConstructor ctCons : constructors) {
 					ctCons.insertAfter("{"
-							+ TRACER_PATH + ".getTracer().add(this, \"" + cl + "\",\""
+							+ TRACER_PATH + ".getTracer().add(this, \"" + superclassName + "\",\""
 							+ method + "\","
 							+ "\"null\");"
 							+ "}");
@@ -159,12 +169,12 @@ public class Inspector implements ClassFileTransformer {
 						if(returnType.getName().contains("Void") 
 								|| returnType.getName().contains("void"))
 							ctm.insertAfter("{"
-								+ TRACER_PATH + ".getTracer().getTracer().add(this, \"" + cl + "\",\""
+								+ TRACER_PATH + ".getTracer().getTracer().add(this, \"" + superclassName + "\",\""
 								+ method + "\",\"void\");"
 								+ "}");
 						else
 							ctm.insertAfter("{"
-								+ TRACER_PATH + ".getTracer().getTracer().add(this, \"" + cl + "\",\""
+								+ TRACER_PATH + ".getTracer().getTracer().add(this, \"" + superclassName + "\",\""
 								+ method + "\","
 								+ getWrapperName(returnType) + ".toString($_));"
 								+ "}");
@@ -172,7 +182,7 @@ public class Inspector implements ClassFileTransformer {
 					}
 					else {
 						ctm.insertAfter("{"
-								+ TRACER_PATH + ".getTracer().getTracer().addObjectRV(this, \"" + cl + "\",\""
+								+ TRACER_PATH + ".getTracer().getTracer().addObjectRV(this, \"" + superclassName + "\",\""
 									+ method + "\",$_);"
 								+ "}");
 					}
@@ -196,7 +206,7 @@ public class Inspector implements ClassFileTransformer {
 		
 		return changedCode;
 	}
-	private byte[] instrumentClass(Set<String> methods, String cl, Class<?> klass, byte[] rawCode) 
+	private byte[] instrumentClass(Set<String> methods, String superclassName, Class<?> klass, byte[] rawCode) 
 			throws IOException, RuntimeException, CannotCompileException, 
 			       NotFoundException {
 		int constrCount = 0, methodCount = 0, alreadyInstrumented = 0;
@@ -205,12 +215,10 @@ public class Inspector implements ClassFileTransformer {
 		ClassPool ctp = ClassPool.getDefault();
 		CtClass ctc = ctp.makeClass(new ByteArrayInputStream(rawCode));
 		
+		//Add equals protection
+		instrumentEqualsMethod(ctc);
+		
 		for(String method : methods) {
-			if(instrumentedMethods.containsKey(klass) && instrumentedMethods.get(klass).contains(method)) {
-				alreadyInstrumented++;
-				continue;
-			}
-			
 			if(method.equals("<init>")) { //Modify the constructor instead!
 				CtConstructor[] constructors = ctc.getConstructors();
 				
@@ -221,7 +229,7 @@ public class Inspector implements ClassFileTransformer {
 				
 				for(CtConstructor ctCons : constructors) {
 					ctCons.insertAfter("{"
-							+ TRACER_PATH + ".getTracer().add(this, \"" + cl + "\",\""
+							+ TRACER_PATH + ".getTracer().add(this, \"" + superclassName + "\",\""
 							+ method + "\","
 							+ "\"null\");"
 							+ "}");
@@ -248,15 +256,23 @@ public class Inspector implements ClassFileTransformer {
 					//Get return type
 					CtClass returnType = ctm.getReturnType();
 					//Add ID retrieval statement and tracer information operation
-					if(returnType.isPrimitive())
-						ctm.insertAfter("{"
-								+ TRACER_PATH + ".getTracer().getTracer().add(this, \"" + cl + "\",\""
+					if(returnType.isPrimitive()) {
+						if(returnType.getName().contains("Void") 
+								|| returnType.getName().contains("void"))
+							ctm.insertAfter("{"
+								+ TRACER_PATH + ".getTracer().getTracer().add(this, \"" + superclassName + "\",\""
+								+ method + "\",\"void\");"
+								+ "}");
+						else
+							ctm.insertAfter("{"
+								+ TRACER_PATH + ".getTracer().getTracer().add(this, \"" + superclassName + "\",\""
 								+ method + "\","
 								+ getWrapperName(returnType) + ".toString($_));"
 								+ "}");
-					else {
+							
+					} else {
 						ctm.insertAfter("{"
-								+ TRACER_PATH + ".getTracer().getTracer().addObjectRV(this, \"" + cl + "\",\""
+								+ TRACER_PATH + ".getTracer().getTracer().addObjectRV(this, \"" + superclassName + "\",\""
 									+ method + "\",$_);"
 								+ "}");
 					}
@@ -346,5 +362,13 @@ public class Inspector implements ClassFileTransformer {
 		}
 		
 		return null;
+	}
+	private void instrumentEqualsMethod(CtClass ctc) throws CannotCompileException {
+		try {
+			CtMethod method = ctc.getDeclaredMethod("equals");
+			
+			method.insertBefore(EQUALS_CODE);
+			
+		} catch (NotFoundException e) { }
 	}
 }

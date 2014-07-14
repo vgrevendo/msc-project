@@ -3,10 +3,19 @@ package testbench.lister;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 
 public class FileWordLister extends TestLister<List<Integer>> {
+	//DEBUG
+	private static final int INTERESTING_ID = 899;
+	private static final int FIRST_ID = 6;
+	private static final boolean DEBUG = false; 
+	private static final boolean DEBUG_FILTER = true;
+	private final Map<Integer, Integer> counts  =new HashMap<Integer, Integer>();
+	
 	private final double testStep;
 	private final double testPercentage;
 	private final List<Integer> translation;
@@ -16,15 +25,39 @@ public class FileWordLister extends TestLister<List<Integer>> {
 		this.testStep = step;
 		
 		//Load trace file
-		System.out.print("[FWL] Loading trace file....");
-		sc.nextLine();
+		if(DEBUG && DEBUG_FILTER)
+			System.out.println("[FWL-DEBUG] Filtering trace for ID " + INTERESTING_ID);
+		else if(DEBUG) 
+			System.out.println("[FWL-DEBUG] Counting occurrences...");
+		else
+			System.out.print("[FWL] Loading trace file....");
 		sc.nextLine();
 		sc.nextLine();
 		Scanner intScanner = new Scanner(sc.nextLine());
 		
 		translation = new ArrayList<>(3_000_000);
+		boolean recording = false;
 		while(intScanner.hasNextInt()) {
-			translation.add(intScanner.nextInt());
+			String l = sc.nextLine();
+			if(l.startsWith("-"))
+				break;
+			int i = Integer.parseInt(l);
+			
+			if(DEBUG) {
+				if(i == INTERESTING_ID) {
+					recording = true;
+				} else if(i >= FIRST_ID) {
+					recording = false;
+				}
+				if(DEBUG_FILTER && recording)
+					translation.add(i);
+				else if(!DEBUG_FILTER)
+					translation.add(i);
+				if(!counts.containsKey(i))
+					counts.put(i, 0);
+				counts.put(i, counts.get(i)+1);
+			} else			
+				translation.add(i);
 		}
 		
 		if(percentage > 1.1) {
@@ -37,6 +70,17 @@ public class FileWordLister extends TestLister<List<Integer>> {
 				this.testPercentage = ((double)sizeLimit)/((double)translation.size());
 		} else {
 			testPercentage = percentage;
+		}
+		
+		if(DEBUG) {
+			System.out.println("Small trace display (< 200):");
+			if(translation.size() < 200) {
+				System.out.println(translation.toString());
+			} else
+				System.out.println(translation.subList(0, 200).toString());
+			
+			System.out.println("Counts:");
+			System.out.println(counts.get(1));
 		}
 		
 		intScanner.close();
