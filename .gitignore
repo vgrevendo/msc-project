@@ -9,3 +9,4 @@ scratch
 run/traces/*
 *.log
 run/results
+/tags
