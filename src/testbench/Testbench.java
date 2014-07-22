@@ -11,6 +11,7 @@ import java.util.Map;
 
 import references.MembershipAlgorithms;
 import testbench.lister.FileWordLister;
+import testbench.lister.LargeFileLister;
 import testbench.lister.TestLister;
 import testbench.lister.TestWordLister;
 import testbench.programs.translator.SafeIterTranslator;
@@ -122,15 +123,13 @@ public class Testbench {
 		algorithms.put("OBFLGS", Membership.optiBflgsCheck);
 		algorithms.put("FBFLGS", Membership.forgetfulBflgsCheck);
 		algorithms.put("GBFLGS", Membership.greedyCheck);
+		algorithms.put("BFS", Membership.bfsCheck);
 		
 		//Parse arguments
 		String chosenAlgorithm = args[1];
 		String automaton = args[2];
 		String tracePath = args[3];
 		String difficulty = args[4];
-		String[] dTokens = difficulty.split("/");
-		final double tracePercentage = Double.parseDouble(dTokens[0]);
-		final double traceStep = Double.parseDouble(dTokens[1]);
 		String outputPath = args[5];
 		
 		//Build parameters
@@ -157,8 +156,16 @@ public class Testbench {
 			a = ra;
 		}
 		
-
-		TestLister<List<Integer>> twg = new FileWordLister(traceStep, tracePercentage, tracePath);
+		TestLister<List<Integer>> twg = null;
+		if(difficulty.trim().equals("all")) {
+			twg = new LargeFileLister(tracePath);
+		} else {
+			String[] dTokens = difficulty.split("/");
+			final double tracePercentage = Double.parseDouble(dTokens[0]);
+			final double traceStep = Double.parseDouble(dTokens[1]);
+			twg = new FileWordLister(traceStep, tracePercentage, tracePath);
+		}
+		
 
 		Test lmt = new ListMembershipTest(a, chosenAlgorithms, twg, outputPath);
 		lmt.test();

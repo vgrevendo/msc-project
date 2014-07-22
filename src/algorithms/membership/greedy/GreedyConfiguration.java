@@ -95,7 +95,8 @@ public class GreedyConfiguration {
 	}
 	@Override
 	public String toString() {
-		return state.name + ": " + Arrays.toString(registers); 
+		return state.name + ": " + Arrays.toString(registers)
+				+ (isFinal() ? " F" : ""); 
 	}
 
 	//Accessors

@@ -18,10 +18,9 @@ public class ListMembershipTest extends Test {
 	private final TestLister<List<Integer>> twg;
 	private final MBSDecisionAlgorithm[] algorithms;
 	
-	//Results
-	private final boolean[] results;
-	private final int[][] times;
-	private final long[] totalTimes;
+	//Internal stats
+	private int successMemberships = 0;
+	private int[] totalTimes;
 	
 	public ListMembershipTest(Automaton a, 
 								MBSDecisionAlgorithm[] algorithms, 
@@ -31,10 +30,7 @@ public class ListMembershipTest extends Test {
 		this.twg = twg;
 		
 		maxProgression = twg.size()*algorithms.length;
-		
-		totalTimes = new long[algorithms.length];
-		results = new boolean[twg.size()];
-		times = new int[algorithms.length][twg.size()];
+		totalTimes = new int[algorithms.length];
 	}
 	
 	public ListMembershipTest(Automaton a, 
@@ -46,22 +42,19 @@ public class ListMembershipTest extends Test {
 		this.twg = twg;
 		
 		maxProgression = twg.size()*algorithms.length;
-		
-		totalTimes = new long[algorithms.length];
-		results = new boolean[twg.size()];
-		times = new int[algorithms.length][twg.size()];
+		totalTimes = new int[algorithms.length];
 	}
 
 	@Override
 	protected void run() throws TestException {
 		//Consistency checks are integrated in the tests themselves
 		boolean result = false;
-		int[] inputSizes = new int[twg.size()];
-		
 		//make the tests
 		//For each word, test each algorithm
 		for(List<Integer> testWord : twg) {
 			System.out.println("Current word size: " + testWord.size() + " symbols");
+			
+			boolean previousResult = false;
 			
 			for(int algIndex = 0; algIndex < algorithms.length; algIndex++) {
 				signalProgression();
@@ -74,45 +67,41 @@ public class ListMembershipTest extends Test {
 				long testTime = System.currentTimeMillis()-cTime;
 				
 				//Record results
+				successMemberships += result ? 1 : 0;
+				rc.addSessionNumber(algorithm.name, "Time", (int)testTime);
 				totalTimes[algIndex] += testTime;
-				times[algIndex][twg.getIndex()] = (int) testTime;
 				
-				if(algIndex > 0 && results[twg.getIndex()] != result)
+				if(algIndex > 0 && previousResult != result)
 					throw new TestException("Consistency failure: algorithms disagree on " + testWord.toString());
 				else
-					results[twg.getIndex()] = result;
+					previousResult = result;
 				
+				rc.addSessionNumber(algorithm.name, "Word Size", testWord.size());
 				algorithm.yieldStatistics(rc);
 			}
-			
-			inputSizes[twg.getIndex()] = testWord.size();
 		}
 		
 		signalProgression();
 		
 		
 		//print all useful data
-		addCsvColumn(inputSizes, "Word size");
 		for(int algIndex = 0; algIndex < algorithms.length; algIndex++) {
 			MBSDecisionAlgorithm algorithm = algorithms[algIndex];
 			
 			addStats(rc.getSession(algorithm.name));
-			addCsvColumn(times[algIndex], algorithm + " time");
 		}
 	}
 	
 	@Override
 	public void customPrint(ResultsContainer rc) {
-		int successMemberships = 0;
-		for(boolean b: results) {
-			successMemberships += b ? 1 : 0;
-		}
-		
 		for(int algIndex = 0; algIndex < algorithms.length; algIndex++) {
 			MBSDecisionAlgorithm algorithm = algorithms[algIndex];
 			
 			rc.println(algorithm + " total execution time:   " + prettyPrintMillis(totalTimes[algIndex]));
-			rc.println(algorithm + " average execution time: " + prettyPrintMillis(totalTimes[algIndex]/twg.size()));
+			if(twg.size() > 0)
+				rc.println(algorithm + " average execution time: " + prettyPrintMillis(totalTimes[algIndex]/twg.size()));
+			else
+				rc.println(algorithm + " average execution time unkown.");
 		}
 		
 		rc.println("");

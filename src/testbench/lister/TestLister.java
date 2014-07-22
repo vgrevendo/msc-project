@@ -18,7 +18,7 @@ public abstract class TestLister<T> implements Iterable<T> {
 
 			@Override
 			public boolean hasNext() {
-				return index < size();
+				return hasMore() && index < size();
 			}
 
 			@Override
@@ -35,6 +35,9 @@ public abstract class TestLister<T> implements Iterable<T> {
 	
 	protected abstract T nextResource();
 	public abstract int size();
+	protected boolean hasMore() {
+		return true;
+	}
 	
 	public int getIndex() {
 		return index-1;

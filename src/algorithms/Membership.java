@@ -3,11 +3,14 @@ package algorithms;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 import java.util.Set;
 import java.util.Stack;
 
 import testbench.Testbench;
+import testbench.lister.LargeFileLister;
 import algorithms.membership.MBSDecisionAlgorithm;
 import algorithms.membership.PrioritySet;
 import algorithms.membership.SearchNode;
@@ -81,6 +84,7 @@ public class Membership {
 	 */
 	public static final MBSDecisionAlgorithm ldftsCheck = new MBSDecisionAlgorithm("Ldfts-mbs") {
 		private int maxFrontierSize = 0;
+		private int goals = 0;
 		
 		@Override
 		public boolean decide(Automaton a, List<Integer> word) {
@@ -93,13 +97,15 @@ public class Membership {
 			frontier.add(new SearchNode(initialSearchState, null, -1));
 			
 			//Main search loop
+			goals = 0;
 			while(!frontier.isEmpty()) {
 				if(Testbench.COLLECT_STATS)
 					maxFrontierSize = Math.max(maxFrontierSize, frontier.size());
 				
 				SearchNode node = frontier.pop();
 				if(node.state.isFinal()) {
-					return true;
+					System.out.println(node.state + " is final!");
+					goals++;
 				}
 				
 				List<SearchState> nextStates = node.state.expand();
@@ -109,15 +115,65 @@ public class Membership {
 				}
 			}
 			
-			return false;
+			return goals > 0;
 		}
 
 		@Override
 		protected void yieldStatistics(String sessionName, ResultsContainer rc) {
 			SearchNode.yieldStatistics(sessionName, rc);
 			rc.addSessionNumber(sessionName, "frontier size", maxFrontierSize);
+			rc.addSessionNumber(sessionName, "error configs", goals);
 			
 			maxFrontierSize = 0;
+			goals = 0;
+		}
+	};
+	
+	/**
+	 * Second naïve version just for showing.
+	 */
+	public static final MBSDecisionAlgorithm bfsCheck = new MBSDecisionAlgorithm("Bfs-mbs") {
+		private int maxFrontierSize = 0;
+		private int goals = 0;
+		
+		public boolean decide(Automaton a, List<Integer> word) {
+			RegisterAutomaton automaton = (RegisterAutomaton) a;
+			//Depth-first search implies a stack storing the frontier
+			Queue<SearchNode> frontier = new LinkedList<>();
+			SearchState initialSearchState = new SearchState(automaton.getInitialState(), 
+															 automaton.getInitialRegisters(), 
+															 word, automaton);
+			frontier.add(new SearchNode(initialSearchState, null, -1));
+			
+			//Main search loop
+			goals = 0;
+			while(!frontier.isEmpty()) {
+				if(Testbench.COLLECT_STATS)
+					maxFrontierSize = Math.max(maxFrontierSize, frontier.size());
+				
+				SearchNode node = frontier.poll();
+				if(node.state.isFinal()) {
+					goals++;
+				}
+				
+				List<SearchState> nextStates = node.state.expand();
+				
+				for(SearchState s : nextStates) {
+					frontier.add(new SearchNode(s, node, 0));
+				}
+			}
+			
+			return goals > 0;
+		}
+
+		@Override
+		protected void yieldStatistics(String sessionName, ResultsContainer rc) {
+			SearchNode.yieldStatistics(sessionName, rc);
+			rc.addSessionNumber(sessionName, "frontier size", maxFrontierSize);
+			rc.addSessionNumber(sessionName, "error configs", goals);
+			
+			maxFrontierSize = 0;
+			goals = 0;
 		}
 	};
 	
@@ -247,6 +303,7 @@ public class Membership {
 	 */
 	public static final MBSDecisionAlgorithm forgetfulBflgsCheck = new MBSDecisionAlgorithm("F-Bflgs-mbs") {
 		private OptimisedRA a;
+		private int goals = 0;
 		
 		@Override
 		public boolean decide(Automaton automaton, List<Integer> word) {
@@ -266,8 +323,7 @@ public class Membership {
 				Set<OBFLGSSearchState> nextFrontier = new HashSet<OBFLGSSearchState>();
 				for(OBFLGSSearchState node: frontier) {
 					if(node.isFinal()) {
-						System.out.println("Terminated on " + node.toString());
-						return true;
+						goals++;
 					}
 
 					//Add the adjacent nodes to the new frontier
@@ -282,7 +338,7 @@ public class Membership {
 				frontier = nextFrontier;
 			}
 			
-			return false;
+			return goals > 0;
 		}
 
 		@Override
@@ -295,8 +351,9 @@ public class Membership {
 
 		@Override
 		protected void yieldStatistics(String sessionName, ResultsContainer rc) {
-			// TODO Auto-generated method stub
+			rc.addSessionNumber(sessionName, "error configs", goals);
 			
+			goals = 0;
 		}
 	};
 
@@ -423,6 +480,7 @@ public class Membership {
 	public static final MBSDecisionAlgorithm greedyCheck = new MBSDecisionAlgorithm("Greedy-mbs") {
 		private GreedyRA a;
 		private GreedyFrontier frontier;
+		private int goals = 0;
 		
 		@Override
 		public boolean decide(Automaton automaton, List<Integer> word) {
@@ -433,29 +491,28 @@ public class Membership {
 			GreedyConfiguration initialConfig = 
 					new GreedyConfiguration(a.getInitialState(), a.getInitialRegisters(), a, -1);
 			
-			if(initialConfig.isFinal())
+			if(initialConfig.isFinal()) {
+				goals = 1;
 				return true;
+			}
 			
 			frontier.add(initialConfig);
 			
 			//Main search loop
 			int symbolIdx = 0;
 			int previousSymbol = 0;
-			final int wordSize = word.size();
-			while(symbolIdx < wordSize && !frontier.isEmpty()) {
+			for(Integer symbol : word) {
+				if(frontier.isEmpty())
+					return false;
+				
 				GreedyFrontier nextFrontier = new GreedyFrontier();
-				Integer symbol = word.get(symbolIdx);
 				
 				//Fill up the next frontier by reading the current one
 				for(GreedyConfiguration gc : frontier.filter(symbol)) {
-
 					//Add the adjacent nodes to the new frontier
 					List<GreedyConfiguration> nextGCs = gc.expand(symbol, symbolIdx, previousSymbol);
 					
 					for(GreedyConfiguration nextGC : nextGCs) {
-						if(nextGC.isFinal())
-							return true;
-						
 						//Add to frontier (automatic filtering)
 						nextFrontier.add(nextGC);
 					}
@@ -467,6 +524,11 @@ public class Membership {
 				previousSymbol = symbol;
 			}
 			
+			if(!frontier.isEmpty()) {
+				goals = frontier.getNumFinalConfigurations();
+				return goals > 0;
+			}
+			
 			return false;
 		}
 		
@@ -474,12 +536,12 @@ public class Membership {
 		public void setAutomaton(Automaton ra) {
 			a = (GreedyRA) ra;
 		}
-
 		
 		@Override
 		protected void yieldStatistics(String sessionName, ResultsContainer rc) {
 			GreedyConfiguration.yieldStatistics(sessionName, rc);
 			GreedyFrontier.yieldStatistics(sessionName, rc);
+			LargeFileLister.yieldStatistics(sessionName, rc);
 		}
 	};
 }

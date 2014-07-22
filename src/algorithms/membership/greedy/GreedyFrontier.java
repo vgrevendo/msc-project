@@ -1,11 +1,13 @@
 package algorithms.membership.greedy;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import algorithms.tools.ResultsContainer;
 import testbench.Testbench;
@@ -21,9 +23,9 @@ public class GreedyFrontier {
 	//stables
 	public final List<GreedyConfiguration> onRhoStates;
 	public final Map<Integer, List<GreedyConfiguration>> symbolNeeders;
-
-	//Internal monitoring
 	
+	public int terminalGoals = 0;
+
 	//Statistics collection (see testbench)
 	private static int size = 0;
 	private static int rhoCompCounter = 0;
@@ -74,6 +76,10 @@ public class GreedyFrontier {
 		
 		if(Testbench.COLLECT_STATS)
 			ignoredConfigs++;
+		
+		if(gc.isFinal()) {
+			terminalGoals++;
+		}
 	}
 	public Iterable<GreedyConfiguration> filter(Integer symbol) {
 		return new ConfigurationFilter(symbol);
@@ -92,6 +98,8 @@ public class GreedyFrontier {
 			else
 				symbolNeeders.get(e.getKey()).addAll(e.getValue());
 		}
+		
+		terminalGoals += otherFrontier.terminalGoals;
 	}
 	
 	//Tools
@@ -174,7 +182,26 @@ public class GreedyFrontier {
 	public boolean isEmpty() {
 		return unstables.isEmpty() && onRhoStates.isEmpty() && symbolNeeders.isEmpty();
 	}
-
+	/**
+	 * Count the number of final configurations in the greedy frontier
+	 * @return
+	 */
+	public int getNumFinalConfigurations() {
+		Set<GreedyConfiguration> goalGCs = new HashSet<>();
+		
+		for(GreedyConfiguration gc: unstables)
+			if(!gc.isDead() && gc.isFinal()) goalGCs.add(gc);
+		
+		for(GreedyConfiguration gc: onRhoStates)
+			if(!gc.isDead() && gc.isFinal()) goalGCs.add(gc);
+		
+		for(Entry<Integer, List<GreedyConfiguration>> e: symbolNeeders.entrySet())
+			for(GreedyConfiguration gc: e.getValue())
+				if(!gc.isDead() && gc.isFinal()) goalGCs.add(gc);
+		
+		return terminalGoals + goalGCs.size();
+	}
+	
 	//Statistics
 	public static void yieldStatistics(String sessionName, ResultsContainer rc) {
 		rc.addSessionNumber(sessionName, "max fsize", size);

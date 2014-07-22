@@ -106,6 +106,7 @@ public abstract class Test {
 			}
 		} catch (Exception e) {
 			rc.println("CSV output encountered an error: " + e.getMessage());
+			e.printStackTrace();
 			rc.println("CSV output aborted.");
 		}
 		

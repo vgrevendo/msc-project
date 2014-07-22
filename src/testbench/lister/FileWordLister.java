@@ -10,14 +10,15 @@ import java.util.Scanner;
 
 public class FileWordLister extends TestLister<List<Integer>> {
 	//DEBUG
-	private static final int INTERESTING_ID = 899;
+	private static final int INTERESTING_ID = 72;
 	private static final int FIRST_ID = 6;
-	private static final boolean DEBUG = false; 
+	private static final boolean DEBUG = true; 
 	private static final boolean DEBUG_FILTER = true;
+	private static final int LIMIT_TR_NUMBER = 700;
 	private final Map<Integer, Integer> counts  =new HashMap<Integer, Integer>();
 	
 	private final double testStep;
-	private final double testPercentage;
+	private double testPercentage;
 	private final List<Integer> translation;
 	
 	public FileWordLister(double step, double percentage, String filename) throws FileNotFoundException {
@@ -35,9 +36,20 @@ public class FileWordLister extends TestLister<List<Integer>> {
 		sc.nextLine();
 		Scanner intScanner = new Scanner(sc.nextLine());
 		
+		//Handle percentage/size limit case
+		int sizeLimit = Integer.MAX_VALUE;
+		if(percentage > 1.1) {
+			sizeLimit = (int) percentage;
+			
+			testPercentage = -1.0D;
+		} else {
+			testPercentage = percentage;
+		}
+		
 		translation = new ArrayList<>(3_000_000);
 		boolean recording = false;
-		while(intScanner.hasNextInt()) {
+		int examined = 0;
+		while(intScanner.hasNextInt() && translation.size() < sizeLimit) {
 			String l = sc.nextLine();
 			if(l.startsWith("-"))
 				break;
@@ -56,21 +68,20 @@ public class FileWordLister extends TestLister<List<Integer>> {
 				if(!counts.containsKey(i))
 					counts.put(i, 0);
 				counts.put(i, counts.get(i)+1);
+				examined++;
+				if(examined >= LIMIT_TR_NUMBER)
+					break;
 			} else			
 				translation.add(i);
 		}
 		
-		if(percentage > 1.1) {
-			int sizeLimit = (int) percentage;
-			
+		if(testPercentage < 0.0D) { //A size limit was specified
 			if(sizeLimit > translation.size()) {
 				System.out.println("(w) Size limit to big! Adjusting to 100%: " + translation.size());
 				testPercentage = 1.0D;
 			} else
 				this.testPercentage = ((double)sizeLimit)/((double)translation.size());
-		} else {
-			testPercentage = percentage;
-		}
+		}		
 		
 		if(DEBUG) {
 			System.out.println("Small trace display (< 200):");
