@@ -22,12 +22,8 @@ public class AsymptoticMembershipTest extends Test {
 	private final MBSDecisionAlgorithm[] algorithms;
 	
 	//Results
-	private final boolean[] results;
-	private final int[][] nodesExpanded;
-	private final int[][] maxFrontierSize;
 	private final int[][] totalTimes;
-	private final int[][] runTimes;
-	private final int[] ns;
+	private int successMemberships = 0;
 
 	public AsymptoticMembershipTest(TestLister<RegisterAutomaton> ag, 
 									TestLister<List<Integer>> twg,
@@ -39,13 +35,7 @@ public class AsymptoticMembershipTest extends Test {
 		this.twg = twg;
 		
 		maxProgression = twg.size()*algorithms.length;
-		
-		results = new boolean[twg.size()];
-		nodesExpanded = new int[algorithms.length][twg.size()];
-		maxFrontierSize = new int[algorithms.length][twg.size()];
 		totalTimes = new int[algorithms.length][twg.size()];
-		runTimes = new int[algorithms.length][twg.size()];
-		ns = new int[twg.size()];
 	}
 
 	@Override
@@ -65,66 +55,48 @@ public class AsymptoticMembershipTest extends Test {
 			RegisterAutomaton a = ragIt.next();
 			List<Integer> testWord = twgIt.next();
 			
+			signalProgression();
+			
+			System.out.println("Current word size: " + testWord.size() + " symbols");
+			
+			boolean previousResult = false;
 			for(int algIndex = 0; algIndex < algorithms.length; algIndex++) {
-				signalProgression();
-				
 				MBSDecisionAlgorithm algorithm = algorithms[algIndex];
 				
 				//PREPARE AUTOMATON
-				long cTime = System.currentTimeMillis();			
 				algorithm.setAutomaton(a);
-				long prepTime = System.currentTimeMillis()-cTime;
-				
 				
 				//TEST CORE
-				cTime = System.currentTimeMillis();			
+				long cTime = System.currentTimeMillis();			
 				result = algorithm.decide(a, testWord);
 				long testTime = System.currentTimeMillis()-cTime;
 				
 				//Record results
-				totalTimes[algIndex][twg.getIndex()] = (int) (prepTime + testTime);
-				runTimes[algIndex][twg.getIndex()] = (int) testTime;
+				successMemberships += result ? 1 : 0;
+				rc.addSessionNumber(algorithm.name, "Time", (int)testTime); 
+				totalTimes[algIndex][twg.getIndex()] = (int) (testTime);
 				
-				if(algIndex > 0 && results[twg.getIndex()] != result)
+				if(algIndex > 0 && previousResult != result)
 					throw new TestException("Consistency failure: algorithms disagree on " + testWord.toString());
 				else
-					results[twg.getIndex()] = result;
+					previousResult = result;
 				
-				List<Integer> numbers = null;
-				if(numbers.size() > 0) {
-					nodesExpanded[algIndex][twg.getIndex()] = numbers.get(0);
-					maxFrontierSize[algIndex][twg.getIndex()] = numbers.get(1);
-				}
+				rc.addSessionNumber(algorithm.name, "Word Size", testWord.size());
+				signalProgression();
 			}
 			
-			ns[twg.getIndex()] = testWord.size();
 		}
 		
-		signalProgression();
-		
-		
 		//print all useful data
-		addCsvColumn(ns, "Input size");
 		for(int algIndex = 0; algIndex < algorithms.length; algIndex++) {
 			MBSDecisionAlgorithm algorithm = algorithms[algIndex];
 			
-			addCsvColumn(nodesExpanded[algIndex], algorithm + " nodes");
-			addCsvColumn(maxFrontierSize[algIndex], algorithm + " frontier");
-			addCsvColumn(totalTimes[algIndex], algorithm + " time");
-			addCsvColumn(runTimes[algIndex], algorithm + " runtime");
+			addStats(rc.getSession(algorithm.name));
 		}
 	}
 	
 	@Override
 	public void customPrint(ResultsContainer rc) {
-		int successMemberships = 0;
-		for(boolean b: results) {
-			successMemberships += b ? 1 : 0;
-		}
-		
 		rc.println("Total number of success memberships: " + successMemberships + "/" + twg.size());
 	}
-
-	//No preparation is necessary since automata 
-	//need to be prepared again before each run...
 }

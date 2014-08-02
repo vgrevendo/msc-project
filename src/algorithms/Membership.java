@@ -104,7 +104,6 @@ public class Membership {
 				
 				SearchNode node = frontier.pop();
 				if(node.state.isFinal()) {
-					System.out.println(node.state + " is final!");
 					goals++;
 				}
 				
@@ -138,7 +137,7 @@ public class Membership {
 		
 		public boolean decide(Automaton a, List<Integer> word) {
 			RegisterAutomaton automaton = (RegisterAutomaton) a;
-			//Depth-first search implies a stack storing the frontier
+			//Breadth-first search implies a queue storing the frontier
 			Queue<SearchNode> frontier = new LinkedList<>();
 			SearchState initialSearchState = new SearchState(automaton.getInitialState(), 
 															 automaton.getInitialRegisters(), 
@@ -183,6 +182,8 @@ public class Membership {
 	 * BFLGS implies a double-set structure as a frontier. 
 	 */
 	public static final MBSDecisionAlgorithm bflgsCheck = new MBSDecisionAlgorithm("Bflgs-mbs") {
+		private int goals = 0;
+		private int maxFrontierSize = 0;
 		
 		@Override
 		public boolean decide(Automaton a, List<Integer> word) {
@@ -203,14 +204,18 @@ public class Membership {
 			frontier.add(new SearchNode(initialSearchState, null, -1));
 			
 			//Main search loop
+			goals = 0;
 			while(!frontier.isEmpty()) {
+				if(Testbench.COLLECT_STATS)
+					maxFrontierSize = Math.max(maxFrontierSize, frontier.size());
+				
 				//See if a node is final, and 
 				// start filling up the next frontier
 				activeSet = (activeSet+1)%2;
 				Set<SearchNode> nextFrontier = sets.get(activeSet);
 				for(SearchNode node: frontier) {
 					if(node.state.isFinal()) {
-						return true;
+						goals++;
 					}
 
 					//Add the adjacent nodes to the new frontier
@@ -226,13 +231,17 @@ public class Membership {
 				frontier = nextFrontier;
 			}
 			
-			return false;
+			return goals > 0;
 		}
 
 		@Override
 		protected void yieldStatistics(String sessionName, ResultsContainer rc) {
-			// TODO Auto-generated method stub
+			SearchNode.yieldStatistics(sessionName, rc);
+			rc.addSessionNumber(sessionName, "frontier size", maxFrontierSize);
+			rc.addSessionNumber(sessionName, "error configs", goals);
 			
+			maxFrontierSize = 0;
+			goals = 0;
 		}
 	};
 	
@@ -308,7 +317,7 @@ public class Membership {
 		@Override
 		public boolean decide(Automaton automaton, List<Integer> word) {
 			//BFLGS implies a double set storing the frontier
-			Set<OBFLGSSearchState> frontier = new HashSet<OBFLGSSearchState>();
+			Queue<OBFLGSSearchState> frontier = new LinkedList<>();
 			
 			//Initial state
 			OBFLGSSearchState initialSearchState = new OBFLGSSearchState(a.getInitialState(), 
@@ -318,24 +327,18 @@ public class Membership {
 			
 			//Main search loop
 			while(!frontier.isEmpty()) {
-				//See if a node is final, and 
-				// start filling up the next frontier
-				Set<OBFLGSSearchState> nextFrontier = new HashSet<OBFLGSSearchState>();
-				for(OBFLGSSearchState node: frontier) {
-					if(node.isFinal()) {
-						goals++;
-					}
-
-					//Add the adjacent nodes to the new frontier
-					List<OBFLGSSearchState> nextStates = node.expand();
-					
-					for(OBFLGSSearchState s : nextStates) {
-						nextFrontier.add(s);
-					}
+				OBFLGSSearchState node = frontier.poll();
+				
+				if(node.isFinal()) {
+					goals++;
 				}
 
-				//Then start over with the next frontier
-				frontier = nextFrontier;
+				//Add the adjacent nodes to the new frontier
+				List<OBFLGSSearchState> nextStates = node.expand();
+				
+				for(OBFLGSSearchState s : nextStates) {
+					frontier.add(s);
+				}
 			}
 			
 			return goals > 0;

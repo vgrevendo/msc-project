@@ -1,4 +1,4 @@
-package references;
+package references.hasnextsimple;
 
 import java.util.Iterator;
 import java.util.concurrent.locks.Condition;
@@ -9,7 +9,7 @@ import com.runtimeverification.rvmonitor.java.rt.ref.CachedWeakReference;
 import com.runtimeverification.rvmonitor.java.rt.table.MapOfMonitor;
 import com.runtimeverification.rvmonitor.java.rt.tablebase.TerminatedMonitorCleaner;
 
-class HasNextRuntimeMonitor implements com.runtimeverification.rvmonitor.java.rt.RVMObject {
+public class HasNextRuntimeMonitor implements com.runtimeverification.rvmonitor.java.rt.RVMObject {
 	private static com.runtimeverification.rvmonitor.java.rt.map.RVMMapManager HasNextMapManager;
 	static {
 		HasNextMapManager = new com.runtimeverification.rvmonitor.java.rt.map.RVMMapManager();

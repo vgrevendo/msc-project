@@ -4,78 +4,53 @@ package automata.gen;
  * <p>Generates a strict diamond-chain-shaped register automaton.
  * Least slacking possible here!
  * Only the last state is final.
- * The penultimate state is a self-repeating state as in
- * example 4</p>
- * 
- * <p>Possible improvements include:
- * <ul>
- * <li>Have more incoming/outgoing transitions per intermediary state</li>
- * <li>Do not choose labels randomly but with high probability for rho</li>
- * <li>Do not always define rho?</li>
- * </ul>
- * </p>
+ * The penultimate state is not self-repeating</p>
  * @author vincent
  *
  */
 public class StrictDCGenerator extends AutomatonGenerator {
 	//Instance parameters
-	public int targetDepth = 5;
-	public int branchingFactor = 2;
-	public int registers = 2;
+	private final int n;
 	
-	public double labelIsRhoProportion = 0.7;
-	
-	public StrictDCGenerator() {
-		super("Strict Diamonds Chain Generator");
+	public StrictDCGenerator(int n) {
+		super("Strict Diamond Chain Generator");
+		this.n = n;
 	}
 	
 	@Override
 	protected void build() {
-		int intermediaryStates = branchingFactor;
+		//Now building an automaton with n diamonds.
+		//Add registers
+		addRegister(-1);
+		addRegister(-1);
 		
-		//Init registers
-		int actualRegisters = registers;
-		for(int r = 0; r < actualRegisters; r++) {
-			addRegister(-1);
-		}
-		
-		//Initial state
+		//Build entrance
 		addState(0, 0, false);
+		addState(1, -1, false);
 		
-		//Generate diamonds
-		int cStateNumber = 1;
-		for(int d = 0; d < targetDepth; d++) {
-			//Create target state
-			addState(cStateNumber+intermediaryStates, 
-					 0, 
-					 false);
+		addTransition(0, 1, 0);
+		
+		//Set initial state
+		setInitialState(0);
+		
+		//Build n diamonds
+		int stateIndex = 2;
+		for(int k = 0; k < n; k++) {
+			addState(stateIndex, -1, false);
+			addState(stateIndex+1, -1, false);
+			addState(stateIndex+2, k == n-1 ? 1 : -1, false);
 			
-			//Create intermediary states and add transitions
-			// (one incoming, one outgoing per state)
-			for(int s = 0; s < intermediaryStates; s++) {
-				addState(cStateNumber+s, 
-						 0, 
-						 false);
-				
-				addTransition(cStateNumber-1, 
-							  cStateNumber+s, 				   
-							  0);
-				addTransition(cStateNumber+s, 
-							  cStateNumber+intermediaryStates, 
-							  0);
-			}
-			
-			cStateNumber += intermediaryStates+1;
+			addTransition(stateIndex-1, stateIndex  , 0);
+			addTransition(stateIndex-1, stateIndex+1, 0);
+			addTransition(stateIndex  , stateIndex+2, 0);
+			addTransition(stateIndex+1, stateIndex+2, 0);
+
+			stateIndex += 3;
 		}
 		
-		//Penultimate state
-		addState(cStateNumber, 1, false);
-		addTransition(cStateNumber, cStateNumber, 0);
-		addTransition(cStateNumber, cStateNumber, 0);
-		
-		//Final state
-		addState(cStateNumber+1, -1, true);
-		addTransition(cStateNumber, cStateNumber+1, 1);
+		//Add exit
+		addState(stateIndex, -1, true);
+		addTransition(stateIndex-1, stateIndex, 1);
 	}
 
 }

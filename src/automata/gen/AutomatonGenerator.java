@@ -85,18 +85,42 @@ public abstract class AutomatonGenerator {
 		return PATH_ROOT + id + ".fma";
 	}
 	
+	/**
+	 * Transition label is labelled from 0 to R-1
+	 * @param s1
+	 * @param s2
+	 * @param label
+	 */
 	protected void addTransition(int s1, int s2, int label) {
 		addTransition("q" + s1, "q" + s2, label);
 	}
 	
+	/**
+	 * Transition label is labelled from 0 to R-1
+	 * @param s1
+	 * @param s2
+	 * @param label
+	 */
 	protected void addTransition(String s1, String s2, int label) {
 		transitionLines.add(s1 + " " + (label+1) + " " + s2);
 	}
 	
+	/**
+	 * Rho is indexed from 0 to R-1. -1 for none
+	 * @param number
+	 * @param rho
+	 * @param isFinal
+	 */
 	protected void addState(int number, int rho, boolean isFinal) {
 		addState("q" + number, rho, isFinal);
 	}
 	
+	/**
+	 * Rho is indexed from 0 to R-1. -1 for none
+	 * @param number
+	 * @param rho
+	 * @param isFinal
+	 */
 	protected void addState(String name, int rho, boolean isFinal) {
 		String stateString = name;
 		
@@ -111,14 +135,26 @@ public abstract class AutomatonGenerator {
 		stateLines.add(stateString);
 	}
 	
+	/**
+	 * Default is set to 0
+	 * @param initialState
+	 */
 	protected void setInitialState(int initialState) {
 		this.initialState = "q" + initialState;
 	}
 	
+	/**
+	 * Default is set to "q0"
+	 * @param initialState
+	 */
 	protected void setInitialState(String initialState) {
 		this.initialState = initialState;
 	}
 
+	/**
+	 * -1 for unset register
+	 * @param initSymbol
+	 */
 	protected void addRegister(int initSymbol) {
 		if(registersSb.length() > 0)
 			registersSb.append(" ");

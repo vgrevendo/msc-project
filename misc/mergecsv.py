@@ -4,6 +4,8 @@ Merge csv files for easy handling
 import sys
 import os
 
+WS_COLUMN = 1
+
 def main(args):
     print "Merging CSV cells..."
     
@@ -23,18 +25,22 @@ def main(args):
     
     output = {}
     firstfile = files[0]
-    cats = []
+    cats = {}
     
     with open(firstfile) as f:
         lines = f.readlines()
         lines = [line.split(";") for line in lines]
         
-        cats = lines[0][1:-1]
+        for idx, category in enumerate(lines[0][0:-1]):
+            if idx is not WS_COLUMN:
+                cats[category] = idx
         
         for field, cat in enumerate(cats):
             output[cat] = []
             for line in lines:
-                output[cat].append([line[0].replace(" ", "_")])
+                output[cat].append([line[WS_COLUMN].replace(" ", "_")])
+                
+    print cats
                 
     #Analyse all files    
     for j,file in enumerate(files):
@@ -46,13 +52,12 @@ def main(args):
             lines = [line.split(";") for line in lines]
             
             for i,line in enumerate(lines):
-                for field, cat in enumerate(cats):
+                for cat in cats:
+                    field = cats[cat]
                     if i == 0:
                         output[cat][i].append(bmark)
                     else:
-                        print output[cat]
-                        print "access: " + str(i)
-                        output[cat][i].append(line[field+1])
+                        output[cat][i].append(line[field])
                     
     for cat in cats:
         output[cat] = [" ".join(line) for line in output[cat]]

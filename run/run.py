@@ -39,6 +39,7 @@ ROOT = os.path.dirname(__file__)
 TRF_FOLDER_PATH = os.path.join(ROOT, "trf/")
 BENCHMARKS_RES_PATH = os.path.join(ROOT, "benchmarks.res")
 HOME_TESTS_RES_PATH = os.path.join(ROOT, "home-tests.res")
+REF_TESTS_RES_PATH = os.path.join(ROOT, "ref-tests.res")
 DACAPO_PATH = "dacapo-9.12-bach.jar"
 DEBUGGER_PORT = "42892"
 DEBUG_LIB_CMD = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address="+str(DEBUGGER_PORT)
@@ -50,6 +51,7 @@ DACAPO_EXIT_METHOD = "stop"
 TRACES_FOLDER = os.path.join(ROOT, "traces")
 AUTOMATA_FOLDER = os.path.join(ROOT, "automata")
 RUN_RESULTS_FOLDER = os.path.join(ROOT, "results")
+RVMONITOR_JAR_PATH = "/data/data/Programmation/Eclipse/workspaces/ubuntu/javamop/lib/rt.jar"
 
 #NEW TRACER
 NT_AGENT = "-javaagent:agent.jar="
@@ -195,7 +197,16 @@ def run_trace(bmark, trf_files):
         time.sleep(2)
 
 def test_references():
-    pass
+    print "(i) Testing REF algorithms"
+    print "(i) Parsing file 'ref-tests.res'..."
+    
+    torun = parse_ref_tests_res()
+    
+    print "    Found " + str(len(torun)) + " executions"
+    print "(i) Initiating run sequence:"
+    
+    for e in torun:
+        run_ref_test(e)
 
 def test_home():
     print "(i) Testing HOME algorithms"
@@ -207,7 +218,6 @@ def test_home():
     print "(i) Initiating run sequence:"
     
     for e in torun:
-        
         run_home_test(e)
 
 def parse_home_tests_res():
@@ -241,6 +251,48 @@ def run_home_test(rundata):
                                "-" + rundata["algorithm"] + ".csv")
     
     cmd = ["java", rundata["jvmparams"], "-cp", "bin", 
+           "testbench/Testbench", "mbs",
+           rundata["algorithm"], automaton_path,
+           trace_path, rundata["difficulty"], output_path]
+    
+    print "(x) RUN: " + " ".join(cmd)
+    
+    subprocess.call(cmd)
+    time.sleep(2)
+    
+def parse_ref_tests_res():
+    with open(REF_TESTS_RES_PATH) as f:
+        lines = f.readlines()
+        
+        runs = []
+        for line in lines:
+            if line.startswith("--"):
+                continue
+            
+            tokens = line.split(":")
+            run = {}
+            run["property"] = tokens[0].strip(' \t\r')
+            run["benchmark"] = tokens[1].strip(' \t\r')
+            run["algorithm"] = tokens[2].strip(' \t\r')
+            run["difficulty"] = tokens[3].strip(' \t\r')
+            run["jvmparams"] = tokens[4].strip(' \t\r\n')
+            
+            runs.append(run)
+        
+        return runs
+    
+def run_ref_test(rundata):
+    #Consitute run command
+    trace_name = rundata["property"] + "-" + rundata["benchmark"] + ".tr"
+    trace_path = os.path.join(TRACES_FOLDER, trace_name)
+    automaton_path = os.path.join(AUTOMATA_FOLDER, rundata["property"] + ".fma")
+    output_path = os.path.join(RUN_RESULTS_FOLDER, 
+                               rundata["property"] + "-" + rundata["benchmark"] +
+                               "-" + rundata["algorithm"] + ".csv")
+    
+    classpath = "bin:" + RVMONITOR_JAR_PATH
+    
+    cmd = ["java", rundata["jvmparams"], "-cp", classpath, 
            "testbench/Testbench", "mbs",
            rundata["algorithm"], automaton_path,
            trace_path, rundata["difficulty"], output_path]

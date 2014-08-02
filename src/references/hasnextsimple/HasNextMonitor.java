@@ -1,4 +1,4 @@
-package references;
+package references.hasnextsimple;
 
 class HasNextMonitor extends com.runtimeverification.rvmonitor.java.rt.tablebase.AbstractMonitor 
 					 implements Cloneable, com.runtimeverification.rvmonitor.java.rt.RVMObject {

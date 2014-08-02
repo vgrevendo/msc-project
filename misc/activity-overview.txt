@@ -651,6 +651,17 @@ the examiners. See also section 4.11.2.
 - The problem's question.
 
 [THE METHOD]
+**This is no longer valid as the method is divided into each decision problem category**
+
+[RESULTS: MEMBERSHIP]
+FIRST SUBSECTION: The problem for membership (introduction)
+- Some more theory about membership
+  * The deterministic case which is trivial
+  * The problem nondeterminism induces
+  * Why this can't be solved the way we would do it with finite-state automata.
+
+SECOND SUBSECTION: 
+
 - The general method
   * Given a problem, iterations over the following algorithm:
 	. Think
@@ -672,15 +683,7 @@ the examiners. See also section 4.11.2.
 	. Choose a time limit for testing (about 60s?)
   * A versioning system to keep track of everything that happened.
 - The base version of an automaton when encoded
-
-[RESULTS: MEMBERSHIP]
-FIRST SUBSECTION: The problem for membership (introduction)
-- Some more theory about membership
-  * The deterministic case which is trivial
-  * The problem nondeterminism induces
-  * Why this can't be solved the way we would do it with finite-state automata.
-
-SECOND SUBSECTION: Finding samples to test membership on
+Finding samples to test membership on
 - We will try some theoretical examples at first
 - Randomly generated examples don't make much sense
 - Why runtime verification is a good idea
@@ -782,5 +785,21 @@ Then has_next.avrora, safe_iter.tomcat, tss.tss_custom, uso.tomcat, umi.pmd on G
 -Better multitype support
 -Better exception handling: is class not found important?
 
-07/12/14
+07/23/14
+Todo: 
+* write parts that are not yet written, and rewrite those that need it including Radu's comments.
+* Write structure of initial parts of the report
+* Collect results about diamond-chain-shaped automata and trees
 
+Look at one example where the trace fails.
+Put names of benchmarks next to graph
+For forgetful BFS explain why pointers “back” kill performance
+BFLGS fails for RV: what is the general decision process for this?
+Formal definition of decision problem
+Insert text examples of automata.
+Justification why DFS is abandoned: there are some cases where DFS is terrible, and BFS presents an easy optimisation.
+
+Criteria for good input: no need to formalise
+- tried random automata, it failed
+- one thing is theoretical extended examples
+- the other is RV

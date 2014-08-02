@@ -12,7 +12,7 @@ public class FileWordLister extends TestLister<List<Integer>> {
 	//DEBUG
 	private static final int INTERESTING_ID = 72;
 	private static final int FIRST_ID = 6;
-	private static final boolean DEBUG = true; 
+	private static final boolean DEBUG = false; 
 	private static final boolean DEBUG_FILTER = true;
 	private static final int LIMIT_TR_NUMBER = 700;
 	private final Map<Integer, Integer> counts  =new HashMap<Integer, Integer>();

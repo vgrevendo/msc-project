@@ -31,6 +31,7 @@ import automata.gen.BuildException;
 import automata.gen.HighLevelPropertyGenerator;
 import automata.gen.RootBranchGenerator;
 import automata.gen.SpecificationSynthGenerator;
+import automata.gen.StrictDCGenerator;
 import automata.greedy.GreedyRA;
 import automata.hra.HRAutomaton;
 
@@ -96,6 +97,20 @@ public class Testbench {
 
 				greedyPTTest(args[1], args[2], args[3]);
 				break;
+			case "sdc":
+				if(args.length != 2) {
+					System.out.println("Expecting n");
+					return;
+				}
+				gdcTest(args[1]);
+				break;	
+			case "sdcTest":
+				if(args.length != 2) {
+					System.out.println("Expecting n");
+					return;
+				}
+				gdcAsymptoticTest(args[1]);
+				break;
 			case "auto":
 			default:
 				if (args.length != 4) {
@@ -111,6 +126,75 @@ public class Testbench {
 			e.printStackTrace();
 		}
 	}
+	private static void gdcAsymptoticTest(String string) {
+		final int n = Integer.parseInt(string);
+		final int iterations = 10;
+		final int step = n/iterations;
+		
+		//Make word lister
+		TestLister<List<Integer>> twg = new TestLister<List<Integer>>() {
+			private final int NUMBER = 23;
+			
+			@Override
+			public int size() {
+				return iterations;
+			}
+			
+			@Override
+			protected List<Integer> nextResource() {
+				final int limit = 2*(index+1)*step+2;
+				List<Integer> word = new ArrayList<>(limit);
+				//Make word of size 2n+2 of all the same numbers
+				for(int i = 0; i < limit; i++)
+					word.add(NUMBER);
+				return word;
+			}
+		};
+		
+		//Make automaton generator
+		TestLister<RegisterAutomaton> tag = new TestLister<RegisterAutomaton>() {
+
+			@Override
+			protected RegisterAutomaton nextResource() {
+				AutomatonGenerator ag = new StrictDCGenerator((index+1)*step);
+				String filename;
+				try {
+					filename = ag.generate();
+					RegisterAutomaton ra = new RegisterAutomaton(filename);
+					return ra;
+				} catch (FileNotFoundException | BuildException | ParseException e) {
+					e.printStackTrace();
+					System.exit(-1);
+				}
+				
+				return null;
+			}
+
+			@Override
+			public int size() {
+				return iterations;
+			}
+		};
+		
+		//List algorithms
+		MBSDecisionAlgorithm[] algs = new MBSDecisionAlgorithm[] {
+//			Membership.ldftsCheck,
+			Membership.bflgsCheck,
+		};
+		
+		//Create and run test
+		AsymptoticMembershipTest test = new AsymptoticMembershipTest(tag, twg, algs);
+		test.test();
+		
+		//Flush output
+		ResultsContainer.getContainer().flush();
+	}
+	private static void gdcTest(String string) throws FileNotFoundException, BuildException, ParseException {
+		AutomatonGenerator ag = new StrictDCGenerator(Integer.parseInt(string));
+		String filename = ag.generate();
+		RegisterAutomaton ra = new RegisterAutomaton(filename);
+		ra.displayInfo();
+	}
 	private static void hlpTest() throws FileNotFoundException, BuildException {
 		HighLevelPropertyGenerator hlpg = new HighLevelPropertyGenerator("res/unique_servlet_output.hlp");
 		hlpg.generate();
@@ -124,6 +208,7 @@ public class Testbench {
 		algorithms.put("FBFLGS", Membership.forgetfulBflgsCheck);
 		algorithms.put("GBFLGS", Membership.greedyCheck);
 		algorithms.put("BFS", Membership.bfsCheck);
+		algorithms.put("HNP-REF", MembershipAlgorithms.hasNextTrueRef);
 		
 		//Parse arguments
 		String chosenAlgorithm = args[1];
@@ -466,7 +551,7 @@ public class Testbench {
 			// Membership.bestFirstCheck,
 			// Membership.aStarCheck,
 			// Membership.greedyCheck,
-			MembershipAlgorithms.hasNextJavaMOPReference,
+			MembershipAlgorithms.hasNextSimpleRef,
 			};
 
 			double testStep = 0.1D;

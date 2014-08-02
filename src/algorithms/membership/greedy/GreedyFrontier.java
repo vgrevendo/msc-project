@@ -64,6 +64,7 @@ public class GreedyFrontier {
 		}
 		
 		//If s-outgoing symbols
+		boolean needsSymbols = false;
 		for(Integer s : gc.getOutgoingSymbols()) {
 			if(!symbolNeeders.containsKey(s))
 				symbolNeeders.put(s, new LinkedList<GreedyConfiguration>());
@@ -71,8 +72,11 @@ public class GreedyFrontier {
 			size++;
 			if(Testbench.COLLECT_STATS)
 				symbolNeedCounter++;
-			return;
+			needsSymbols = true;
 		}
+		
+		if(needsSymbols)
+			return;
 		
 		if(Testbench.COLLECT_STATS)
 			ignoredConfigs++;

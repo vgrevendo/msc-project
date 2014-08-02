@@ -266,6 +266,9 @@ public class Tracer {
 		System.out.println("(i) Tracer reached end of traceable section, trace has stopped.");
 		finaliseOutputFile();
 		System.out.println("(i) Trace file is finalised and ready for use.");
+		System.out.println("(i) Events: " + relevantExits);
+		System.out.println("(i) Numbers: " + numTrNumbers);
+		System.out.println("(i) Trace calls: " + entries);
 	}
 	/**
 	 * Call for every method call that should be traced. 
@@ -302,7 +305,7 @@ public class Tracer {
 		//Protect against infinite loops
 		traceStatus.put(Thread.currentThread(), TraceStatus.WAITING);
 		//If this is a constructor/static method (??), ignore
-		if (implicitArgument == null)
+		if (implicitArgument == null || method.equals("<init>"))
 			return;
 		//Manage implicit argument's ID
 		//If the object wasn't known yet, we will need to add an <init> statement
@@ -319,11 +322,11 @@ public class Tracer {
 					id = idMap.get(implicitArgument);
 			} catch (Exception e) {
 				System.out.println("FAIL!");
-				System.out.println("Implicit argument: " + implicitArgument);
 				System.out.println("cl: " + cl);
 				System.out.println("method: " + method);
 				System.out.println("rv: " + rv);
 				e.printStackTrace();
+				System.out.println("Implicit argument: " + implicitArgument);
 				System.exit(0);
 			}
 			if (!method.equals("<init>"))

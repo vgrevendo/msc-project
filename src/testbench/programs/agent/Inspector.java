@@ -260,19 +260,19 @@ public class Inspector implements ClassFileTransformer {
 						if(returnType.getName().contains("Void") 
 								|| returnType.getName().contains("void"))
 							ctm.insertAfter("{"
-								+ TRACER_PATH + ".getTracer().getTracer().add(this, \"" + superclassName + "\",\""
+								+ TRACER_PATH + ".getTracer().add(this, \"" + superclassName + "\",\""
 								+ method + "\",\"void\");"
 								+ "}");
 						else
 							ctm.insertAfter("{"
-								+ TRACER_PATH + ".getTracer().getTracer().add(this, \"" + superclassName + "\",\""
+								+ TRACER_PATH + ".getTracer().add(this, \"" + superclassName + "\",\""
 								+ method + "\","
 								+ getWrapperName(returnType) + ".toString($_));"
 								+ "}");
 							
 					} else {
 						ctm.insertAfter("{"
-								+ TRACER_PATH + ".getTracer().getTracer().addObjectRV(this, \"" + superclassName + "\",\""
+								+ TRACER_PATH + ".getTracer().addObjectRV(this, \"" + superclassName + "\",\""
 									+ method + "\",$_);"
 								+ "}");
 					}
