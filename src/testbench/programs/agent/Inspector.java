@@ -35,6 +35,8 @@ public class Inspector implements ClassFileTransformer {
 	private final Tracer tracer;
 	private final Set<Class<?>> superclasses;
 	private final Set<CtClass> superctclasses;
+	private final Set<CtClass> superFailedctclasses;
+	private final Set<String> extraClassNames;
 	
 	//Instrumentation monitoring
 	private final Map<Class<?>, Set<String>> instrumentedMethods = new HashMap<Class<?>, Set<String>>(); 
@@ -43,6 +45,8 @@ public class Inspector implements ClassFileTransformer {
 		this.tracer = tracer;
 		this.superclasses = tracer.getSuperclasses();
 		this.superctclasses = new HashSet<>();
+		this.superFailedctclasses = new HashSet<>();
+		this.extraClassNames = tracer.getFailedClassLoadNames();
 		
 		for(Class<?> c:superclasses) {
 			try {
@@ -63,9 +67,12 @@ public class Inspector implements ClassFileTransformer {
 	public byte[] transform(ClassLoader loader, String cl, Class<?> klass,
 			ProtectionDomain pd, byte[] rawClass)
 			throws IllegalClassFormatException {
+		//Test if we're still supposed to instrument (might
+		// not be the case after benchmark)
 		if(!tracer.shouldInstrument())
 			return rawClass;
-		
+
+		//Test if is main class
 		if(tracer.isMainClass(cl))
 			try {
 				return instrumentMainClass(cl, klass, rawClass);
@@ -75,7 +82,7 @@ public class Inspector implements ClassFileTransformer {
 				e1.printStackTrace();
 				return rawClass;
 			}
-		
+
 		//To do better with subclassing issues
 		String superclassName = isInterestingClass(klass);
 		if(superclassName == null)
@@ -119,12 +126,36 @@ public class Inspector implements ClassFileTransformer {
 		ClassPool ctp = ClassPool.getDefault();
 		CtClass ctc = ctp.makeClass(new ByteArrayInputStream(rawCode));
 		
+		//Test if this was a failed class, that could not be loaded at the time.
+		boolean failedSubClass = false;
+		if(isFailedClass(cl)) {
+			System.out.println("(i) Inspector recovered class that could not previously be loaded: " + cl);
+			
+			//Add the class to the CTC collection, and load as usual
+			superFailedctclasses.add(ctc);
+			extraClassNames.remove(cl);
+			failedSubClass = true;
+		}
+		
 		String superclassName = isInterestingClass(ctc); 
 		if(superclassName == null) {
-			return rawCode;
+			//This class is not a subclass of a directly loaded class
+			//It might be a subclass of a failed class though.
+			if((superclassName = isInterestingFailedClass(ctc)) == null) {
+				//If it isn't
+				return rawCode;
+			}
+			
+			//if it is, remember to not detach it!
+			failedSubClass = true;
 		}
 		
 		Tools.println("Inspector: '" + ctc.getName() + "' is being loaded.", Tools.ANSI_GREEN);
+		
+		
+		if(failedSubClass) {
+			Tools.println("    This class is part of the 'failed' family and will not be detached.", Tools.ANSI_BLUE);
+		}
 		
 		//Add equals protection
 		instrumentEqualsMethod(ctc);
@@ -199,7 +230,10 @@ public class Inspector implements ClassFileTransformer {
 		
 		//Return the modified class's code
 		byte[] changedCode = ctc.toBytecode();
-		ctc.detach();
+		
+		if(!failedSubClass)
+			ctc.detach();
+		
 		Tools.println("    constructors: " + constrCount + ", methods: " + methodCount + 
 				             ", already handled: " + alreadyInstrumented + ", not found:" + notfound + 
 				             ", empty: " + empty + ", native: " + natMethods, Tools.ANSI_GREEN);
@@ -338,6 +372,13 @@ public class Inspector implements ClassFileTransformer {
 		
 		instrumentedMethods.get(klass).add(method);
 	}
+	/**
+	 * Returns null if the class is uninteresting, an emtpy string if it's a loading class and therefore
+	 * cannot be determined this way (use Javassist), or the name of the superclass that makes this class
+	 * interesting.
+	 * @param klass
+	 * @return
+	 */
 	private String isInterestingClass(Class<?> klass) {
 		//If no class is being loaded (and not retransformed), the argument is null, and therefore it
 		// has to be interpreted with Javassist to know which superclasses it has.
@@ -356,9 +397,17 @@ public class Inspector implements ClassFileTransformer {
 			try {
 				if(ctc.subtypeOf(ctc2))
 					return ctc2.getName();
-			} catch(Throwable e) {
-				
-			}
+			} catch(Throwable e) {}
+		}
+		
+		return null;
+	}
+	private String isInterestingFailedClass(CtClass ctc) throws NotFoundException {
+		for(CtClass ctc2 : superFailedctclasses) {
+			try {
+				if(ctc.subtypeOf(ctc2))
+					return ctc2.getName();
+			} catch(Throwable e) {}
 		}
 		
 		return null;
@@ -370,5 +419,8 @@ public class Inspector implements ClassFileTransformer {
 			method.insertBefore(EQUALS_CODE);
 			
 		} catch (NotFoundException e) { }
+	}
+	private boolean isFailedClass(String cl) {
+		return extraClassNames.contains(cl);
 	}
 }

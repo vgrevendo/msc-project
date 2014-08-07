@@ -48,6 +48,7 @@ public class Tracer {
 	private Map<String, RuleEvaluator> rules = new HashMap<>();
 	private List<RuleEvaluator> evaluators = new ArrayList<>();
 	private Set<String> subclassNames;
+	private Set<String> failedClassLoadsNames = new HashSet<>();
 	private Set<Class<?>> subclasses = new HashSet<>();
 	private Map<String, Set<String>> clToMethods;
 	private PrintWriter output;
@@ -94,7 +95,8 @@ public class Tracer {
 			try {
 				subclasses.add(Class.forName(scStr));
 			} catch (ClassNotFoundException | NullPointerException e) {
-				System.out.println("  (e) Subclass load failed: " + e.getMessage());
+				System.out.println("  (w) Tracer could not load '" + e.getMessage() + "' directly, Inspector might ignore subclasses.");
+				failedClassLoadsNames.add(scStr.replace('.', '/'));
 			}
 		}
 
@@ -241,6 +243,16 @@ public class Tracer {
 	public boolean shouldInstrument() {
 		return generalTraceStatus != TraceStatus.STOPPED;
 	}
+	/**
+	 * Returns the names of the classes that could not be loaded straight away.
+	 * Names are already internal ('.' replaced by '/').
+	 * These classes, upon first load, should be added to CTC with Javassist.
+	 * @return
+	 */
+	public Set<String> getFailedClassLoadNames() {
+		return failedClassLoadsNames;
+	}
+	
 	
 	//Interface with instrumentation
 	/**
@@ -279,6 +291,13 @@ public class Tracer {
 	 */
 	public void add(Object implicitArgument, String cl, 
 			        String method, String rv) {
+		try {
+			if(Agent.DEBUG_MODE) {
+				System.out.println("Received " + cl);
+				System.out.println("  " + method);
+				System.out.println("  " + implicitArgument);
+				System.out.println("  Thread: " + Thread.currentThread());
+			}
 		/*
 		 * This method is flagged by trace status to suspend tracing
 		 * when called: the reason for this is that calls may loop
@@ -294,19 +313,27 @@ public class Tracer {
 		 */
 		
 		//Manage trace status per thread
-		if(generalTraceStatus != TraceStatus.IN_PROGRESS) 
+		if(generalTraceStatus != TraceStatus.IN_PROGRESS)  {
+			if(Agent.DEBUG_MODE)
+				System.out.println("  Trace status not OK :/");
 			return;
+		}
 		if(!traceStatus.containsKey(Thread.currentThread()))
 			traceStatus.put(Thread.currentThread(), TraceStatus.IN_PROGRESS);
-		if(traceStatus.get(Thread.currentThread()) != TraceStatus.IN_PROGRESS)
+		if(traceStatus.get(Thread.currentThread()) != TraceStatus.IN_PROGRESS) {
 			return;
+		}
 		
 		entries++;
 		//Protect against infinite loops
 		traceStatus.put(Thread.currentThread(), TraceStatus.WAITING);
 		//If this is a constructor/static method (??), ignore
-		if (implicitArgument == null || method.equals("<init>"))
+		if (implicitArgument == null || method.equals("<init>")) {
+			if(Agent.DEBUG_MODE)
+				System.out.println("  Implicit argument unknown! Ignoring");
+			traceStatus.put(Thread.currentThread(), TraceStatus.IN_PROGRESS);
 			return;
+		}
 		//Manage implicit argument's ID
 		//If the object wasn't known yet, we will need to add an <init> statement
 		int id = 0;
@@ -318,6 +345,8 @@ public class Tracer {
 					idMap.put(implicitArgument, id);
 	
 					addToTranslation(id, cl, "<init>", "null");
+					if(Agent.DEBUG_MODE)
+						System.out.println("  Added <init> to translation");
 				} else
 					id = idMap.get(implicitArgument);
 			} catch (Exception e) {
@@ -329,8 +358,11 @@ public class Tracer {
 				System.out.println("Implicit argument: " + implicitArgument);
 				System.exit(0);
 			}
-			if (!method.equals("<init>"))
+			if (!method.equals("<init>")) {
+				if(Agent.DEBUG_MODE)
+					System.out.println("  Found object and added to translation");
 				addToTranslation(id, cl, method, rv);
+			}
 			if (enforceLimit && numTrNumbers >= MAX_NUM_NUMBERS_TR) {
 				System.out.print("Reached limit: ");
 				System.out.format("%,d", numTrNumbers);
@@ -338,6 +370,13 @@ public class Tracer {
 			} else
 				traceStatus.put(Thread.currentThread(), TraceStatus.IN_PROGRESS);
 		}
+		
+		} catch(Throwable e) {
+			e.printStackTrace();
+		}
+		
+		if(Agent.DEBUG_MODE)
+			System.out.println("  OK Exit");
 	}
 	/**
 	 * Call if the return value is an object of which the string 

@@ -7,27 +7,33 @@ import java.util.Queue;
 
 public class Agent {
 	private static boolean signalledRetransformationFail = false;
+	public final static boolean DEBUG_MODE = false;
 	
 	private static final Queue<Class<?>> toRetransform = new LinkedList<Class<?>>();
 	/**
 	 * The agent's entry point.
 	 */
 	public static void premain(String agentArgument, Instrumentation instr) {
-		System.out.println("[[AGENTLIB ENTRY POINT]]");
+		System.out.println("------ [[AGENTLIB ENTRY POINT]] -------");
 		
 		System.out.println("(i) Loading tracer...");
 		try {
 			Tracer.loadRules(agentArgument);
 		} catch (Exception e) {
+			System.out.println();
 			System.out.println("(e) Tracer loading failed, here's why:");
 			e.printStackTrace();
 			System.out.println("Aborting...");
 			System.exit(0);
 		}
 		
+		System.out.println("    DONE");
+		
 		System.out.println("(i) Loading instrumentation...");
 		ClassFileTransformer cft = new Inspector(Tracer.getTracer());
 		instr.addTransformer(cft, true); //"I'm OK with retransforming classes!"
+		
+		System.out.println("    DONE");
 	
 		//Load classes to be instrumented
 		for(Class<?> c: instr.getAllLoadedClasses()) {
