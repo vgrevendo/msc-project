@@ -2,13 +2,17 @@ package testbench.programs;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 public class SafeIterProgram {
-	public static final int NUM_COLLECTIONS = 100;
-	public static final int NUM_ITERATORS = 50;
+	public static final int NUM_COLLECTIONS = 1000;
+	public static final int NUM_ITERATORS = 500;
 	public static final int NUM_ELEMENTS = 100;
+	public static final double PROB_UPD_COL = 0.05;
 
 	public static void main(String[] args) {
 		//Instantiate collections
@@ -24,30 +28,45 @@ public class SafeIterProgram {
 			collections.add(col);
 		}
 		
-		//Instantiate iterators
-		List<Iterator<Integer>> iterators = new ArrayList<>();
-		
+		Map<Collection<Integer>, List<Iterator<Integer>>> iterators = new HashMap<>();
 		for(Collection<Integer> col : collections) {
-			int numIterators = (int) (Math.random()*NUM_ITERATORS);
-			for(int i = 0; i < numIterators; i++) {
-				iterators.add(col.iterator());
+			iterators.put(col, new ArrayList<Iterator<Integer>>());
+		}
+		
+		
+		while(true) {
+			//Instantiate iterators
+			for(Collection<Integer> col : collections) {
+				int numIterators = (int) (Math.random()*NUM_ITERATORS);
+				for(int i = 0; i < numIterators; i++) {
+					iterators.get(col).add(col.iterator());
+				}
 			}
-		}
-		
-		//Call next on iterators
-		int sum = 0;
-		
-		while(!iterators.isEmpty()) {
-			int itIdx = (int) (Math.random() * iterators.size());
-			Iterator<Integer> it = iterators.get(itIdx);
 			
-			if(it.hasNext())
-				sum += it.next();
-			else
-				iterators.remove(itIdx);
+			for(Entry<Collection<Integer>, List<Iterator<Integer>>> e : iterators.entrySet()) {
+				List<Iterator<Integer>> its = e.getValue();
+				
+				while(!its.isEmpty()) {
+					if(Math.random() < PROB_UPD_COL) {
+						e.getKey().add(52);
+						its.clear();
+						break;
+					}
+					
+					int itIdx = (int) (Math.random() * its.size());
+					Iterator<Integer> it = its.get(itIdx);
+					
+					if(it.hasNext())
+						it.next();
+					else
+						its.remove(itIdx);
+				}
+			
+				
+			}
+			
 		}
 		
-		System.out.println("All done. Sum: " + sum);
 	}
 
 }

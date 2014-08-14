@@ -21,5 +21,8 @@ public class State {
 		this.isFinal = isFinal;
 	}
 	
+	public String toString() {
+		return name;
+	}
 	
 }

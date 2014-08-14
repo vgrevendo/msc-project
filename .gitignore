@@ -11,3 +11,4 @@ run/traces/*
 run/results
 /tags
 run/sav
+res/*.cnf

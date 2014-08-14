@@ -22,7 +22,7 @@
 --dacapo	:tradebeans	:has_next
 --dacapo	:tradesoap	:has_next
 -- SAFE_ITER --------------------------------
---dacapo	:tomcat		:safe_iter
+dacapo	:tomcat		:safe_iter
 --dacapo	:avrora		:safe_iter
 --dacapo	:pmd		:safe_iter
 --dacapo	:xalan		:safe_iter
@@ -52,8 +52,8 @@
 --dacapo	:tradebeans	:unsafe_map_iter
 --dacapo	:tradesoap	:unsafe_map_iter
 -- MISC -------------------------------------
-dacapo	:tomcat		:unique_servlet_output
+--dacapo	:tomcat		:unique_servlet_output
 -- CUSTOM -----------------------------------
 --other	:hnp_custom	:has_next			:testbench/programs/HasNextPropertyTracer MULTIPLE 2000 2000:testbench.programs.HasNextPropertyTracer main main true
---other	:sip_custom	:safe_iter			:testbench/programs/SafeIterProgram:testbench.programs.SafeIterProgram main main
+--other	:sip_custom	:safe_iter			:testbench/programs/SafeIterProgram:testbench.programs.SafeIterProgram main main true
 --other	:tss_custom	:tainted_sink_source		:testbench/programs/SourceSinkProgram 1000 100000:testbench.programs.SourceSinkProgram main main true

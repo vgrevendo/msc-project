@@ -144,6 +144,7 @@ def run_trace(bmark, trf_files):
             agent_options += ",limit=false"
             target_cmd = ["java", NT_AGENT + agent_options, NT_CP, "-jar",
                           DACAPO_PATH, "-c", DACAPO_MAIN_CLASS, "-s", "large",
+                          "-t", "1",
                           bm_name]
             debug_cmd = None
         else:

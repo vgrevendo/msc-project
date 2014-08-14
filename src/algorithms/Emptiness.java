@@ -1,14 +1,18 @@
 package algorithms;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.Stack;
 
-import algorithms.emptiness.SearchNode;
+import testbench.Testbench;
+import algorithms.emptiness.EMPDecisionAlgorithm;
 import algorithms.emptiness.SearchState;
-import algorithms.emptiness.WordIterator;
+import algorithms.tools.ResultsContainer;
 import automata.RegisterAutomaton;
 
 /**
@@ -19,66 +23,120 @@ import automata.RegisterAutomaton;
  */
 public class Emptiness {
 	/**
-	 * Test all words within a certain finite subset of the alphabet and
-	 * within a length. This gives an idea as to whether the language is empty or not.
-	 * 
-	 * First step is to construct the useful alphabet subset that we will need. Then iterate
-	 * over all possibilities for membership checks.
+	 * DFS implementation. In case of no cycles, because low memory consumption.
 	 */
-	public static boolean empiricalEmptinessCheck(RegisterAutomaton a, int wordLengthLimit) {
-		Integer[] sequence = Tools.computeMinimalAlphabet(a);
+	public static final EMPDecisionAlgorithm generativeDFSCheck = new EMPDecisionAlgorithm("DFS") {
+		private int maxFrontierSize = 0;
 		
-		System.out.println("EMPIRICAL EMPTINESS CHECK");
-		System.out.println("Alphabet subset size is " + sequence.length);
-		
-		
-		for(int wordSize = 1; wordSize < wordLengthLimit; wordSize++) {
-			WordIterator wi = new WordIterator(wordSize, sequence);
+		@Override
+		public boolean decide(RegisterAutomaton automaton) {
+			int[] fullAssignment = buildFullAssignment(automaton);
+			SearchState initialState = new SearchState(automaton.getInitialState(), automaton.getInitialRegisters(), 
+													   automaton, fullAssignment);
 			
-			System.out.println("Checking wordsize " + wordSize + " (" + wi.capacity + " words)");
+			Stack<SearchState> frontier = new Stack<>();
+			frontier.add(initialState);
 			
+			while(!frontier.isEmpty()) {
+				SearchState state = frontier.pop();
+				
+				if(state.isFinal()) {
+					if(Testbench.DEBUG)
+						System.out.println("Successful configuration: " + state.toString());
+					return true;
+				}
+				
+				List<SearchState> adjacentStates = state.expand();
+				frontier.addAll(adjacentStates);
+				
+				if(Testbench.COLLECT_STATS)
+					maxFrontierSize = Math.max(maxFrontierSize, frontier.size());
+			}
+			
+			return false;
 		}
-		
-		
-		return false;
-	}
+		@Override
+		protected void yieldStatistics(String sessionName, ResultsContainer rc) {
+			rc.addSessionNumber(sessionName, "frontier size", maxFrontierSize);
+			
+			maxFrontierSize = 0;
+		}
+	};
 	
+	public static final EMPDecisionAlgorithm generativeBFGSCheck = new EMPDecisionAlgorithm("BFGS") {
+		private int maxFrontierSize = 0;
+		private int ignored = 0;
+		
+		@Override
+		public boolean decide(RegisterAutomaton automaton) {
+			Set<SearchState> visitedStates = new HashSet<>();
+			int[] fullAssignment = buildFullAssignment(automaton);
+			SearchState initialState = new SearchState(automaton.getInitialState(), automaton.getInitialRegisters(), 
+													   automaton, fullAssignment);
+			
+			Queue<SearchState> frontier = new LinkedList<>();
+			frontier.add(initialState);
+			visitedStates.add(initialState);
+			
+			while(!frontier.isEmpty()) {
+				SearchState state = frontier.poll();
+				
+				if(state.isFinal()) {
+					if(Testbench.DEBUG)
+						System.out.println("Successful configuration: " + state.toString());
+					return true;
+				}
+				
+				List<SearchState> adjacentStates = state.expand();
+				
+				for(SearchState ss: adjacentStates) {
+					if(!visitedStates.contains(ss))
+						frontier.add(ss);
+					else if(Testbench.COLLECT_STATS)
+						ignored++;
+				}
+				
+				if(Testbench.COLLECT_STATS)
+					maxFrontierSize = Math.max(maxFrontierSize, frontier.size());
+			}
+			
+			return false;
+		}
+		@Override
+		protected void yieldStatistics(String sessionName, ResultsContainer rc) {
+			rc.addSessionNumber(sessionName, "frontier size", maxFrontierSize);
+			rc.addSessionNumber(sessionName, "ignored nodes", ignored);
+			
+			maxFrontierSize = 0;
+			ignored = 0;
+		}
+	};
+	
+	//Tools
 	/**
-	 * The generative and complete version of the previous empirical emptiness check.
-	 * Returns true if the automaton is nonempty, false if the automaton is empty.
-	 * @param a
+	 * We will avoid 0 here
+	 * @param ra
 	 * @return
 	 */
-	public static boolean generativeCompleteEmptinessCheck(RegisterAutomaton a) {
-		Set<SearchState> visitedStates = new HashSet<>();
-		SearchState initialState = new SearchState(a.getInitialState(), 
-												   a.getInitialRegisters(), 
-												   a, 
-												   -1);
-		visitedStates.add(initialState);
+	public static int[] buildFullAssignment(RegisterAutomaton ra) {
+		Map<Integer, Integer> oldToNewSymbols = new HashMap<Integer, Integer>();
+		int counter = 1;
+		int[] regs = ra.getInitialRegisters();
 		
-		//For BF(G)S we'll need a FIFO data structure. 
-		Queue<SearchNode> frontier = new LinkedList<>();
-		SearchNode initialNode = new SearchNode(initialState, null);
-		frontier.add(initialNode);
 		
-		while(!frontier.isEmpty()) {
-			SearchNode currentNode = frontier.poll();
-			
-			if(currentNode.state.isFinal()) {
-				currentNode.printPath();
-				return true;
-			}
-			
-			List<SearchState> adjacentStates = currentNode.state.expand();
-			for(SearchState aState : adjacentStates) {
-				if(!visitedStates.contains(aState)) {
-					visitedStates.add(aState);
-					frontier.add(new SearchNode(aState, currentNode));
-				}
+		for(int i = 0; i < regs.length; i++) {
+			if(regs[i] >= 0) 
+				oldToNewSymbols.put(regs[i], counter++);
+		}
+		
+		for(int r = 0; r < regs.length; r++) {
+			if(regs[r] >= 0) {
+				regs[r] = oldToNewSymbols.get(regs[r]);
+			} else {
+				regs[r] = counter++;
 			}
 		}
 		
-		return false;
+		return regs;
 	}
 }

@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -20,6 +21,7 @@ import testbench.programs.translator.TRFTranslator;
 import testbench.programs.translator.Translator;
 import testbench.tests.AsymptoticMembershipTest;
 import testbench.tests.ListMembershipTest;
+import algorithms.Emptiness;
 import algorithms.Membership;
 import algorithms.membership.MBSDecisionAlgorithm;
 import algorithms.tools.ResultsContainer;
@@ -29,6 +31,7 @@ import automata.RegisterAutomaton;
 import automata.gen.AutomatonGenerator;
 import automata.gen.BuildException;
 import automata.gen.HighLevelPropertyGenerator;
+import automata.gen.NondetSATGenerator;
 import automata.gen.RootBranchGenerator;
 import automata.gen.SpecificationSynthGenerator;
 import automata.gen.StrictDCGenerator;
@@ -39,8 +42,8 @@ public class Testbench {
 	public final static int TEST_LENGTH = 1500;
 	public final static String HNP_TEST_TRACE_PATH = "gen/trace4.tr";
 
-	public final static boolean DEBUG = false;
-	public final static boolean COLLECT_STATS = true;
+	public final static boolean DEBUG = true;
+	public final static boolean COLLECT_STATS = false;
 
 	/**
 	 * A stub for parameter parsing has been implemented here, to make launches
@@ -50,11 +53,16 @@ public class Testbench {
 	 */
 	public static void main(String[] args) {
 		System.out.println("This is testbench, running...");
+		System.out.println("Arguments: " + Arrays.toString(args));
 		double p = 0.0D;
 
 		try {
 
 			switch (args[0]) {
+			case "sattest":
+				satTest(args); break;
+			case "satgen":
+				satGenTest(); break;
 			case "mbs": mbsTests(args); break;
 			case "deterministic-check":
 				deterministicTest(); break;
@@ -124,6 +132,19 @@ public class Testbench {
 		} catch (Exception e) {
 			System.out.println("An error occurred:");
 			e.printStackTrace();
+		}
+	}
+	private static void satTest(String[] args) throws FileNotFoundException, BuildException, ParseException {
+		AutomatonGenerator ag = new NondetSATGenerator(args[1]);
+		String filename = ag.generate();
+		RegisterAutomaton a = new RegisterAutomaton(filename);
+		a.displayInfo();
+		
+		//Do emptiness check
+		if(Emptiness.generativeBFGSCheck.decide(a)) {
+			System.out.println("Emptiness is success");
+		} else {
+			System.out.println("Fail");
 		}
 	}
 	private static void gdcAsymptoticTest(String string) {
@@ -832,5 +853,11 @@ public class Testbench {
 		ListMembershipTest lmt = new ListMembershipTest(ra, algorithms, twg);
 		lmt.test();
 		ResultsContainer.getContainer().flush();
+	}
+	private static void satGenTest() throws FileNotFoundException, BuildException, ParseException {
+		AutomatonGenerator ag = new NondetSATGenerator("res/sat1.cnf");
+		String filename = ag.generate();
+		RegisterAutomaton a = new RegisterAutomaton(filename);
+		a.displayInfo();
 	}
 }

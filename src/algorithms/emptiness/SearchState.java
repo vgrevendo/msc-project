@@ -2,7 +2,6 @@ package algorithms.emptiness;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -33,13 +32,14 @@ public class SearchState {
 	public final State state;
 	public final int[] registers;
 	public final RegisterAutomaton a;
-	public final int trSymbol;
+	public final int[] fullAssignment;
 	
-	public SearchState(State state, int[] registers, RegisterAutomaton a, int trSymbol) {
+	public SearchState(State state, int[] registers, 
+					   RegisterAutomaton a, int[] fullAssignment) {
 		this.state = state;
 		this.registers = registers;
 		this.a = a;
-		this.trSymbol = trSymbol;
+		this.fullAssignment = fullAssignment;
 	}
 	
 	public boolean isFinal() {
@@ -58,28 +58,32 @@ public class SearchState {
 		 * index) and:
 		 * - if that register is full, we will append to the current word the symbol
 		 *   that is currently in that register;
-		 * - if that register is empty, we'll have a look at rho. If rho happens to 
-		 *   point to that register, that's great, we append "a new letter"; else we
-		 *   abandon the considered label.
+		 * - if that register is empty, we ignore it.
+		 * - we check if rho points to an empty register, and if it does that register 
+		 *   becomes eligible as well.
 		 */
-		Integer rho = a.getAssignmentRegister(state);
+		Integer irho = a.getAssignmentRegister(state);
+		int rho = irho != null ? irho : -1;
 		
 		for(Entry<Integer, List<State>> labelTr : transitions.entrySet()) {
+			int regIndex = labelTr.getKey();
+			
 			//take a look at the register
-			if(registers[labelTr.getKey()] >= 0) {
+			if(registers[regIndex] >= 0) {
 				//If assigned, take the same symbol, and generate the new 
 				//searchstates with it
-				int symbol = registers[labelTr.getKey()];
 				for(State nextState : labelTr.getValue()) {
-					adjacentSearchStates.add(new SearchState(nextState, registers.clone(), a, symbol));
+					adjacentSearchStates.add(new SearchState(nextState, registers.clone(), a, fullAssignment));
 				}
-			} else if(rho != null && rho == labelTr.getKey()) {
-				//Take a new value
-				int symbol = chooseNewSymbol();
-				registers[labelTr.getKey()] = symbol;
-				for(State nextState : labelTr.getValue()) {
-					adjacentSearchStates.add(new SearchState(nextState, registers.clone(), a, symbol));
-				}
+			}
+		}
+		
+		//If rho is set and the assigned register is not created
+		if(rho >= 0 && registers[rho] < 0) {
+			//Pick the symbol from the full assignment
+			registers[rho] = fullAssignment[rho];
+			for(State nextState : transitions.get(irho)) {
+				adjacentSearchStates.add(new SearchState(nextState, registers.clone(), a, fullAssignment));
 			}
 		}
 		
@@ -113,18 +117,9 @@ public class SearchState {
 			return false;
 		return true;
 	}
-	
-	private int chooseNewSymbol() {
-		HashSet<Integer> registerContents = new HashSet<>();
-		for(int i : registers) {
-			registerContents.add(i);
-		}
-		
-		for(int s = 1; ;s++) {
-			if(!registerContents.contains(s))
-				return s;
-		}
+
+	@Override
+	public String toString() {
+		return "[" + state + ": " + Arrays.toString(registers) + "]";
 	}
-	
-	
 }
