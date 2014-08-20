@@ -1,9 +1,8 @@
 package testbench.tests;
 
 import java.util.Iterator;
-import java.util.List;
 
-import algorithms.membership.MBSDecisionAlgorithm;
+import algorithms.emptiness.EMPDecisionAlgorithm;
 import algorithms.tools.ResultsContainer;
 import automata.RegisterAutomaton;
 import testbench.Test;
@@ -17,25 +16,22 @@ import testbench.lister.TestLister;
  *
  */
 public class AsymptoticEmptinessTest extends Test {
-	private final TestLister<List<Integer>> twg;
 	private final TestLister<RegisterAutomaton> ag;
-	private final MBSDecisionAlgorithm[] algorithms;
+	private final EMPDecisionAlgorithm[] algorithms;
 	
 	//Results
 	private final int[][] totalTimes;
 	private int successMemberships = 0;
 
 	public AsymptoticEmptinessTest(TestLister<RegisterAutomaton> ag, 
-									TestLister<List<Integer>> twg,
-									MBSDecisionAlgorithm[] algorithms) {
+									EMPDecisionAlgorithm[] algorithms) {
 		//We don't give an automaton to the super class, because we don't need any
 		super("Asymptotic MBS", null);
 		this.algorithms = algorithms;
 		this.ag = ag;
-		this.twg = twg;
 		
-		maxProgression = twg.size()*algorithms.length;
-		totalTimes = new int[algorithms.length][twg.size()];
+		maxProgression = ag.size()*algorithms.length;
+		totalTimes = new int[algorithms.length][ag.size()];
 	}
 
 	@Override
@@ -43,53 +39,47 @@ public class AsymptoticEmptinessTest extends Test {
 		//Consistency checks are integrated in the tests themselves
 		boolean result = false;
 		
-		if(twg.size() != ag.size()) 
-			throw new TestException("Word lister and automaton lister have different sizes!");
-		
-		Iterator<List<Integer>> twgIt = twg.iterator();
 		Iterator<RegisterAutomaton> ragIt = ag.iterator();
 		
+		signalProgression();
 		//make the tests
 		//For each word and automaton, test each algorithm
-		while(twgIt.hasNext() && ragIt.hasNext()) {
+		while(ragIt.hasNext()) {
 			RegisterAutomaton a = ragIt.next();
-			List<Integer> testWord = twgIt.next();
 			
-			signalProgression();
-			
-			System.out.println("Current word size: " + testWord.size() + " symbols");
+			System.out.println("Current automaton:");
+			a.displayInfo();
 			
 			boolean previousResult = false;
 			for(int algIndex = 0; algIndex < algorithms.length; algIndex++) {
-				MBSDecisionAlgorithm algorithm = algorithms[algIndex];
-				
-				//PREPARE AUTOMATON
-				algorithm.setAutomaton(a);
+				EMPDecisionAlgorithm algorithm = algorithms[algIndex];
 				
 				//TEST CORE
 				long cTime = System.currentTimeMillis();			
-				result = algorithm.decide(a, testWord);
+				result = algorithm.decide(a);
 				long testTime = System.currentTimeMillis()-cTime;
 				
 				//Record results
 				successMemberships += result ? 1 : 0;
 				rc.addSessionNumber(algorithm.name, "Time", (int)testTime); 
-				totalTimes[algIndex][twg.getIndex()] = (int) (testTime);
+				totalTimes[algIndex][ag.getIndex()] = (int) (testTime);
 				
 				if(algIndex > 0 && previousResult != result)
-					throw new TestException("Consistency failure: algorithms disagree on " + testWord.toString());
+					throw new TestException("Consistency failure: algorithms disagree on this emptiness check!");
 				else
 					previousResult = result;
 				
-				rc.addSessionNumber(algorithm.name, "Word Size", testWord.size());
-				signalProgression();
+				rc.addSessionNumber(algorithm.name, "Test n", ag.getIndex());
+				rc.addSessionNumber(algorithm.name, "|Q|", a.getStates().length);
+				rc.addSessionNumber(algorithm.name, "R", a.getInitialRegisters().length);
+				signalProgression(true);
 			}
 			
 		}
 		
 		//print all useful data
 		for(int algIndex = 0; algIndex < algorithms.length; algIndex++) {
-			MBSDecisionAlgorithm algorithm = algorithms[algIndex];
+			EMPDecisionAlgorithm algorithm = algorithms[algIndex];
 			
 			addStats(rc.getSession(algorithm.name));
 		}
@@ -97,6 +87,6 @@ public class AsymptoticEmptinessTest extends Test {
 	
 	@Override
 	public void customPrint(ResultsContainer rc) {
-		rc.println("Total number of success memberships: " + successMemberships + "/" + twg.size());
+		rc.println("Total number of nonempty automata: " + successMemberships + "/" + ag.size());
 	}
 }

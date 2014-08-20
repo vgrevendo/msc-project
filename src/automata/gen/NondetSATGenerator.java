@@ -7,17 +7,18 @@ import java.util.List;
 import java.util.Scanner;
 
 /**
- * Takes as input a SAT description file and generates the corresponding automaton.
+ * Takes as input a SAT description file and generates the corresponding automaton,
+ * in its DET version as shown in fma_npc.
  * To solve the SAT problem, apply an emptiness algorithm.
  * @author vincent
  *
  */
 public class NondetSATGenerator extends AutomatonGenerator {
-	private final Scanner sc;
+	protected final Scanner sc;
 	
-	private int n;
-	private int m;
-	private final List<List<Integer>> clauses = new ArrayList<>();
+	protected int n;
+	protected int m;
+	protected final List<List<Integer>> clauses = new ArrayList<>();
 
 	public NondetSATGenerator(String filename) throws FileNotFoundException {
 		super("ND-SAT-GEN");
@@ -34,7 +35,7 @@ public class NondetSATGenerator extends AutomatonGenerator {
 		buildAutomaton();
 	}
 	
-	private void buildAutomaton() {
+	protected void buildAutomaton() {
 		//Build automaton according to description in fma_npc
 		//STATES
 		addState(0, 2*n, false);

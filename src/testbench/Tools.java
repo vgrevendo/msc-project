@@ -1,5 +1,7 @@
 package testbench;
 
+import java.io.File;
+
 /**
  * Some misc testing and utility tools
  * @author vincent
@@ -18,5 +20,16 @@ public class Tools {
 	
 	public static void println(String s, String color) {
 		System.out.println(color + s + ANSI_RESET);
+	}
+	
+	public static String chooseFileName(String pathRoot, String extension) {
+		int id = 0;
+		String fullExtension = "." + extension;
+		
+		while((new File(pathRoot + id + fullExtension)).exists()) {
+			id ++;
+		}
+		
+		return pathRoot + id + fullExtension;
 	}
 }

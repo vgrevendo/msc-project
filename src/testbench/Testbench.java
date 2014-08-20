@@ -19,10 +19,13 @@ import testbench.programs.translator.SafeIterTranslator;
 import testbench.programs.translator.StrictHasNextTranslator;
 import testbench.programs.translator.TRFTranslator;
 import testbench.programs.translator.Translator;
+import testbench.sat.PigeonHoleGenerator;
+import testbench.tests.AsymptoticEmptinessTest;
 import testbench.tests.AsymptoticMembershipTest;
 import testbench.tests.ListMembershipTest;
 import algorithms.Emptiness;
 import algorithms.Membership;
+import algorithms.emptiness.EMPDecisionAlgorithm;
 import algorithms.membership.MBSDecisionAlgorithm;
 import algorithms.tools.ResultsContainer;
 import automata.Automaton;
@@ -59,6 +62,12 @@ public class Testbench {
 		try {
 
 			switch (args[0]) {
+			case "FMA2SAT":
+				fma2satGen(); break;
+			case "pigeon-test":
+				pigeonHoleTest(args); break;
+			case "pigeon-gen":
+				pigeonHoleGenTest(); break;
 			case "sattest":
 				satTest(args); break;
 			case "satgen":
@@ -133,6 +142,54 @@ public class Testbench {
 			System.out.println("An error occurred:");
 			e.printStackTrace();
 		}
+	}
+	private static void fma2satGen() {
+		
+	}
+	private static void pigeonHoleTest(String[] args) throws FileNotFoundException, BuildException, ParseException {
+		final int N = Integer.parseInt(args[1]);
+		final int STEP = Integer.parseInt(args[2]);
+		
+		//Make testlister
+		TestLister<RegisterAutomaton> rag = new TestLister<RegisterAutomaton>() {
+			@Override
+			protected RegisterAutomaton nextResource() {
+				PigeonHoleGenerator phg;
+				try {
+					phg = new PigeonHoleGenerator(STEP*(index+1));
+					String cnffile = phg.generate();
+					System.out.println("CNF output to " + cnffile);
+					AutomatonGenerator ag = new NondetSATGenerator(cnffile);
+					String rafile = ag.generate();
+					RegisterAutomaton ra = new RegisterAutomaton(rafile);
+					return ra;
+				} catch (FileNotFoundException | BuildException | ParseException e) {
+					e.printStackTrace();
+					System.exit(0);
+				}
+
+				return null;
+			}
+
+			@Override
+			public int size() {
+				return N/STEP;
+			}
+		};
+		
+		//Pick algorithms
+		EMPDecisionAlgorithm[] algs = {
+				Emptiness.generativeDFSCheck,
+		};
+
+		Test t = new AsymptoticEmptinessTest(rag, algs);
+		t.test();
+		ResultsContainer.getContainer().flush();
+	}
+	private static void pigeonHoleGenTest() throws FileNotFoundException {
+		PigeonHoleGenerator phg = new PigeonHoleGenerator(1);
+		String filename = phg.generate();
+		System.out.println("PHG to " + filename);
 	}
 	private static void satTest(String[] args) throws FileNotFoundException, BuildException, ParseException {
 		AutomatonGenerator ag = new NondetSATGenerator(args[1]);

@@ -265,7 +265,9 @@ public class RegisterAutomaton extends Automaton {
 	public Map<Integer, List<State>> getTransitions(State s) {
 		return mu.get(s);
 	}
-
+	public Map<State, Map<Integer, List<State>>> getTransitions() {
+		return mu;
+	}
 
 	
 	/**

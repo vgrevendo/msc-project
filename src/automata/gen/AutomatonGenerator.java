@@ -1,6 +1,5 @@
 package automata.gen;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.text.DateFormat;
@@ -8,6 +7,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+
+import testbench.Tools;
 
 /**
  * The aim of this toolbox is to automatically generate very large automata.
@@ -73,16 +74,6 @@ public abstract class AutomatonGenerator {
 	
 	protected int pickFrom(int max) {
 		return (int)(Math.random()*(double)max);
-	}
-	
-	private String chooseFileName() {
-		int id = 0;
-		
-		while((new File(PATH_ROOT + id + ".fma")).exists()) {
-			id ++;
-		}
-		
-		return PATH_ROOT + id + ".fma";
 	}
 	
 	/**
@@ -168,7 +159,7 @@ public abstract class AutomatonGenerator {
 	
 	private String produce() throws FileNotFoundException {
 		//Init output file
-		String filename = chooseFileName();
+		String filename = Tools.chooseFileName(PATH_ROOT, "fma");
 		PrintWriter file = new PrintWriter(filename);
 		
 		//Output comment lines

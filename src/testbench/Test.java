@@ -123,14 +123,18 @@ public abstract class Test {
 		return time + "ms (" + ((double)time)/1000.0 + "s)";
 	}
 	
-	protected void signalProgression() {
+	protected void signalProgression(boolean force) {
 		progression++;
 		
-		if(lastSigTime + MIN_SIGNAL_PERIOD*1000 < System.currentTimeMillis() || progression*10 % maxProgression == 0) {
+		if(force || lastSigTime + MIN_SIGNAL_PERIOD*1000 < System.currentTimeMillis() || progression*10 % maxProgression == 0) {
 			System.out.print("Test '" + name + "' progression: " + (((double)progression)/((double)maxProgression))*100.0 + "% ");
 			System.out.println("|" + progression + " out of " + maxProgression + " problem instances");
 			lastSigTime = System.currentTimeMillis();
 		}
+	}
+	
+	protected void signalProgression() {
+		signalProgression(false);
 	}
 
 	protected void addCsvColumn(int[] elements, String label) {
