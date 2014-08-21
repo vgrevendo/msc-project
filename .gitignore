@@ -12,3 +12,4 @@ run/results
 /tags
 run/sav
 res/*.cnf
+res/satgen*

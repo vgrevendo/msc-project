@@ -26,6 +26,9 @@ import testbench.tests.ListMembershipTest;
 import algorithms.Emptiness;
 import algorithms.Membership;
 import algorithms.emptiness.EMPDecisionAlgorithm;
+import algorithms.emptiness.sat.RAToSatConverter;
+import algorithms.emptiness.sat.SATSolAnalyser;
+import algorithms.emptiness.sat.SmartRAToSatConverter;
 import algorithms.membership.MBSDecisionAlgorithm;
 import algorithms.tools.ResultsContainer;
 import automata.Automaton;
@@ -62,6 +65,12 @@ public class Testbench {
 		try {
 
 			switch (args[0]) {
+			case "translate-sat":
+				translateSAT(args[1],args[2]); break;
+			case "PGH2EMP2SAT":
+				pgh2emp2sat(args); break;
+			case "satsolAnalysis":
+				satsolAnalysis(args[1],args[2]); break;
 			case "FMA2SAT":
 				fma2satGen(); break;
 			case "pigeon-test":
@@ -143,8 +152,33 @@ public class Testbench {
 			e.printStackTrace();
 		}
 	}
-	private static void fma2satGen() {
+	private static void translateSAT(String mapFilename, String formulaFilename) throws FileNotFoundException {
+		SATSolAnalyser.translateFormula(mapFilename, formulaFilename);
+	}
+	private static void pgh2emp2sat(String[] args) throws NumberFormatException, FileNotFoundException, BuildException, ParseException {
+		//Create SAT formula for pigeon hole problem
+		PigeonHoleGenerator phg = new PigeonHoleGenerator(Integer.parseInt(args[1]));
+		String phFilename = phg.generate();
+		//Create automaton for that sat formula
+		AutomatonGenerator ag = new NondetSATGenerator(phFilename);
+		String raFilename = ag.generate();
+		RegisterAutomaton ra = new RegisterAutomaton(raFilename);
+		ra.displayInfo();
+		//Convert the new automaton to a sat formula
+		SmartRAToSatConverter satg = new SmartRAToSatConverter(ra);
+		satg.generate();
+	}
+	private static void satsolAnalysis(String mapfile, String solfile) throws FileNotFoundException {
+		SATSolAnalyser.analyseOutput(mapfile, solfile);
+	}
+	private static void fma2satGen() throws FileNotFoundException, ParseException, BuildException {
+		//Load RA
+		RegisterAutomaton ra = new RegisterAutomaton("res/example8.fma");
+		ra.displayInfo();
 		
+		//Build SAT
+		SmartRAToSatConverter ra2sat = new SmartRAToSatConverter(ra);
+		ra2sat.generate();
 	}
 	private static void pigeonHoleTest(String[] args) throws FileNotFoundException, BuildException, ParseException {
 		final int N = Integer.parseInt(args[1]);

@@ -268,7 +268,10 @@ public class RegisterAutomaton extends Automaton {
 	public Map<State, Map<Integer, List<State>>> getTransitions() {
 		return mu;
 	}
-
+	public boolean declaresRho(State q) {
+		Integer i = rho.get(q);
+		return i != null && i >= 0;
+	}
 	
 	/**
 	 * Registers of an automaton model are immutable!

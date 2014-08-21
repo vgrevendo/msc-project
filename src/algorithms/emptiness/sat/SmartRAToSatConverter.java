@@ -2,11 +2,13 @@ package algorithms.emptiness.sat;
 
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import testbench.Tools;
@@ -20,8 +22,9 @@ import automata.gen.BuildException;
  * @author vincent
  *
  */
-public class RAToSatConverter {
+public class SmartRAToSatConverter {
 	public static final String PATH_ROOT = "gen/ra-gen";
+	public static final int DEF_N = 10+30;
 	
 	private final PrintWriter pw;
 	private final PrintWriter mapPw;
@@ -35,7 +38,7 @@ public class RAToSatConverter {
 	
 	private int n = 0;
 	
-	public RAToSatConverter(RegisterAutomaton ra) throws FileNotFoundException {
+	public SmartRAToSatConverter(RegisterAutomaton ra) throws FileNotFoundException {
 		this.ra = ra;
 		this.pw = new PrintWriter(filename = Tools.chooseFileName(PATH_ROOT, "cnf"));
 		this.mapPw = new PrintWriter(mapFilename = Tools.chooseFileName("gen/map-sat", "map"));
@@ -50,7 +53,7 @@ public class RAToSatConverter {
 		//Compute N
 		int N = computeN();
 		
-		System.out.println("[STRIPS] This is STRIPS, commencing transformation -------------");
+		System.out.println("[STRIPS] This is IntelliSTRIPS, commencing transformation -------");
 		System.out.println("[STRIPS] Estimated N: " + N);
 		
 		//Generate STRIPS formula given N
@@ -60,11 +63,11 @@ public class RAToSatConverter {
 		computePhiInit(N);
 		System.out.println("[STRIPS] Computing phi GOAL");
 		computePhiGoal(N);
-		System.out.println("[STRIPS] Computing phi SUCC");
+		System.out.print("[STRIPS] Computing phi SUCC");
 		computePhiSucc(N);
 		System.out.println("[STRIPS] Computing phi PREC");
 		computePhiPrec(N);
-		System.out.println("[STRIPS] Computing phi EXCL");
+		System.out.print("[STRIPS] Computing phi EXCL");
 		computePhiExcl(N);
 		
 		//Write to CNF file
@@ -81,6 +84,8 @@ public class RAToSatConverter {
 	}
 	
 	private int computeN() {
+		if(DEF_N > 0)
+			return DEF_N;
 		return ra.getInitialRegisters().length * ra.getStates().length;
 	}
 	
@@ -88,6 +93,7 @@ public class RAToSatConverter {
 	private void addLitterals(int N) throws BuildException {
 		State[] states = ra.getStates();
 		int[] registers = ra.getInitialRegisters();
+		Map<State, Map<Integer, List<State>>> mu = ra.getTransitions();
 		
 		//Temporal ground atoms
 		// Defines the current configuration
@@ -103,41 +109,31 @@ public class RAToSatConverter {
 			}
 		}
 		
-		//Atemporal ground atoms
-		//Add transition values
-		for(State q : states) {
-			for(int k = 0; k < registers.length; k++) {
-				for(State qp : states) {
-					addLitteral("trans-" + q.name + "-" + k + "-" + qp.name);
-				}
-			}
-		}
-		
-		//Add rho set values
-		for(State q : states) {
-			addLitteral("rhoset-" + q.name);
-		}
-		
 		//Temporal actions
 		// There are only N of them, not N+1
 		for(int t = 0; t < N; t++) {
-			for(State qi: states) {
-				for(int r = 0; r < registers.length; r++) {
-					for(State qj: states) {
-						if(qj == qi)
-							continue;
-						
-						//Move t (qi,r,qj)
-						addLitteral("move-" + t + "-" + qi.name + "-" + r + "-" + qj.name);
-						//Move rho t (qi,r,qj)
-						addLitteral("moverho-" + t + "-" + qi.name + "-" + r + "-" + qj.name);
+			for(Entry<State, Map<Integer, List<State>>> ts : mu.entrySet()) {
+				State qi = ts.getKey();
+				Integer rho = ra.getAssignmentRegister(qi);
+				for(Entry<Integer, List<State>> trans : ts.getValue().entrySet()) {
+					int r = trans.getKey();
+					for(State qj : trans.getValue()) {
+						if(qi == qj) {
+							if(rho != null && rho == r)
+								//Move same rho t (qi,r)
+								addLitteral("movesamerho-" + t + "-" + qi.name + "-" + r);
+							else
+								//Move same t (qi,r)
+								addLitteral("movesame-" + t + "-" + qi.name + "-" + r);
+						} else {
+							if(rho != null && rho == r)
+								//Move rho t (qi,r,qj)
+								addLitteral("moverho-" + t + "-" + qi.name + "-" + r + "-" + qj.name);
+							else
+								//Move t (qi,r,qj)
+								addLitteral("move-" + t + "-" + qi.name + "-" + r + "-" + qj.name);
+						}
 					}
-					
-					//Move same t (qi,r)
-					addLitteral("movesame-" + t + "-" + qi.name + "-" + r);
-					
-					//Move same rho t (qi,r)
-					addLitteral("movesamerho-" + t + "-" + qi.name + "-" + r);
 				}
 			}
 		}
@@ -145,9 +141,7 @@ public class RAToSatConverter {
 	
 	//Phi values
 	private void computePhiInit(int N) throws BuildException {
-		State[] states = ra.getStates();
 		int[] registers = ra.getInitialRegisters();
-		Map<State, Map<Integer, List<State>>> mu = ra.getTransitions();
 		
 		//CLAUSES
 		//The current state is q0
@@ -169,27 +163,6 @@ public class RAToSatConverter {
 			addToClause("regset-0-" + r, registers[r] >= 0);
 			commitClause();
 		}
-		
-		//Some transitions are allowed, others not
-		for(State q : states) {
-			for(int k = 0; k < registers.length; k++) {
-				for(State qp : states) {
-					addToClause("trans-" + q.name + "-" + k + "-" + qp.name, 
-							    mu.containsKey(q)
-							    && mu.get(q).containsKey(k)
-							    && mu.get(q).get(k).contains(qp));
-					//not very efficient, can be sped up with sets
-					commitClause();
-				}
-			}
-		}
-		
-		//Some rho values are set
-		for(State q: states) {
-			Integer rho = ra.getAssignmentRegister(q);
-			addToClause("rhoset-" + q.name, rho != null && rho >= 0);
-			commitClause();
-		}
 	}
 	private void computePhiGoal(int N) throws BuildException {
 		State[] states = ra.getStates();
@@ -206,6 +179,43 @@ public class RAToSatConverter {
 	private void computePhiSucc(int N) throws BuildException {
 		State[] states = ra.getStates();
 		int[] registers = ra.getInitialRegisters();
+		Map<State, Map<Integer, List<State>>> mu = ra.getTransitions();
+		
+		//Build destination-based mu (dbmu: dest-reg-source)
+		Map<State, Map<Integer, List<State>>> dbmu = new HashMap<>();
+		
+		for(Entry<State, Map<Integer, List<State>>> ts : mu.entrySet()) {
+			for(Entry<Integer, List<State>> trans : ts.getValue().entrySet()) {
+				for(State destination : trans.getValue()) {
+					if(!dbmu.containsKey(destination)) {
+						dbmu.put(destination, new HashMap<Integer, List<State>>());
+					}
+					if(!dbmu.get(destination).containsKey(trans.getKey())) {
+						dbmu.get(destination).put(trans.getKey(), new ArrayList<State>());
+					}
+					dbmu.get(destination).get(trans.getKey()).add(ts.getKey());
+				}
+			}
+		}
+		
+		//Build register-based mu (rbmu: reg-source-dest)
+		Map<Integer, Map<State, List<State>>> rbmu = new HashMap<>();
+		
+		for(Entry<State, Map<Integer, List<State>>> ts : mu.entrySet()) {
+			for(Entry<Integer, List<State>> trans : ts.getValue().entrySet()) {
+				for(State destination : trans.getValue()) {
+					if(!rbmu.containsKey(trans.getKey())) {
+						rbmu.put(trans.getKey(), new HashMap<State, List<State>>());
+					}
+					if(!rbmu.get(trans.getKey()).containsKey(ts.getKey())) {
+						rbmu.get(trans.getKey()).put(ts.getKey(), new ArrayList<State>());
+					}
+					rbmu.get(trans.getKey()).get(ts.getKey()).add(destination);
+				}
+			}
+		}
+		
+		//Fill in action constraints
 		for(int t = 0; t < N; t++) {
 			//Ground atoms: AT
 			for(State q: states) {
@@ -215,20 +225,44 @@ public class RAToSatConverter {
 				List<String> negActionClause = new LinkedList<>();
 				
 				//Actions causing F: all possible moves with destination q
-				//Actions causing not F: all possible moves with source q
-				for(State qp: states) {
-					if(qp == q)
-						continue;
-					
-					for(int r = 0; r < registers.length; r++) {
-						posActionClause.add("move-" + t + "-" + qp.name + "-" + r + "-" + q.name);
-						posActionClause.add("moverho-" + t + "-" + qp.name + "-" + r + "-" + q.name);
-						posActionClause.add("movesame-" + t + "-" + q.name + "-" + r);
-						posActionClause.add("movesamerho-" + t + "-" + q.name + "-" + r);
-						negActionClause.add("move-" + t + "-" + q.name + "-" + r + "-" + qp.name);
-						negActionClause.add("moverho-" + t + "-" + q.name + "-" + r + "-" + qp.name);
+				if(dbmu.containsKey(q))
+					for(Entry<Integer, List<State>> ts : dbmu.get(q).entrySet()) {
+						int r = ts.getKey();
+						for(State qp : ts.getValue()) {
+							Integer rho = ra.getAssignmentRegister(qp);
+							if(q == qp) {
+								//Same clauses
+								if(rho != null && rho == r)
+									posActionClause.add("movesamerho-" + t + "-" + q.name + "-" + r);
+								else
+									posActionClause.add("movesame-" + t + "-" + q.name + "-" + r);
+							} else {
+								//Regular clauses
+								if(rho != null && rho == r)
+									posActionClause.add("moverho-" + t + "-" + qp.name + "-" + r + "-" + q.name);
+								else
+									posActionClause.add("move-" + t + "-" + qp.name + "-" + r + "-" + q.name);
+							}
+						}
 					}
-				}
+				
+				//Actions causing not F: all possible moves with source q
+				Integer rho = ra.getAssignmentRegister(q);
+				if(mu.containsKey(q))
+					for(Entry<Integer, List<State>> ts : mu.get(q).entrySet()) {
+						int r = ts.getKey();
+						for(State qp : ts.getValue()) {
+							if(q == qp) {
+								continue;
+							} else {
+								//Regular clauses
+								if(rho != null && rho == r)
+									negActionClause.add("moverho-" + t + "-" + q.name + "-" + r + "-" + qp.name);
+								else
+									negActionClause.add("move-" + t + "-" + q.name + "-" + r + "-" + qp.name);
+							}
+						}
+					}
 				
 				addSuccClause(groundAtomTP, posActionClause, groundAtomT, negActionClause);
 			}
@@ -241,108 +275,109 @@ public class RAToSatConverter {
 				List<String> negActionClause = new LinkedList<>();
 				
 				//Actions causing F: move rho and move same rho for register r
-				//Actions causing not F: none
-				for(State q: states) {
-					//Move rho
-					for(State qp: states) {
-						if(qp == q)
+				for(Entry<State, List<State>> trans : rbmu.get(r).entrySet()) {
+					State q = trans.getKey();
+					Integer rho = ra.getAssignmentRegister(q);
+					
+					for(State qp : trans.getValue()) {
+						if(rho == null || rho != r)
 							continue;
-						
-						posActionClause.add("moverho-" + t + "-" + qp.name + "-" + r + "-" + q.name);
+						if(qp == q)
+							posActionClause.add("movesamerho-" + t + "-" + q.name + "-" + r);
+						else
+							posActionClause.add("moverho-" + t + "-" + q.name + "-" + r + "-" + qp.name);
 					}
 					
-					//Move same rho
-					posActionClause.add("movesamerho-" + t + "-" + q.name + "-" + r);
 				}
+				
+				//Actions causing not F: none
 				
 				addSuccClause(groundAtomTP, posActionClause, groundAtomT, negActionClause);
 			}
 			
-			System.out.println("[STRIPS]  : " + t + "/" + N);
+			System.out.print(" : " + t + "/" + N);
 		}
+		
+		System.out.println();
 	}
 	private void computePhiPrec(int N) throws BuildException {
-		State[] states = ra.getStates();
-		int[] registers = ra.getInitialRegisters();
+		Map<State, Map<Integer, List<State>>> mu = ra.getTransitions();
 		
 		for(int t = 0; t < N; t++) {
-			for(State q : states) {
-				for(int r = 0; r < registers.length; r++) {
-					String actionAtom;
-					List<String> precAtoms;
-					
-					for(State qp: states) {
-						if(q == qp)
-							continue;
-						
-						//Move action
-						actionAtom = "move-" + t + "-" + q.name + "-" + r + "-" + qp.name;
-						precAtoms = new LinkedList<String>();
-						precAtoms.add("regset-" + t + "-" + r);
-						precAtoms.add("at-" + t + "-" + q.name);
-						precAtoms.add("-at-" + t + "-" + qp.name);
-						precAtoms.add("trans-" + q.name + "-" + r + "-" + qp.name);
-						
-						addPrecClause(actionAtom, precAtoms);
-						
-						//Move rho action
-						actionAtom = "moverho-" + t + "-" + q.name + "-" + r + "-" + qp.name;
-						precAtoms = new LinkedList<String>();
-						precAtoms.add("rhoset-" + q.name);
-						precAtoms.add("at-" + t + "-" + q.name);
-						precAtoms.add("-at-" + t + "-" + qp.name);
-						precAtoms.add("trans-" + q.name + "-" + r + "-" + qp.name);
-						
+			for(Entry<State, Map<Integer, List<State>>> ts : mu.entrySet()) {
+				State q = ts.getKey();
+				Integer rho = ra.getAssignmentRegister(q);
+				
+				for(Entry<Integer, List<State>> trans : ts.getValue().entrySet()) {
+					int r = trans.getKey();
+					for(State qp : trans.getValue()) {
+						String actionAtom = null;
+						List<String> precAtoms = null;
+						if(q == qp) {
+							if(rho != null && rho == r) {
+								actionAtom = "movesamerho-" + t + "-" + q.name + "-" + r;
+								precAtoms = new LinkedList<String>();
+								precAtoms.add("at-" + t + "-" + q.name);
+							} else {
+								//Move same
+								actionAtom = "movesame-" + t + "-" + q.name + "-" + r;
+								precAtoms = new LinkedList<String>();
+								precAtoms.add("regset-" + t + "-" + r);
+								precAtoms.add("at-" + t + "-" + q.name);
+							}
+						} else {
+							if(rho != null && rho == r) {
+								//Move rho action
+								actionAtom = "moverho-" + t + "-" + q.name + "-" + r + "-" + qp.name;
+								precAtoms = new LinkedList<String>();
+								precAtoms.add("at-" + t + "-" + q.name);
+								precAtoms.add("-at-" + t + "-" + qp.name);
+							} else {
+								//Move action
+								actionAtom = "move-" + t + "-" + q.name + "-" + r + "-" + qp.name;
+								precAtoms = new LinkedList<String>();
+								precAtoms.add("regset-" + t + "-" + r);
+								precAtoms.add("at-" + t + "-" + q.name);
+								precAtoms.add("-at-" + t + "-" + qp.name);
+							}
+						}
 						addPrecClause(actionAtom, precAtoms);
 					}
-					
-					//Move same
-					actionAtom = "movesame-" + t + "-" + q.name + "-" + r;
-					precAtoms = new LinkedList<String>();
-					precAtoms.add("regset-" + t + "-" + r);
-					precAtoms.add("at-" + t + "-" + q.name);
-					precAtoms.add("trans-" + q.name + "-" + r + "-" + q.name);
-					
-					addPrecClause(actionAtom, precAtoms);
-					
-					//Move same rho
-					actionAtom = "movesamerho-" + t + "-" + q.name + "-" + r;
-					precAtoms = new LinkedList<String>();
-					precAtoms.add("rhoset-" + q.name);
-					precAtoms.add("at-" + t + "-" + q.name);
-					precAtoms.add("trans-" + q.name + "-" + r + "-" + q.name);
-					
-					addPrecClause(actionAtom, precAtoms);
 				}
 			}
 		}
 	}
 	private void computePhiExcl(int N) throws BuildException {
-		State[] states = ra.getStates();
-		int[] registers = ra.getInitialRegisters();
+		Map<State, Map<Integer, List<State>>> mu = ra.getTransitions();
 		
 		for(int t = 0; t < N; t++) {
 			
 			//Generate all actions
 			Set<String> actions = new HashSet<>();
-			for(State q : states) {
-				for(int r = 0; r < registers.length; r++) {
-					for(State qp: states) {
-						if(q == qp)
-							continue;
-						
-						//Move action
-						actions.add("move-" + t + "-" + q.name + "-" + r + "-" + qp.name);
-						
-						//Move rho action
-						actions.add("moverho-" + t + "-" + q.name + "-" + r + "-" + qp.name);
+			for(Entry<State, Map<Integer, List<State>>> ts : mu.entrySet()) {
+				State q = ts.getKey();
+				Integer rho = ra.getAssignmentRegister(q);
+				for(Entry<Integer, List<State>> trans : ts.getValue().entrySet()) {
+					int r = trans.getKey();
+					for(State qp : trans.getValue()) {
+						if(q == qp) {
+							if(rho != null && rho == r) {
+								//Move same rho
+								actions.add("movesamerho-" + t + "-" + q.name + "-" + r);
+							} else {
+								//Move same
+								actions.add("movesame-" + t + "-" + q.name + "-" + r);
+							}
+						} else {
+							if(rho != null && rho == r) {
+								//Move rho action
+								actions.add("moverho-" + t + "-" + q.name + "-" + r + "-" + qp.name);
+							} else {
+								//Move action
+								actions.add("move-" + t + "-" + q.name + "-" + r + "-" + qp.name);
+							}
+						}
 					}
-					
-					//Move same
-					actions.add("movesame-" + t + "-" + q.name + "-" + r);
-					
-					//Move same rho
-					actions.add("movesamerho-" + t + "-" + q.name + "-" + r);
 				}
 			}
 			
@@ -352,11 +387,13 @@ public class RAToSatConverter {
 					if(action1 == action2)
 						continue;
 					
+					
 					addExclClause(action1, action2);
 				}
 			}
-			System.out.println("[STRIPS]  : " + t + "/" + N);
+			System.out.print(" : " + t + "/" + N);
 		}
+		System.out.println();
 	}
 	
 	private void writeCNF() {
@@ -394,7 +431,7 @@ public class RAToSatConverter {
 		clauses.add(clause);
 		clause = new LinkedList<>();
 	}
-
+	
 	/**
 	 * <p>
 	 * Given the mapping:
@@ -449,7 +486,7 @@ public class RAToSatConverter {
 		addToClause(groundAtomTP, true);
 		addToClause(groundAtomT, false);
 		for(String acnft: negActionClause) {
-			addToClause(acnft, false);
+			addToClause(acnft, true);
 		}
 		commitClause();
 	}

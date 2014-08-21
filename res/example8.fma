@@ -1,0 +1,8 @@
+-- A simple example to debug SmartRAToSatConverter
+q0 1
+f _ F
+-
+q0
+#
+-
+q0 1 f
