@@ -227,12 +227,7 @@ public class RegisterAutomaton extends Automaton {
 		System.out.println("-- Automaton information --");
 		System.out.println("Number of states: " + states.length);
 		
-		int transitions = 0;
-		for(Entry<State, Map<Integer, List<State>>> e: mu.entrySet()) {
-			for(Entry<Integer, List<State>> e2: e.getValue().entrySet()) {
-				transitions += e2.getValue().size();
-			}
-		}
+		int transitions = countTransitions();
 		
 		System.out.println("Number of registers: " + registers.length);
 		
@@ -271,6 +266,15 @@ public class RegisterAutomaton extends Automaton {
 	public boolean declaresRho(State q) {
 		Integer i = rho.get(q);
 		return i != null && i >= 0;
+	}
+	public int countTransitions() {
+		int count = 0;
+		for(Entry<State, Map<Integer, List<State>>> e : mu.entrySet()) {
+			for(Entry<Integer, List<State>> ep : e.getValue().entrySet()) 
+				count += ep.getValue().size();
+		}
+		
+		return count;
 	}
 	
 	/**

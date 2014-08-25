@@ -36,6 +36,7 @@ import automata.OptimisedRA;
 import automata.RegisterAutomaton;
 import automata.gen.AutomatonGenerator;
 import automata.gen.BuildException;
+import automata.gen.DetSATGenerator;
 import automata.gen.HighLevelPropertyGenerator;
 import automata.gen.NondetSATGenerator;
 import automata.gen.RootBranchGenerator;
@@ -193,7 +194,7 @@ public class Testbench {
 					phg = new PigeonHoleGenerator(STEP*(index+1));
 					String cnffile = phg.generate();
 					System.out.println("CNF output to " + cnffile);
-					AutomatonGenerator ag = new NondetSATGenerator(cnffile);
+					AutomatonGenerator ag = new DetSATGenerator(cnffile);
 					String rafile = ag.generate();
 					RegisterAutomaton ra = new RegisterAutomaton(rafile);
 					return ra;

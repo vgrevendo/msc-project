@@ -72,6 +72,7 @@ public class AsymptoticEmptinessTest extends Test {
 				rc.addSessionNumber(algorithm.name, "Test n", ag.getIndex());
 				rc.addSessionNumber(algorithm.name, "|Q|", a.getStates().length);
 				rc.addSessionNumber(algorithm.name, "R", a.getInitialRegisters().length);
+				rc.addSessionNumber(algorithm.name, "|mu|", a.countTransitions());
 				signalProgression(true);
 			}
 			
